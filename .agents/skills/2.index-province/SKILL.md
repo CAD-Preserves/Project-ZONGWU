@@ -33,7 +33,12 @@ Construct targeted queries for every mapped modern unit and historical entity:
 - **Mainland PRC Counties (`县`, `自治县`, `县级市`, `市辖区`, `旗`, `自治旗`, `特区`, `林区`)**:
   - Search both the shortened `<BaseName>县志` / `旗志` (stripping ethnic autonomous suffixes) and the full official title, alongside post-1953 renamings and `市志` titles for upgraded cities.
   - For historic core counties absorbed into urban **`市辖区`**, index **both** the district `区志` and the overarching municipal `市志` (`大事记` + `军事志`).
+  - Detect and group **multi-volume sets (`上、中、下册` / `第一卷..第N卷`)** using `volume_set_id` and `volume_index: [k, n]`, ensuring all volumes covering `大事记`, `建置沿革`, `地名`, `人口`, `政党`, `军事` and `公安` (`剿匪`) are listed.
   - Target First-Round (`第一轮修志`, ca. `1980–2005`) or full-revision `重修` volumes covering `1912–1953`.
+- **Provincial Gazetteers, Standalone Thematic Books (`分志`) and `地名志` (`provincial_gazetteers`)**:
+  - Explicitly search for and index provincial (`省志`) and major municipal (`市志`) standalone thematic volumes: `<Province/City>志·大事记`, `·军事志`, `·地名志` (e.g. `黑龙江省志·地名志`), `·建置沿革志` / `·民政志` / `·行政区划志`, `·公安志` (`剿匪`), `·政党志`, `·民族志` and `·报业志` / `·新闻出版志`.
+  - Index standalone `<Province/Prefecture/County>地名志`, `地名录` and `中华人民共和国地名词典（<Province>卷）` because they record granular subdivision `沿革` changes and local bandit mountain strongholds (`山寨`).
+  - Cross-check any discovered `报业志` / `新闻出版志` to ensure no contemporaneous `1912–1953` regional newspaper is omitted under `newspapers`.
 - **Taiwan**:
   - Index `1990–2015` `重修縣市志` (`GADM TWN_2`) paired with `GADM TWN_3` township/district chronicles (`鄉鎮縣轄市區志`, including `山地鄉`) and `1912–1945` Japanese *Shū*/*Chō*/*Gun*/*Banchi* official surveys (`州管內概況及事務概要`, `郡要覽`, `理蕃誌稿`).
   - Disambiguate **ROC Fujian `金門縣志` (Kinmen) and `連江縣志` (Matsu)** from PRC mainland Fuzhou `连江县志`.
@@ -62,4 +67,4 @@ Inspect `./chronicles/source_registry.json5` before finalising entries. Because 
 ## Step 6. Write and Verify `index_manifest.json5`
 
 1. Save `./chronicles/<province_slug>/index_manifest.json5` using 2-space indentation and the schema in [taxonomy_and_schemas.md](../1.download-all-provinces/references/taxonomy_and_schemas.md).
-2. Verify that every historical `adm_3` unit resolves to at least one modern crosswalk unit (`modern_unit_id`, `covered_historical_adm3`), every accepted source passes the `1912–1953` `content_years_covered` filter, every entry specifies `language_orig`, `script_direction`, `format`, `gazetteer_tier_or_round`, `time_coverage_role` and `access_status`, and the file parses cleanly with `gis_helpers.load_json5()`.
+2. Verify that every historical `adm_3` unit resolves to at least one modern crosswalk unit (`modern_unit_id`, `covered_historical_adm3`), `provincial_gazetteers` covers `地名志`, `大事记` and `军事志` searches, multi-volume `上、中、下册` sets include every volume (`volume_set_id`, `volume_index`), every accepted source passes the `1912–1953` `content_years_covered` filter, every entry specifies `language_orig`, `script_direction`, `format`, `gazetteer_tier_or_round`, `time_coverage_role` and `access_status`, and the file parses cleanly with `gis_helpers.load_json5()`.

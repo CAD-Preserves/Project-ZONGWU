@@ -11,12 +11,12 @@ Read `./common/chronology/actor_glossary.json5`, `./common/defines/modern_gazett
 
 ## Step 1. Cross-Province Harmonisation of Actors, Combatants, Parties, Cliques and Polities
 
-1. **Ingest Raw Markdown**: Scan every `*_zh_raw.md` and `*_en_raw.md` file across `counties/`, `newspapers/` and `tusi_sources/` (resolving shared sources via `canonical_source_path`).
+1. **Ingest Raw Markdown**: Scan every `*_zh_raw.md` and `*_en_raw.md` file across `counties/`, `provincial_gazetteers/` (including standalone `大事记`, `军事志`, `公安志` and `地名志`), `newspapers/` and `tusi_sources/` (resolving shared sources via `canonical_source_path`).
 2. **Extract All Actors**: Identify every historical entity appearing in `1912–1953` events—**not only states and major warlords**, but all:
    - Polities (`polity`), foreign powers (`foreign_power`) and Tusi polities (`tusi_polity`)
    - Warlord cliques and regional factions (`clique`)
    - Political parties, youth leagues, fronts and secret/religious societies (`party_or_society`, e.g. Red Spears, Elder Brother Society)
-   - Military units and irregular formations (`military_unit`, `bandit_or_irregular`)
+   - Military units and irregular formations (`military_unit`, `bandit_or_irregular`, including named bandit leaders `报号` / `杆首` / `胡子头目`, mountain bands and local `民团` militias recorded in `军事志`, `公安志` and `地名志`)
    - Named commanders, county magistrates, party cadres, Tusi chieftains, monastic leaders and foreign envoys (`commander`, `tusi_chieftain`, `civil_or_religious_figure`)
 3. **Standardise Military Echelons and Romanisation**:
    - Translate Chinese military formations strictly using `echelon_standard_en_gb` in `./common/chronology/actor_glossary.json5` (for example `18th Group Army`, `29th Corps`, `38th Division`, `Peace Preservation Regiment`, `Mintuan Militia`).
@@ -35,13 +35,16 @@ Read `./common/chronology/actor_glossary.json5`, `./common/defines/modern_gazett
 2. **Enforce Bullet Contract**:
    Every timeline entry must conform strictly to:
    `- dd Month YYYY: [Event Name] — Concise non-Oxford EN-GB summary using exact canonical actor and division names. (Location: <county_slug>; Cross-province: <province_slugs | none>; Source: <source_slug> p. <N>)`
-3. **Crosswalk Modern Local Histories to Historical `1912–1953` Counties**:
-   - Use `./common/defines/modern_gazetteer_crosswalk.json5` (`covered_historical_adm3`) alongside internal town, village, river and *khoshuun* toponyms inside the text to route events from modern PRC county/district chronicles (`市辖区`/`县级市`), Taiwanese township chronicles, Mongolian post-1994 aimag/soum books and Tuvan republic-wide TIGPI compendia onto the exact contemporaneous `1912–1953` `<county_slug>` and `<province_slug>`.
+3. **Crosswalk Modern Local Histories and `地名志` to Historical `1912–1953` Counties**:
+   - Use `./common/defines/modern_gazetteer_crosswalk.json5` (`covered_historical_adm3`) alongside **`地名志`** (`沿革` + village/mountain entries) and internal town, village, river and *khoshuun* toponyms to date sub-county/county administrative shifts (`设治局`, Manchukuo `保甲`/`街村`, township transfers) and route events from modern PRC county/district chronicles (`市辖区`/`县级市`), standalone `分志`, Taiwanese township chronicles, Mongolian post-1994 aimag/soum books and Tuvan republic-wide TIGPI compendia onto the exact contemporaneous `1912–1953` `<county_slug>` and `<province_slug>`.
    - Where a single historical frontier `厅` or `府` split into multiple modern PRC counties, merge events from all daughter `县志` into that historical `<county_slug>`; where a modern county straddles multiple historical `adm_3` units, split each event by its attested settlement toponym.
-4. **Compile County Timelines First, Then Synthesise Province Timeline**:
-   - Write `./chronicles/<province_slug>/counties/<county_slug>/chronology_<county_slug>.md` for every county, merging county chronicle events (`大事记`, `军事`, `建置沿革`) with county-level dispatches from `newspapers/` and `tusi_sources/`. Deduplicate identical events reported across multiple sources while retaining all citations in `(Source: ...)`.
-   - Synthesise `./chronicles/<province_slug>/chronology_<province_slug>.md` by merging all `chronology_<county_slug>.md` entries with provincial/prefectural newspaper events and `tusi_sources/` entries, ordered chronologically from `1912` to `1953`.
-5. **Enforce Inter-Provincial Coherence**:
+4. **Enforce Upland / Off-Corridor Spatial Distinction**:
+   - Distinguish county-seat (`县城`) and valley road/rail/river corridor control from bandit, guerrilla, KMT stay-behind or autonomous militia encampments in hill and mountain contour zones away from main roads and settlements (such as rugged interior uplands and forested Manchurian uplands like Changbaishan and the Lesser Khingan, contrasted with open-plain mounted banditry).
+   - Never misrecord upland mountain-camp presence as capture of the county seat; append `[upland: <Mountain/Ridge Toponym>]` inside `Location:` when an event occurs in a highland stronghold so downstream mappers intersect it accurately against `./gis/elevation_contours.geojson` and `./gis/roads_1912_1953.geojson`.
+5. **Compile County Timelines First, Then Synthesise Province Timeline**:
+   - Write `./chronicles/<province_slug>/counties/<county_slug>/chronology_<county_slug>.md` for every county, merging county chronicle events (`大事记`, `军事`, `公安`/`剿匪`, `建置沿革`, `地名志`) with county-level dispatches from `provincial_gazetteers/`, `newspapers/` and `tusi_sources/`. Deduplicate identical events reported across multiple sources while retaining all citations in `(Source: ...)`.
+   - Synthesise `./chronicles/<province_slug>/chronology_<province_slug>.md` by merging all `chronology_<county_slug>.md` entries with provincial/prefectural newspaper events, `provincial_gazetteers/` (`省志·大事记`, `·军事志`, `·地名志`) and `tusi_sources/` entries, ordered chronologically from `1912` to `1953`.
+6. **Enforce Inter-Provincial Coherence**:
    - **Date-Contemporaneous Jurisdiction**: Attribute every event on date `D` to the first-level division administering or occupying `<county_slug>` on date `D` per `./common/defines/province_defines.json5` and `./gis/adm_3_<year>.geojson`. Whenever a county or Tusi transfers between divisions (e.g. Zhili -> Rehe, Sichuan -> Xikang, East Hebei, Manchukuo or `改土归流` Tusi abolition), record paired `[Administrative Transfer of <County>]` entries with reciprocal `Cross-province:` tags.
    - **Cross-Border Campaigns and Corridors**: When military operations, retreats or political decrees span provincial, Tusi or international borders along `./common/gis/transport_corridors.json5`, tag `Cross-province:` with every affected `<province_slug>` and adopt a unified `[<Campaign Name> — <Sub-event>]` event title across all involved divisions.
 

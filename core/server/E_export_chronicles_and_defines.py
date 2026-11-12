@@ -187,6 +187,8 @@ class ChroniclesDefinesExporter:
       rec["active_years"].add(int(info["year"]))
     if info.get("unit_id"):
       rec["gis_unit_ids"].add(str(info["unit_id"]))
+    if info.get("tusi_meta"):
+      rec["tusi_meta"] = info["tusi_meta"]
 
   def _format_loc_names (self, arg1_slug, arg2_name, arg3_is_tusi):
     """Build EN-GB, FR, and DE display labels for a division or Tusi.
@@ -232,9 +234,19 @@ class ChroniclesDefinesExporter:
       slug = gis_helpers.slugify_snake(tusi_id or entry.get("name_en", ""))
       name_en = str(entry.get("name_en") or tusi_id).strip()
       name_zh = str(entry.get("name_zh") or entry.get("name_ch") or "").strip()
-      start_y = int(entry.get("start_year", 1912))
-      end_y = int(entry.get("end_year", 1953))
+      start_y = int(entry.get("de_facto_start_year", entry.get("start_year", 1911)))
+      end_y = int(entry.get("de_facto_end_year", entry.get("end_year", 1953)))
       years = range(max(1911, start_y), min(1953, end_y) + 1)
+      tusi_meta = {
+        "abolition_note": str(entry.get("abolition_note") or ""),
+        "de_facto_end_year": end_y,
+        "de_facto_start_year": start_y,
+        "de_jure_gaituguiliu_year": entry.get("de_jure_gaituguiliu_year"),
+        "polity_type": str(entry.get("polity_type") or "tusi"),
+        "rank_title": str(entry.get("rank_title") or "Tusi"),
+        "start_year": int(entry.get("start_year", start_y)),
+        "tusi_status": str(entry.get("tusi_status") or "de_jure_and_de_facto"),
+      }
 
       for yr in years:
         self._add_division_record(slug, {
@@ -242,6 +254,7 @@ class ChroniclesDefinesExporter:
           "name": name_en,
           "name_zh": name_zh,
           "polity": entry.get("parent_province") or entry.get("polity_parent") or entry.get("province_1912") or "China",
+          "tusi_meta": tusi_meta,
           "unit_id": tusi_id or slug,
           "year": yr,
         })
@@ -334,7 +347,7 @@ class ChroniclesDefinesExporter:
       de_strings[loc_key] = de_label
 
       years_sorted = sorted(rec["active_years"])
-      defines_map[slug] = {
+      def_entry = {
         "active_years": [years_sorted[0], years_sorted[-1]] if years_sorted else [],
         "categories": categories_sorted,
         "category": primary_cat,
@@ -345,6 +358,9 @@ class ChroniclesDefinesExporter:
         "name_zh": rec["name_zh"],
         "polities": sorted(rec["polities"]),
       }
+      if rec.get("tusi_meta"):
+        def_entry.update(rec["tusi_meta"])
+      defines_map[slug] = def_entry
 
     defines_payload = {
       "schema_version": 1,

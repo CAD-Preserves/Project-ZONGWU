@@ -23,28 +23,32 @@ Before launching subagents, confirm that both Phase-1 GIS skills have completed:
 
 Each division `<province_slug>` listed in `./common/defines/province_defines.json5` owns:
 
-- `./chronicles/<province_slug>/index_manifest.json5` — Master index of county chronicles, regional/provincial newspapers and Tusi sources.
-- `./chronicles/<province_slug>/counties/<county_slug>/` — `adm_3` county chronicles (`raw/` and `ocr/`) plus `chronology_<county_slug>.md`.
+- `./chronicles/<province_slug>/index_manifest.json5` — Master index of county chronicles, regional/provincial newspapers, provincial standalone `分志` and Tusi sources.
+- `./chronicles/<province_slug>/counties/<county_slug>/` — `adm_3` county chronicles (`raw/` and `ocr/`, supporting multi-volume `上、中、下册` sets) plus `chronology_<county_slug>.md`.
+- `./chronicles/<province_slug>/provincial_gazetteers/<source_slug>/` — Provincial (`省志`), prefectural and major municipal standalone thematic books (`分志` such as `大事记`, `军事志`, `地名志`, `建置沿革志`/`民政志`, `公安志`, `报业志`) and multi-volume municipal sets (`raw/` and `ocr/`).
 - `./chronicles/<province_slug>/newspapers/<publication_slug>/` — Contemporaneous 1912–1953 newspapers (`raw/` and `ocr/`), stored at division level because press coverage typically spans provincial, prefectural (`道`) or major municipal catchments between province and county.
 - `./chronicles/<province_slug>/tusi_sources/<source_slug>/` — Tusi genealogies, *Wenshi Ziliao*, *Five Series* ethnographic surveys, monastic *deb-ther* and frontier journals (`raw/` and `ocr/`).
 - `./chronicles/<province_slug>/actors_local.json5` and `chronology_<province_slug>.md` — Local actor provenance and harmonised province-level bullet timeline.
 
 ## Finding Source Material
 
-### County Chronicles (`地方志`) — Modern PRC County Granularity and Time-Domain Filter
+### County Chronicles (`地方志`), Multi-Volume Sets, Standalone `分志` and `地名志`
 
 - **Modern PRC county baseline**: `1980–2010` Chinese county chronicles (`新编地方志`) are compiled at the level of **modern PRC county-level divisions (`县`, `自治县`, `县级市`, `市辖区`, `旗`, `自治旗`, `特区`, `林区`)**, not `1912` CHGIS polygons. Always resolve historical `adm_3` units through `./common/defines/modern_gazetteer_crosswalk.json5`, collect both `区志` and overarching municipal `市志` (`大事记` + `军事志`) for urbanised historic core counties, and track post-1953 renamings (`迪化` -> `乌鲁木齐`) and frontier `厅`/`府` splits.
+- **Multi-volume sets (`上、中、下册` / `卷一..卷N`)**: Medium and large counties and cities often split their chronicle across two to four volumes, where `上册` typically holds `大事记` and `建置沿革` whilst **`军事`, `公安` (`剿匪`) and `政党` sit in `中册` or `下册`**. Always index and scrape the entire multi-volume set, never stopping at `上册`.
+- **Standalone thematic books (`专业志` / `分志`)**: Provinces (`省志`) and big cities (`市志`) publish individual chapters as **separate whole books**: standalone `大事记` (Major Events), standalone `军事志` (Military), standalone `地名志` (Place Names), standalone `建置沿革志` / `民政志` (Administrative Evolution), standalone `公安志` (Public Security and `剿匪` bandit suppression), standalone `政党志` / `民族志`, and standalone `报业志` / `新闻出版志` (which catalogues local `1912–1953` newspapers).
+- **`地名志` (*Dimingzhi*) and upland bandit terrain**: Prioritise provincial and county `地名志` (such as `黑龙江省志·地名志`) alongside `军事志` and `公安志`, because `地名志` systematically record both fine-grained subdivision `沿革` changes and local bandit camps or mountain strongholds (`山寨`). Outside flat plains (such as the central Manchurian plain), bandits, guerrillas and militias routinely camped in hill and mountain contour zones away from main roads and county seats; pairing `地名志` + `军事志` + `公安志` with `./gis/elevation_contours.geojson` preserves off-road upland strongholds without conflating them with county-seat control.
 - **Edition & time-domain discipline**: Select **First-Round (`第一轮修志`, ca. `1980–2005`) or full-revision (`重修`) editions** whose `content_years_covered` spans `1912–1953`. Reject pre-1912 Ming/Qing dynastic gazetteers (`明`/`清`/`光绪`/`宣统` prints) and reject standalone post-1985 `第二轮续志` continuations that omit `1912–1953`. Pair incomplete 1912–1948 Republican imprints with modern full-span chronicles or newspapers so `1937–1953` is never missing.
 - **Dump and repository discovery**: Run generalised discovery passes across **Wikimedia Commons (`commons.wikimedia.org`)**, **Wikisource (`wikisource.org`)**, **Internet Archive (`archive.org`)**, NLC open gazetteer portals, Taiwan Memory / Sinica `臺灣方志網`, NDL/JACAR, CyberLeninka and open academic dataset dumps before narrow unit-by-unit queries.
 - **Naming tip (ethnic autonomous counties)**: Take the official name—for example Youyang Tujia and Miao Autonomous County (`酉阳土家族苗族自治县`)—and append `志`, whilst **also** searching the shortened form without the autonomous ethnicity suffix (`酉阳县志`), which is frequently the actual book title in catalogues.
 - **Typical chronicle anatomy**:
   - First ~30 pages: photographs of officials, infrastructure and scenery.
   - ~5 prefaces/introductions followed by the Table of Contents (`目录`).
-  - **Chronicle of Major Events (`大事记`)**: immediately follows the ToC in ~90% of volumes.
+  - **Chronicle of Major Events (`大事记`)**: immediately follows the ToC in ~90% of single-volume editions (or forms its own standalone book in major cities/provinces).
   - **History of Administration (`建置沿革` / `行政区划`)**: records historical border shifts, seats and transfers.
   - Thematic chapters (`自然`, `人口`, `政党`, etc.).
   - **Military Affairs (`军事`)**: often covers conflicts from the 1200s onwards; critical for *de facto* battle and garrison mapping.
-  - Ideally scrape the entire volume; prioritise `大事记`, `军事`, `建置沿革`, `人口` and `政党` when indexing page spans.
+  - Ideally scrape the entire volume (or full `上、中、下` / `分志` set); prioritise `大事记`, `军事`, `公安` (`剿匪`), `建置沿革`, `地名`, `人口` and `政党` when indexing page spans.
 
 ### Taiwan, Mongolia and Tuvan Republic Local-History Edge Cases
 
@@ -76,7 +80,7 @@ Each division `<province_slug>` listed in `./common/defines/province_defines.jso
 For each first-level division `<province_slug>` in `./common/defines/province_defines.json5`, spawn one Province Subagent with full workspace tools and pass its division entry (`name`, `name_zh`, `category`, `active_years`, `gis_unit_ids` and constituent `adm_2`/`adm_3` lists). Each Province Subagent must run the following skills sequentially, waiting for the first to finish before starting the next:
 
 1. `/2.index-province` ([SKILL.md](../2.index-province/SKILL.md)) — Produces `./chronicles/<province_slug>/index_manifest.json5`.
-2. `/3.scrape-province` ([SKILL.md](../3.scrape-province/SKILL.md)) — Downloads/assembles `<source_slug>_orig.pdf` and `<source_slug>_meta.json5` across `counties/`, `newspapers/` and `tusi_sources/`, updating `./chronicles/source_registry.json5`.
+2. `/3.scrape-province` ([SKILL.md](../3.scrape-province/SKILL.md)) — Downloads/assembles `<source_slug>_orig.pdf` and `<source_slug>_meta.json5` across `counties/`, `provincial_gazetteers/`, `newspapers/` and `tusi_sources/`, updating `./chronicles/source_registry.json5`.
 
 ### Step 1 Verification Gate
 

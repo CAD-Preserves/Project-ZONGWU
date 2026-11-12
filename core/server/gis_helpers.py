@@ -9,9 +9,10 @@ import zipfile
 import numpy as np
 import requests
 import shapefile
+from scipy import ndimage
 from shapely import make_valid
-from shapely.geometry import GeometryCollection, MultiPolygon, Point, Polygon, box, mapping, shape
-from shapely.ops import unary_union
+from shapely.geometry import GeometryCollection, LineString, MultiPolygon, Point, Polygon, box, mapping, shape
+from shapely.ops import polygonize, unary_union
 
 
 # Normalisation map from Chinese level-1 name to canonical pinyin key
@@ -663,3 +664,316 @@ def write_geojson (arg1_filepath, arg2_features, arg3_precision=5):
 
   # Return statement
   return len(fc_features)
+
+
+def _chaikin_smooth_chain (arg1_pts, arg2_is_loop, arg3_passes=2):
+  """Smooth a polyline chain with Chaikin corner-cutting while fixing open-chain endpoints.
+
+  @param arg1_pts List of (x, y) coordinate tuples.
+  @param arg2_is_loop True when the chain forms a closed ring without degree-3+ junctions.
+  @param arg3_passes Number of smoothing iterations.
+  @return List of smoothed (x, y) tuples.
+  """
+  # Convert from parameters
+  is_loop = bool(arg2_is_loop)
+  passes = int(arg3_passes)
+  pts = list(arg1_pts)
+
+  if len(pts) < 3 or passes <= 0:
+    return pts
+
+  # Declare local instance variables.
+  cur = pts
+  nxt = []
+
+  for _ in range(passes):
+    n_pts = len(cur)
+    if n_pts < 3:
+      break
+    nxt = []
+    if is_loop:
+      ring = cur[:-1] if cur[0] == cur[-1] else cur
+      m = len(ring)
+      if m < 3:
+        break
+      for i in range(m):
+        p0 = ring[i]
+        p1 = ring[(i + 1) % m]
+        nxt.append((0.75*p0[0] + 0.25*p1[0], 0.75*p0[1] + 0.25*p1[1]))
+        nxt.append((0.25*p0[0] + 0.75*p1[0], 0.25*p0[1] + 0.75*p1[1]))
+      nxt.append(nxt[0])
+    else:
+      nxt.append(cur[0])
+      for i in range(n_pts - 1):
+        p0 = cur[i]
+        p1 = cur[i + 1]
+        if i > 0:
+          nxt.append((0.75*p0[0] + 0.25*p1[0], 0.75*p0[1] + 0.25*p1[1]))
+        if i + 1 < n_pts - 1:
+          nxt.append((0.25*p0[0] + 0.75*p1[0], 0.25*p0[1] + 0.75*p1[1]))
+      nxt.append(cur[-1])
+    cur = nxt
+
+  # Return statement
+  return cur
+
+
+def extract_seat_connected_partition (arg1_labels, arg2_in_domain, arg3_seat_rc, arg4_n_polities, arg5_allow_background):
+  """Enforce a single seat-seeded 4-connected component per polity and fill interior pockets.
+
+  @param arg1_labels 2D int32 label array (-1 outside, 0..K-1 polities, K background).
+  @param arg2_in_domain 2D boolean mask of valid domain cells.
+  @param arg3_seat_rc List of (row, col) locked seat indices.
+  @param arg4_n_polities Number of competing polities K.
+  @param arg5_allow_background Whether label K represents external background.
+  @return Cleaned 2D int32 label array with zero detached polity islands or interior pockets.
+  """
+  # Convert from parameters
+  allow_bg = bool(arg5_allow_background)
+  in_dom = arg2_in_domain
+  labels = np.array(arg1_labels, dtype=np.int32, copy=True)
+  n_pol = int(arg4_n_polities)
+  seat_rc = list(arg3_seat_rc)
+
+  # Declare local instance variables.
+  bg_id = n_pol
+  comp = None
+  h, w = labels.shape
+  keep_id = 0
+  padded = None
+  struct4 = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], dtype=np.int32)
+
+  for i in range(n_pol):
+    sr, sc = seat_rc[i]
+    labels[sr, sc] = i
+    comp, n_comp = ndimage.label(labels == i, structure=struct4)
+    if n_comp > 1:
+      keep_id = int(comp[sr, sc])
+      labels[(labels == i) & (comp != keep_id)] = -2
+
+  if allow_bg:
+    comp, n_comp = ndimage.label(labels == bg_id, structure=struct4)
+    if n_comp > 0:
+      ext_mask = np.zeros_like(in_dom)
+      ext_mask[0, :] |= (labels[0, :] == bg_id)
+      ext_mask[-1, :] |= (labels[-1, :] == bg_id)
+      ext_mask[:, 0] |= (labels[:, 0] == bg_id)
+      ext_mask[:, -1] |= (labels[:, -1] == bg_id)
+      ext_mask[1:, :] |= ((labels[1:, :] == bg_id) & (labels[:-1, :] == -1))
+      ext_mask[:-1, :] |= ((labels[:-1, :] == bg_id) & (labels[1:, :] == -1))
+      ext_mask[:, 1:] |= ((labels[:, 1:] == bg_id) & (labels[:, :-1] == -1))
+      ext_mask[:, :-1] |= ((labels[:, :-1] == bg_id) & (labels[:, 1:] == -1))
+      touch_ids = set(int(v) for v in np.unique(comp[ext_mask]) if v > 0)
+      for cid in range(1, n_comp + 1):
+        if cid not in touch_ids:
+          labels[comp == cid] = -2
+
+  # Reassign detached -2 pixels to adjacent 4-neighbours in bounded for passes
+  for _ in range(h + w + 4):
+    un_mask = (labels == -2) & in_dom
+    if not np.any(un_mask):
+      break
+    padded = np.pad(labels, 1, mode="constant", constant_values=-1)
+    n_up = padded[:-2, 1:-1]
+    n_dn = padded[2:, 1:-1]
+    n_lt = padded[1:-1, :-2]
+    n_rt = padded[1:-1, 2:]
+    cand_stack = np.stack([n_up, n_dn, n_lt, n_rt], axis=0)
+    best_lbl = np.full((h, w), -2, dtype=np.int32)
+    best_cnt = np.zeros((h, w), dtype=np.int32)
+    for lbl in range(n_pol + (1 if allow_bg else 0)):
+      cnt = np.sum(cand_stack == lbl, axis=0)
+      win = un_mask & (cnt > best_cnt)
+      best_lbl[win] = lbl
+      best_cnt[win] = cnt[win]
+    upd = un_mask & (best_lbl >= 0)
+    if not np.any(upd):
+      break
+    labels[upd] = best_lbl[upd]
+
+  if np.any((labels == -2) & in_dom):
+    if allow_bg:
+      labels[(labels == -2) & in_dom] = bg_id
+    else:
+      rem_r, rem_c = np.where((labels == -2) & in_dom)
+      seats_arr = np.asarray(seat_rc, dtype=np.float64)
+      for idx in range(len(rem_r)):
+        d2 = (seats_arr[:, 0] - rem_r[idx])**2 + (seats_arr[:, 1] - rem_c[idx])**2
+        labels[rem_r[idx], rem_c[idx]] = int(np.argmin(d2))
+
+  for i in range(n_pol):
+    sr, sc = seat_rc[i]
+    labels[sr, sc] = i
+
+  # Return statement
+  return labels
+
+
+def polygonize_smoothed_partition (arg1_labels, arg2_grid_meta, arg3_domain_poly, arg4_seat_pts, arg5_n_polities, arg6_allow_background):
+  """Convert a discrete 2D partition into watertight polygons via topological shared-chain smoothing.
+
+  @param arg1_labels 2D int32 label array (-1 outside, 0..K-1 polities, K background).
+  @param arg2_grid_meta Dict with x0, y0, step grid spacing parameters.
+  @param arg3_domain_poly Clipping Shapely polygon for the cluster domain.
+  @param arg4_seat_pts List of (lon, lat) seat tuples for 0..K-1.
+  @param arg5_n_polities Number of polities K.
+  @param arg6_allow_background True if label K represents background.
+  @return Dict mapping polity index i -> clean valid Shapely Polygon inside arg3_domain_poly.
+  """
+  # Convert from parameters
+  allow_bg = bool(arg6_allow_background)
+  domain_poly = arg3_domain_poly
+  grid_meta = arg2_grid_meta
+  labels = arg1_labels
+  n_pol = int(arg5_n_polities)
+  seat_pts = list(arg4_seat_pts)
+
+  # Declare local instance variables.
+  adj = {}
+  chains = []
+  h, w = labels.shape
+  pad = np.full((h + 2, w + 2), -1, dtype=np.int32)
+  reg_sets = {}
+  seat_pin_verts = set()
+  step = float(grid_meta["step"])
+  x0 = float(grid_meta["x0"])
+  y0 = float(grid_meta["y0"])
+
+  pad[1:-1, 1:-1] = labels
+  for i in range(n_pol):
+    sx, sy = seat_pts[i]
+    sc = int(np.floor((sx - (x0 - 0.5*step)) / step))
+    sr = int(np.floor((sy - (y0 - 0.5*step)) / step))
+    for dr, dc in ((0, 0), (0, 1), (1, 0), (1, 1)):
+      seat_pin_verts.add((sr + dr, sc + dc))
+
+  def add_edge (u, v, a, b):
+    pair = (a, b) if a < b else (b, a)
+    adj.setdefault(u, []).append((v, pair))
+    adj.setdefault(v, []).append((u, pair))
+    for pt in (u, v):
+      pr, pc = pt
+      reg_sets.setdefault(pt, set()).update((int(pad[pr, pc]), int(pad[pr, pc + 1]), int(pad[pr + 1, pc]), int(pad[pr + 1, pc + 1])))
+
+  hr, hc = np.where(pad[:-1, 1:-1] != pad[1:, 1:-1])
+  for idx in range(len(hr)):
+    vr, vc = int(hr[idx]), int(hc[idx])
+    a, b = int(pad[vr, vc + 1]), int(pad[vr + 1, vc + 1])
+    if a >= 0 or b >= 0:
+      add_edge((vr, vc), (vr, vc + 1), a, b)
+
+  vr_a, vc_a = np.where(pad[1:-1, :-1] != pad[1:-1, 1:])
+  for idx in range(len(vr_a)):
+    vr, vc = int(vr_a[idx]), int(vc_a[idx])
+    a, b = int(pad[vr + 1, vc]), int(pad[vr + 1, vc + 1])
+    if a >= 0 or b >= 0:
+      add_edge((vr, vc), (vr + 1, vc), a, b)
+
+  junctions = {u for u, nbs in adj.items() if len(nbs) != 2 or len(reg_sets.get(u, set())) >= 3 or u in seat_pin_verts}
+  visited = set()
+  max_walk = max(4, sum(len(v) for v in adj.values()) + 2)
+
+  for is_loop_pass in (False, True):
+    start_nodes = sorted(junctions) if not is_loop_pass else sorted(adj.keys())
+    for u0 in start_nodes:
+      for v0, pair0 in adj.get(u0, []):
+        ek0 = (u0, v0) if u0 < v0 else (v0, u0)
+        if ek0 in visited:
+          continue
+        visited.add(ek0)
+        verts = [u0, v0]
+        prev_u, cur_v = u0, v0
+        for _ in range(max_walk):
+          if (not is_loop_pass and cur_v in junctions) or (is_loop_pass and cur_v == u0):
+            break
+          nxt_item = next((cv for cv, cp in adj.get(cur_v, []) if cv != prev_u and cp == pair0), None)
+          if nxt_item is None:
+            break
+          ek_n = (cur_v, nxt_item) if cur_v < nxt_item else (nxt_item, cur_v)
+          if ek_n in visited:
+            verts.append(nxt_item)
+            break
+          visited.add(ek_n)
+          verts.append(nxt_item)
+          prev_u, cur_v = cur_v, nxt_item
+        pts = [(x0 + (vc - 0.5)*step, y0 + (vr - 0.5)*step) for vr, vc in verts]
+        is_closed = (len(verts) >= 4 and verts[0] == verts[-1] and u0 not in junctions)
+        sm_pts = _chaikin_smooth_chain(pts, is_closed, 2) if (pair0[0] >= 0 and pair0[1] >= 0) else pts
+        chains.append((pair0, LineString(sm_pts)))
+
+  all_seat_objs = [Point(seat_pts[j][0], seat_pts[j][1]) for j in range(n_pol)]
+  out_polys = {}
+  for i in range(n_pol):
+    lines_sm = [sm_ln for pair, sm_ln in chains if i in pair]
+    polys = [clean_polygonal_geometry(p) for p in polygonize(lines_sm)]
+    polys = [p for p in polys if p is not None and not p.is_empty and not any(p.contains(all_seat_objs[j]) for j in range(n_pol) if j != i)]
+    geom = clean_polygonal_geometry(unary_union(polys).intersection(domain_poly)) if polys else None
+    spt = all_seat_objs[i]
+    if geom is not None:
+      if geom.geom_type == "MultiPolygon":
+        geom = next((sub for sub in geom.geoms if sub.contains(spt) or sub.distance(spt) < 1e-9), max(geom.geoms, key=lambda g: g.area))
+      if len(geom.interiors) > 0:
+        kept_holes = [ring for ring in geom.interiors if any(Polygon(ring).contains(all_seat_objs[j]) for j in range(n_pol) if j != i)]
+        geom = Polygon(geom.exterior, kept_holes)
+      out_polys[i] = geom
+
+  if not allow_bg and len(out_polys) == n_pol:
+    rem = clean_polygonal_geometry(domain_poly.difference(unary_union(list(out_polys.values()))))
+    if rem is not None and not rem.is_empty:
+      for frag in ([rem] if rem.geom_type == "Polygon" else list(rem.geoms)):
+        if frag.area <= 1e-11:
+          continue
+        best_i = max(out_polys.keys(), key=lambda idx: (frag.intersection(out_polys[idx]).length, -frag.distance(out_polys[idx])))
+        merged = clean_polygonal_geometry(unary_union([out_polys[best_i], frag]))
+        if merged is not None and merged.geom_type == "Polygon":
+          if len(merged.interiors) > 0:
+            merged = Polygon(merged.exterior, [r for r in merged.interiors if any(Polygon(r).contains(all_seat_objs[j]) for j in range(n_pol) if j != best_i)])
+          out_polys[best_i] = merged
+
+  # Return statement
+  return out_polys
+
+
+def smooth_discrete_partition (arg1_labels, arg2_in_domain, arg3_seat_rc, arg4_n_polities, arg5_allow_background, arg6_passes=3):
+  """Apply seat-locked 3x3 majority smoothing passes on a discrete 2D raster partition.
+
+  @param arg1_labels 2D int32 label array (-1 outside, 0..K-1 polities, K background).
+  @param arg2_in_domain 2D boolean mask of valid domain pixels.
+  @param arg3_seat_rc List of (row, col) locked seat indices.
+  @param arg4_n_polities Number of competing polities K.
+  @param arg5_allow_background True if label K represents background.
+  @param arg6_passes Number of smoothing passes.
+  @return Smoothed 2D int32 label array.
+  """
+  # Convert from parameters
+  allow_bg = bool(arg5_allow_background)
+  in_dom = arg2_in_domain
+  labels = np.array(arg1_labels, dtype=np.int32, copy=True)
+  n_pol = int(arg4_n_polities)
+  passes = int(arg6_passes)
+  seat_rc = list(arg3_seat_rc)
+
+  # Declare local instance variables.
+  h, w = labels.shape
+  n_cls = n_pol + (1 if allow_bg else 0)
+  seat_mask = np.zeros((h, w), dtype=bool)
+  for sr, sc in seat_rc:
+    seat_mask[sr, sc] = True
+
+  for _ in range(passes):
+    padded = np.pad(labels, 1, mode="constant", constant_values=-1)
+    best_lbl = np.array(labels, dtype=np.int32, copy=True)
+    best_cnt = np.zeros((h, w), dtype=np.int32)
+    cur_cnt = sum((padded[dr:dr + h, dc:dc + w] == labels) for dr in range(3) for dc in range(3))
+    for lbl in range(n_cls):
+      cnt = sum((padded[dr:dr + h, dc:dc + w] == lbl) for dr in range(3) for dc in range(3))
+      win = in_dom & (~seat_mask) & (cnt >= 5) & (cnt > cur_cnt + 1) & (cnt > best_cnt)
+      best_lbl[win] = lbl
+      best_cnt[win] = cnt[win]
+    labels = best_lbl
+    for i in range(n_pol):
+      sr, sc = seat_rc[i]
+      labels[sr, sc] = i
+
+  # Return statement
+  return labels

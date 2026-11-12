@@ -655,10 +655,11 @@ class AnnualAdminBuilder:
         (year >= 1942, "1942_extra_prefs"),
         (year == 1945, "1945_ichigo_prefs"),
       ]
-      for gate_active, oc_key in occ_gates:
-        if gate_active and l2 in oc[oc_key]:
-          is_occ = True
-          break
+      if (l1, l2) not in (("Sichuan", "Xuzhou Fu"), ("Anhui", "Huizhou Fu")):
+        for gate_active, oc_key in occ_gates:
+          if gate_active and l2 in oc[oc_key]:
+            is_occ = True
+            break
 
       if is_occ:
         occ = "Japan" if year <= 1940 else "Japan/Wang"
@@ -768,7 +769,11 @@ class AnnualAdminBuilder:
     year = int(arg1_year)
 
     # Declare local instance variables.
-    active_tusis = [t for t in self.tusi_catalog if int(t["start_year"]) <= year <= int(t["end_year"]) and t["tusi_id"] in self.tusi_geoms]
+    active_tusis = [
+      t for t in self.tusi_catalog
+      if t["tusi_id"] in self.tusi_geoms
+      and int(t.get("de_facto_start_year", t.get("start_year", 1911))) <= year <= int(t.get("de_facto_end_year", t.get("end_year", 1953)))
+    ]
     active_chgis_tusi_uids = set()
     active_kriged_geoms = []
     adm1_buckets = {}
@@ -917,15 +922,22 @@ class AnnualAdminBuilder:
         feats_out.append({
           "type": "Feature",
           "properties": {
+            "abolition_note": t.get("abolition_note", ""),
             "adm_level": lvl,
             "category": "tusi",
             "country": t_country,
+            "de_facto_end_year": int(t.get("de_facto_end_year", t.get("end_year", 1953))),
+            "de_facto_start_year": int(t.get("de_facto_start_year", t.get("start_year", 1911))),
+            "de_jure_gaituguiliu_year": t.get("de_jure_gaituguiliu_year"),
             "name_ch": t["name_zh"],
             "name_en": t["name_en"],
             "occupied_by": t_occ,
             "parent_adm1": t["parent_province"] if lvl > 1 else "",
             "parent_adm2": t["name_en"] if lvl == 3 else "",
+            "polity_type": t.get("polity_type", "tusi"),
             "rank_title": t.get("rank_title", "Tusi"),
+            "start_year": int(t.get("start_year", 1911)),
+            "tusi_status": t.get("tusi_status", "de_jure_and_de_facto"),
             "unit_id": f"tusi_{tid}",
             "unit_type": "tusi",
             "year": year,

@@ -1,10 +1,10 @@
 # Project-ZONGWU Taxonomy, File Architecture and Schemas
 
-This shared reference defines the workspace directory taxonomy, JSON5 manifest schemas, raw Markdown conventions, chronology bullet formats and peripheral-language rules used across `/1.download-CHGIS`, `/1.download-all-provinces`, `/2.index-province`, `/3.scrape-province`, `/4.OCR-translate-province` and `/5.chronology-province`.
+This shared reference defines the workspace directory taxonomy, JSON5 manifest schemas, raw Markdown conventions, chronology bullet formats and peripheral-language rules used across `/1.download-CHGIS`, `/1.download-PRC`, `/1.download-all-provinces`, `/2.index-province`, `/3.scrape-province`, `/4.OCR-translate-province` and `/5.chronology-province`.
 
 ## 1. Workspace and Pipeline Architecture
 
-Project-ZONGWU reconstructs historical *de jure* and *de facto* territorial control from **01 January 1912 to 31 December 1953 (GMT+0)** across **Mainland China, Taiwan, Mongolia and the Tuvan Republic**, treating autonomous **Tusi polities (`土司`)** as first-level divisions.
+Project-ZONGWU reconstructs historical *de jure* and *de facto* territorial control from **01 January 1912 to 31 December 1953 (GMT+0)** across **Mainland China, Taiwan, Mongolia and the Tuvan Republic**, treating autonomous **Tusi polities (`土司`)** as first-level divisions. Alongside `./gis/roads_1912_1953.geojson`, `./gis/railways_1912_1953.geojson` and `./gis/waterways_1912_1953.geojson`, `./gis/elevation_contours.geojson` provides the topographic baseline for modelling off-road mountain and hill sanctuaries (bandit camps, guerrillas and tribal enclaves) versus valley and corridor control.
 
 ### Shared Configuration and Registry Files
 
@@ -58,6 +58,16 @@ Every first-level division defined in `./common/defines/province_defines.json5` 
 │           ├── <issue_or_vol_slug>_en.pdf
 │           ├── <issue_or_vol_slug>_zh_raw.md
 │           └── <issue_or_vol_slug>_en_raw.md
+├── provincial_gazetteers/
+│   └── <source_slug>/
+│       ├── raw/
+│       │   ├── <source_slug>_orig.pdf
+│       │   └── <source_slug>_meta.json5
+│       └── ocr/
+│           ├── <source_slug>_zh.pdf
+│           ├── <source_slug>_en.pdf
+│           ├── <source_slug>_zh_raw.md
+│           └── <source_slug>_en_raw.md
 └── tusi_sources/
     └── <source_slug>/
         ├── raw/
@@ -72,7 +82,8 @@ Every first-level division defined in `./common/defines/province_defines.json5` 
 
 ### Spatial Granularity Rules
 
-- `counties/` remains keyed to the historical `1912–1953` `<county_slug>` derived from `adm_3_<year>.geojson` (or `prc_<slug>` linked via `covered_historical_adm3` when a modern PRC county was split out of a frontier `厅` or `府`). Because `1980–2010` Chinese gazetteers are published at modern PRC county granularity, `source_registry.json5` deduplicates any modern PRC `县志` or peripheral monograph shared across multiple `1912–1953` counties or provinces.
+- `counties/` remains keyed to the historical `1912–1953` `<county_slug>` derived from `adm_3_<year>.geojson` (or `prc_<slug>` linked via `covered_historical_adm3` when a modern PRC county was split out of a frontier `厅` or `府`). Because `1980–2010` Chinese gazetteers are published at modern PRC county granularity, `source_registry.json5` deduplicates any modern PRC `县志` or peripheral monograph shared across multiple `1912–1953` counties or provinces. Multi-volume county or municipal sets (`上、中、下册` or `卷一..卷N`) sit side-by-side inside `raw/` and `ocr/`, grouped by `volume_set_id` and `volume_index: [k, n]`.
+- `provincial_gazetteers/` sits directly under `<province_slug>/provincial_gazetteers/` for provincial (`省志`), prefectural (`地区志`) and multi-district major municipal (`市志`) standalone thematic books (`分志`)—including standalone `大事记`, `军事志`, `地名志` (e.g. `黑龙江省志·地名志`), `建置沿革志` / `民政志`, `公安志` (`剿匪`), `政党志` and `报业志` / `新闻出版志`—as well as multi-volume (`上、中、下册`) municipal sets.
 - `newspapers/` sits directly under `<province_slug>/newspapers/` because contemporaneous 1912–1953 newspapers normally operate between province and county (`provincial`, `prefectural`/`道`, or `municipal`/treaty-port catchment). Each publication records its exact `spatial_scope`, `covered_adm2` and `covered_counties` inside `index_manifest.json5`.
 - `tusi_sources/` captures Tusi-specific genealogies (`土司谱牒`), *Wenshi Ziliao* (`文史资料`), *Five Series* (`民族问题五种丛书`) ethnographic surveys, monastic *deb-ther* and frontier journals (`边政公论`, `康导月刊`). For `category == "tusi"` divisions, county-level successor gazetteers (such as autonomous county chronicles overlapping the Tusi seat) may also sit in `counties/` or link via `shared_from_province`.
 
@@ -161,7 +172,9 @@ All JSON5 files use 2-space indentation, a leading `//` comment header and UTF-8
         "source_slug": "youyang_xianzhi_1992",
         "time_coverage_role": "full_1912_1953",
         "title_orig": "酉阳县志",
-        "urls": ["https://archive.org/details/..."]
+        "urls": ["https://archive.org/details/..."],
+        "volume_index": [1, 1],
+        "volume_set_id": ""
       }
     ]
   },
@@ -194,12 +207,35 @@ All JSON5 files use 2-space indentation, a leading `//` comment header and UTF-8
     }
   ],
   "province_slug": "sichuan",
+  "provincial_gazetteers": [
+    {
+      "access_status": "open",
+      "content_years_covered": [1912, 1985],
+      "covered_historical_adm3": [],
+      "format": "pdf",
+      "gazetteer_tier_or_round": "prc_round_1",
+      "language_orig": "zh_hans",
+      "modern_unit_id": "prc_510000_sichuan",
+      "ocr_status": "pending",
+      "pub_year": 1999,
+      "scrape_status": "pending",
+      "script_direction": "lr-tb",
+      "shared_from_province": "",
+      "source_slug": "sichuanshengzhi_junshizhi_1999",
+      "source_type": "standalone_junshizhi",
+      "time_coverage_role": "full_1912_1953",
+      "title_orig": "四川省志·军事志",
+      "urls": ["https://..."],
+      "volume_index": [1, 1],
+      "volume_set_id": ""
+    }
+  ],
   "schema_version": 1,
   "tusi_sources": []
 }
 ```
 
-Allowed `format` values: `"pdf"`, `"djvu"`, `"iiif_images"`, `"html_chapters"`. Allowed `gazetteer_tier_or_round` values: `"prc_round_1"`, `"prc_round_2_chongxiu"`, `"taiwan_chongxiu_county"`, `"taiwan_township"`, `"japanese_colonial_survey"`, `"mongolia_soum"`, `"mongolia_aimag"`, `"tuva_kozhuun"`, `"tuva_tigpi_compendium"`, `"tusi_special"`, `"republican_contemporaneous"`. Allowed `time_coverage_role` values: `"full_1912_1953"`, `"partial_contemporaneous_1912_1953"`, `"newspaper_window_1912_1953"`. Allowed `access_status` values: `"open"`, `"mirror_open"`, `"blocked_paywall"`, `"blocked_captcha"`, `"unavailable"`. Allowed `scrape_status` and `ocr_status` values: `"pending"`, `"complete"`, `"shared"`, `"blocked"`, `"failed"`.
+Allowed `format` values: `"pdf"`, `"djvu"`, `"iiif_images"`, `"html_chapters"`. Allowed `source_type` values: `"county_chronicle"`, `"municipal_chronicle"`, `"provincial_fenzhi"`, `"dimingzhi"`, `"standalone_dashiji"`, `"standalone_junshizhi"`, `"standalone_yangezhi"`, `"standalone_gonganzhi"`, `"newspaper"`, `"tusi_record"`. Allowed `gazetteer_tier_or_round` values: `"prc_round_1"`, `"prc_round_2_chongxiu"`, `"taiwan_chongxiu_county"`, `"taiwan_township"`, `"japanese_colonial_survey"`, `"mongolia_soum"`, `"mongolia_aimag"`, `"tuva_kozhuun"`, `"tuva_tigpi_compendium"`, `"tusi_special"`, `"republican_contemporaneous"`. Allowed `time_coverage_role` values: `"full_1912_1953"`, `"partial_contemporaneous_1912_1953"`, `"newspaper_window_1912_1953"`. Allowed `access_status` values: `"open"`, `"mirror_open"`, `"blocked_paywall"`, `"blocked_captcha"`, `"unavailable"`. Allowed `scrape_status` and `ocr_status` values: `"pending"`, `"complete"`, `"shared"`, `"blocked"`, `"failed"`.
 
 ### 3.3 `<source_slug>_meta.json5`
 
@@ -215,17 +251,21 @@ Allowed `format` values: `"pdf"`, `"djvu"`, `"iiif_images"`, `"html_chapters"`. 
   "page_count": 842,
   "priority_sections": {
     "admin_history_pages": [45, 72],
+    "bandit_suppression_pages": [540, 560],
     "major_events_pages": [34, 68],
     "military_pages": [512, 560],
     "parties_pages": [480, 511],
-    "population_pages": [180, 210]
+    "population_pages": [180, 210],
+    "toponymy_and_yange_pages": [73, 110]
   },
   "retrieved_at_utc": "2026-11-12T22:00:00Z",
   "script_direction": "lr-tb",
   "sha256": "<64-hex-digest>",
   "source_slug": "youyang_xianzhi_1992",
   "source_type": "county_chronicle",
-  "source_url": "https://archive.org/details/..."
+  "source_url": "https://archive.org/details/...",
+  "volume_index": [1, 1],
+  "volume_set_id": ""
 }
 ```
 
@@ -254,8 +294,8 @@ Allowed `format` values: `"pdf"`, `"djvu"`, `"iiif_images"`, `"html_chapters"`. 
 
 1. Start with a concise metadata block naming `source_slug`, `province_slug`, `county_slug` or `publication_slug`, `language_orig`, `target_language` (`ZH-UTF8` or `EN-GB`) and `page_count`.
 2. Insert an explicit `<!-- page: N -->` marker before every page (`1` through `page_count`) so ZH and EN dumps align 1-to-1 with `_orig.pdf`, `_zh.pdf` and `_en.pdf`.
-3. Preserve original chapter and section headings (`大事记`, `建置沿革`, `军事`, `人口`, `政党`) as Markdown headings, and render statistical tables or orders of battle as GitHub-flavoured Markdown tables.
-4. Capture non-prose visual evidence (maps, boundary diagrams, photographs, seals and mastheads) with structured multimodal callout blocks:
+3. Preserve original chapter and section headings (`大事记`, `建置沿革`, `地名`, `军事`, `公安`, `人口`, `政党`) as Markdown headings, and render statistical tables, orders of battle or `地名志` administrative-evolution (`沿革`) tables as GitHub-flavoured Markdown tables.
+4. Capture non-prose visual evidence—including topographic relief and bandit-suppression sketch maps (`剿匪要图`, `山寨地形图`), boundary diagrams, photographs, seals and mastheads—with structured multimodal callout blocks:
 
 ```markdown
 > [!NOTE] Multimodal Figure (Page 47 — boundary_map)
@@ -270,6 +310,11 @@ Every event must use **GMT+0 Gregorian dates** and follow this exact bullet cont
 ```markdown
 - dd Month YYYY: [Event Name] — Concise EN-GB factual summary using exact canonical actor and division names from actor_glossary.json5. (Location: <county_slug>; Cross-province: <province_slugs | none>; Source: <source_slug> p. <N>)
 ```
+
+#### Spatial Locus and Upland Terrain Precision
+
+- Never conflate bandit (`土匪`, `刀客`, `杆子`, `胡子`), guerrilla or KMT stay-behind encampments in mountain or hill contour zones outside main roads and settlements with capture of the county seat (`县城`).
+- Preserve the specific mountain, ridge, pass, forest or rural stronghold toponym (cross-checked against `地名志`) using `(Location: <county_slug> [upland: <Mountain/Ridge Toponym>]; Cross-province: ...)` so mappers can align upland sanctuaries with `./gis/elevation_contours.geojson` and corridor control with `./gis/roads_1912_1953.geojson`.
 
 #### Partial-Date Rules (Never Fabricate Precision)
 

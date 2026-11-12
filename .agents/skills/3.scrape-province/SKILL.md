@@ -12,7 +12,7 @@ Consult [taxonomy_and_schemas.md](../1.download-all-provinces/references/taxonom
 ## Step 1. Load Manifest and Deduplication Registry
 
 1. Read `./chronicles/<province_slug>/index_manifest.json5` and `./chronicles/source_registry.json5`.
-2. For each item in `counties`, `newspapers` and `tusi_sources`:
+2. For each item in `counties`, `provincial_gazetteers`, `newspapers` and `tusi_sources`:
    - If `shared_from_province` is set and the canonical `<source_slug>` already shows `scrape_status: "complete"` in `source_registry.json5`, skip downloading. Write `<source_slug>_meta.json5` in the local `raw/` folder with `canonical_source_path` pointing to the canonical `_orig.pdf`, and set `scrape_status: "shared"` in `index_manifest.json5`.
    - If `access_status` is `"blocked_paywall"` or `"blocked_captcha"`, do not attempt to bypass authentication, paywalls or CAPTCHA gates; keep `scrape_status: "blocked"` and proceed to the next source.
 
@@ -21,6 +21,7 @@ Consult [taxonomy_and_schemas.md](../1.download-all-provinces/references/taxonom
 Save raw files under the appropriate taxonomy branch:
 
 - County chronicles: `./chronicles/<province_slug>/counties/<county_slug>/raw/`
+- Provincial and major municipal `分志` / `地名志`: `./chronicles/<province_slug>/provincial_gazetteers/<source_slug>/raw/`
 - Newspapers: `./chronicles/<province_slug>/newspapers/<publication_slug>/raw/`
 - Tusi records: `./chronicles/<province_slug>/tusi_sources/<source_slug>/raw/`
 
@@ -36,13 +37,16 @@ Handle each source format as follows:
 1. Do not discard non-military chapters: retain the full book whenever available so administrative history, population tables and party records stay intact.
 2. Inspect the Table of Contents (`目录`, typically following ~30 photo pages and ~5 prefaces in `1980–2010` county chronicles) and publication masthead via PyMuPDF (`fitz`) or page-image preview:
    - **Time-domain check**: Verify that `content_years_covered` inside the downloaded file genuinely overlaps `1912–1953`. If a downloaded file proves to be a pre-1912 dynastic reprint (`光绪`/`宣统` without post-1911 content) or a post-1985-only `续志` continuation missing `1912–1953` chapters, flag `scrape_status: "failed"` with note `"out_of_time_domain_1912_1953"` and trigger re-indexing for a valid Round-1 / `重修` edition.
+   - **Multi-volume (`上、中、下`) and standalone `分志` completeness check**: If the ToC shows that the PDF is only `上册` or Volume 1 of a multi-volume set (for example ending before `军事`, `公安` or `政党`), verify all sibling volumes (`volume_set_id`, `volume_index`) are also queued and downloaded before marking the county or municipal set complete.
    - Populate `priority_sections` inside `<source_slug>_meta.json5`:
      - `major_events_pages` (`大事记`)
      - `admin_history_pages` (`建置沿革` / `行政区划`)
+     - `toponymy_and_yange_pages` (`地名` / `历史沿革`)
      - `military_pages` (`军事`)
+     - `bandit_suppression_pages` (`剿匪` / `公安` / `治安`)
      - `population_pages` (`人口`)
      - `parties_pages` (`政党`)
-3. Compute the `sha256` digest, `page_count` and `retrieved_at_utc` (`YYYY-MM-DDTHH:MM:SSZ` in GMT+0), and write `<source_slug>_meta.json5` (including `modern_unit_id`, `covered_historical_adm3`, `gazetteer_tier_or_round` and verified `content_years_covered`). If `sha256` matches an existing entry in `./chronicles/source_registry.json5`, deduplicate by storing `canonical_source_path` and removing the redundant binary copy.
+3. Compute the `sha256` digest, `page_count` and `retrieved_at_utc` (`YYYY-MM-DDTHH:MM:SSZ` in GMT+0), and write `<source_slug>_meta.json5` (including `modern_unit_id`, `covered_historical_adm3`, `gazetteer_tier_or_round`, `volume_set_id`, `volume_index` and verified `content_years_covered`). If `sha256` matches an existing entry in `./chronicles/source_registry.json5`, deduplicate by storing `canonical_source_path` and removing the redundant binary copy.
 
 ## Step 4. Verify Integrity and Update Registries
 

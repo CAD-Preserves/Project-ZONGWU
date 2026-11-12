@@ -18,6 +18,8 @@ Consult [taxonomy_and_schemas.md](../1.download-all-provinces/references/taxonom
    - **Metropolitan core districts (`市辖区`)**: Flag urban districts carved out of historic core counties (such as Beijing `宛平`/`大兴`, Shanghai `上海`/`宝山`, Nanjing `江宁`/`上元`, Chongqing `巴县`, Guangzhou `番禺`/`南海`, Wuhan `武昌`/`汉阳`) as requiring both district `区志` and overarching municipal `市志` (`大事记` + `军事志`).
    - **Frontier subdivisions**: Record where one large `1912` CHGIS `厅` or `府` split into multiple modern PRC counties or banners, ensuring every daughter county is linked to its parent historical polygon.
    - **Autonomous ethnic county titles**: Generate both the shortened title stripping ethnic autonomous suffixes (`酉阳土家族苗族自治县` -> `酉阳县志`) and the full official title (`酉阳土家族苗族自治县志`).
+   - **Use of `地名志` (*Dimingzhi* / `地名录` / `地名词典`)**: Cross-check provincial and county `地名志` (for example `黑龙江省志·地名志`) when building the PRC-to-CHGIS crosswalk, as `地名志` systematically record sub-county and county `沿革` changes (abolished `设治局`, Manchukuo `街村`/`保甲`, township transfers and renamed bandit or frontier settlements).
+   - **Big-city multi-volume (`上中下`) and standalone `分志` flagging**: For provincial capitals, direct-controlled municipalities and prefecture-level cities (`市辖区` + `市志`), populate crosswalk query templates not only for multi-volume `<City>市志` (`上、中、下册`) sets but also for standalone thematic books (`<City/Province>志·大事记`, `·军事志`, `·地名志`, `·建置沿革志` / `民政志`, `·公安志`).
 
 ## Step 2. Peripheral Local-History Baselines and Edge Cases (Taiwan, Mongolia, Tuvan Republic)
 

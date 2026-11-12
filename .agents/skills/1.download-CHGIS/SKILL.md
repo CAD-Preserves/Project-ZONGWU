@@ -19,13 +19,14 @@ Consult [taxonomy_and_schemas.md](../1.download-all-provinces/references/taxonom
    - **Mongolia**: Bogd Khanate banners and aimags (`1912–1923`), early MPR mountain aimags (`1924–1931`), and MPR aimag/soum reforms (`1932–1953`).
    - **Tuvan Republic**: Tannu Uriankhai (`1912–1914`), Uryankhay Krai (`1915–1921`), Tuvan People's Republic khoshuuns (`1922–1944`) and Tuva Autonomous Oblast (`1945–1953`).
 3. Compile contemporaneous transport networks (`./gis/roads_1912_1953.geojson`, `./gis/railways_1912_1953.geojson`, `./gis/waterways_1912_1953.geojson`) using `./common/gis/transport_corridors.json5` so downstream chronology and mapping steps can interpolate army movements along historical corridors.
+4. **Topographic Elevation Contours and Relief (`./gis/elevation_contours.geojson`)**: Download open DEM/hypsography sources (such as GMTED2010, SRTM or Natural Earth elevation configured in `./common/gis/data_sources.json5`) clipped to the Project-ZONGWU bounding box and export elevation contours (`200 m`, `500 m`, `1 000 m`, `2 000 m`, `3 000 m` and `4 000 m` intervals) plus major mountain passes and peaks. Contours are essential alongside transport networks because outside flat plains (such as the central Manchurian plain), bandits, guerrillas and local militias routinely camped in mountain and hill zones away from main roads and county seats; relief contours bound upland sanctuaries and Tusi territories.
 
 ## Step 2. Tusi Polities (`土司`)
 
 1. Conduct a comprehensive literature review of Tusi polities and frontier chieftaincies across Sichuan, Xikang, Yunnan, Guizhou, Guangxi, Qinghai, Gansu and Tibet active between `1912` and `1953`.
 2. Launch three coordinated subagents:
-   - `1. Scraper`: compiles every documented Tusi polity, its rank (`宣慰司`, `宣抚司`, `安抚司`, `长官司`, `土千户`, `土百户`), succession dates, `改土归流` abolition dates and parent province, forwarding structured records to `2. Mapper`.
-   - `2. Mapper`: combines Step 1 subadministrative divisions, natural watershed/ridge boundaries, scraped historical maps and kriged settlements (`gns_*` and `v6_1911_twn_pts`) via `./core/server/B_build_tusi_divisions.py` to build `./common/tusi/tusi_catalog.json5` and `./gis/tusi_1912_1953.geojson`.
+   - `1. Scraper`: compiles every documented Tusi polity, its rank (`宣慰司`, `宣抚司`, `安抚司`, `长官司`, `土千户`, `土百户`), succession dates, `改土归流` abolition dates and parent province, checking provincial and county **`地名志` (*Dimingzhi* toponymic gazetteers)** for `沿革` boundary shifts, abolished `设治局` and Tusi stockade (`官寨`) locations before forwarding structured records to `2. Mapper`.
+   - `2. Mapper`: combines Step 1 subadministrative divisions, Step 1 elevation contours and ridgelines, transport corridors, scraped historical maps and kriged settlements (`gns_*` and `v6_1911_twn_pts`) via `./core/server/B_build_tusi_divisions.py` to build `./common/tusi/tusi_catalog.json5` and `./gis/tusi_1912_1953.geojson`.
    - `3. Verifier`: visually inspects and fact-checks **every single deliverable** from `2. Mapper` using web research and historical gazetteers; if any boundary, lifespan or parent attribution is inaccurate, `3. Verifier` rejects it back to `2. Mapper` and `1. Scraper`.
 3. Loop until `3. Verifier` signs off all Tusi units, and independently verify `3. Verifier`'s sign-off as parent coordinator before moving on.
 

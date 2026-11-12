@@ -39,12 +39,12 @@ Read `./common/ocr/ocr_translation_config.json5` for model IDs, thresholds and s
 
 Inspect every page flagged with non-text visual regions (`battle_map`, `boundary_map`, `census_or_oob_table`, `photograph_caption`, `seal_or_masthead`):
 
-- Transcribe tabular figures (population censuses, casualty returns, garrison strengths, county revenue) into exact GitHub-flavoured Markdown tables in both Chinese and EN-GB.
-- Extract battle arrows, troop unit symbols, river/railway labels, legend keys, map dates, photo captions and official seals into `> [!NOTE] Multimodal Figure (Page N — <type>)` blocks in both ZH and EN-GB.
+- Transcribe tabular figures (population censuses, casualty returns, garrison strengths, county revenue) and `地名志` historical subdivision evolution (`沿革`) tables into exact GitHub-flavoured Markdown tables in both Chinese and EN-GB.
+- Extract battle arrows, troop unit symbols, topographic relief and anti-bandit mountain-stronghold sketch maps (`剿匪要图`, `山寨地形图`, contour/ridge annotations and off-road camp markers), river/railway labels, legend keys, map dates, photo captions and official seals into `> [!NOTE] Multimodal Figure (Page N — <type>)` blocks in both ZH and EN-GB.
 
 ## Step 4. Generate Dual PDFs and Raw Markdown Dumps
 
-Write all four artefacts into the source's `ocr/` directory (`counties/<county_slug>/ocr/`, `newspapers/<publication_slug>/ocr/` or `tusi_sources/<source_slug>/ocr/`):
+Write all four artefacts into the source's `ocr/` directory (`counties/<county_slug>/ocr/`, `provincial_gazetteers/<source_slug>/ocr/`, `newspapers/<publication_slug>/ocr/` or `tusi_sources/<source_slug>/ocr/`):
 
 1. **`<source_slug>_zh.pdf`**: Searchable Chinese PDF. For Chinese sources, embed an invisible UTF-8 text layer over the original page scans (using a CJK-capable font); for non-Chinese peripheral sources (`ja`, `ru`, `tyv`, `mn_*`, `bo`, `mnc`, `ug`, `en`, `fr`, `de`), render a cleanly typeset Chinese translation PDF matching original page numbers 1-to-1.
 2. **`<source_slug>_en.pdf`**: Searchable **non-Oxford British English (`EN-GB`)** translated PDF preserving 1-to-1 page correspondence with `_orig.pdf` and `_zh.pdf` (carrying forward canonical actor and military echelon names from `./common/chronology/actor_glossary.json5` wherever recognised).
