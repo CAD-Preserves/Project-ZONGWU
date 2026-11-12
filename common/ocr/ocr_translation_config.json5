@@ -1,0 +1,134 @@
+// OCR, layout detection, multimodal extraction, and ZH/EN-GB translation configuration for Project-ZONGWU.
+{
+  "artefact_suffixes": {
+    "en_md": "_en_raw.md",
+    "en_pdf": "_en.pdf",
+    "orig_meta": "_meta.json5",
+    "orig_pdf": "_orig.pdf",
+    "zh_md": "_zh_raw.md",
+    "zh_pdf": "_zh.pdf"
+  },
+  "embedded_text_validation": {
+    "max_garbled_ratio": 0.05,
+    "min_chars_per_text_page": 40,
+    "min_cjk_ratio_zh": 0.6
+  },
+  "models": {
+    "easyocr_detector": {
+      "craft_text_threshold": 0.7,
+      "link_threshold": 0.4,
+      "low_text": 0.4
+    },
+    "trocr_historical_fallback": "ZihCiLin/trocr-traditional-chinese-historical-finetune",
+    "trocr_traditional_primary": "ZihCiLin/trocr-traditional-chinese-baseline"
+  },
+  "multimodal_regions": [
+    "battle_map",
+    "boundary_map",
+    "census_or_oob_table",
+    "photograph_caption",
+    "seal_or_masthead"
+  ],
+  "page_render_dpi": 300,
+  "script_routing": {
+    "bo": {
+      "notes": "Tibetan monastic records and Kashag edicts; verify placenames and titles against tusi_catalog.json5.",
+      "primary_engine": "tesseract_bod",
+      "reading_order": "lr-tb",
+      "verification_engine": "multimodal_vlm"
+    },
+    "de": {
+      "notes": "German Kiautschou/Qingdao and military attaché sources.",
+      "primary_engine": "easyocr",
+      "primary_langs": ["de", "en"],
+      "reading_order": "lr-tb",
+      "verification_engine": "multimodal_vlm"
+    },
+    "en": {
+      "notes": "Treaty-port English newspapers, consular reports, and missionary gazetteers.",
+      "primary_engine": "easyocr",
+      "primary_langs": ["en"],
+      "reading_order": "lr-tb",
+      "verification_engine": "multimodal_vlm"
+    },
+    "fr": {
+      "notes": "French concession press and Yunnan-Indochina railway archives.",
+      "primary_engine": "easyocr",
+      "primary_langs": ["fr", "en"],
+      "reading_order": "lr-tb",
+      "verification_engine": "multimodal_vlm"
+    },
+    "ja": {
+      "notes": "Taiwan Shu-Cho gazettes, Manchukuo, Kwantung, and IJA Senshi Sosho (kyujitai and modern kanji).",
+      "primary_engine": "easyocr",
+      "primary_langs": ["ja", "en"],
+      "reading_order": "tb-rl_or_lr-tb",
+      "verification_engine": "multimodal_vlm"
+    },
+    "mn_cyrl": {
+      "notes": "Mongolian People's Republic Cyrillic sources (1941-1953).",
+      "primary_engine": "easyocr",
+      "primary_langs": ["mn", "ru"],
+      "reading_order": "lr-tb",
+      "verification_engine": "multimodal_vlm"
+    },
+    "mn_hudum": {
+      "notes": "Classical vertical Mongolian (Bogd Khanate, early MPR, Inner Mongolian banners); MUST read vertical left-to-right (tb-lr), never tb-rl.",
+      "primary_engine": "multimodal_vlm",
+      "reading_order": "tb-lr",
+      "verification_engine": "multimodal_vlm"
+    },
+    "mnc": {
+      "notes": "Manchu banner archives and Qing-early Republican frontier memorials; MUST read vertical left-to-right (tb-lr), never tb-rl.",
+      "primary_engine": "multimodal_vlm",
+      "reading_order": "tb-lr",
+      "verification_engine": "multimodal_vlm"
+    },
+    "ru": {
+      "notes": "Russian Imperial/Soviet sources (Uryankhay Krai, CER Harbin, Tuvan and Xinjiang borderlands); normalise pre-1918 orthography.",
+      "primary_engine": "easyocr",
+      "primary_langs": ["ru", "en"],
+      "reading_order": "lr-tb",
+      "verification_engine": "multimodal_vlm"
+    },
+    "sjo": {
+      "notes": "Sibe frontier records in Xinjiang (Ili); MUST read vertical left-to-right (tb-lr), never tb-rl.",
+      "primary_engine": "multimodal_vlm",
+      "reading_order": "tb-lr",
+      "verification_engine": "multimodal_vlm"
+    },
+    "tyv": {
+      "notes": "Tuvan People's Republic and Tuva AO sources (1930s Latinised New Turkic Alphabet and post-1943 Cyrillic).",
+      "primary_engine": "easyocr",
+      "primary_langs": ["ru", "en"],
+      "reading_order": "lr-tb",
+      "verification_engine": "multimodal_vlm"
+    },
+    "ug": {
+      "notes": "Uyghur and Kazakh Chagatai/Arabic-script sources in Xinjiang; horizontal right-to-left (rl-tb).",
+      "primary_engine": "tesseract_uig",
+      "reading_order": "rl-tb",
+      "verification_engine": "multimodal_vlm"
+    },
+    "zh_hans": {
+      "notes": "1980-2010 PRC county chronicles (xinzhi); mesh EasyOCR ch_sim with TrOCR Traditional on quoted Republican documents and vertical insets.",
+      "primary_engine": "easyocr",
+      "primary_langs": ["ch_sim", "en"],
+      "reading_order": "lr-tb",
+      "secondary_engine": "trocr_traditional_primary"
+    },
+    "zh_hant": {
+      "notes": "Republican newspapers, Taiwan/HK prints, and Traditional gazetteers; detect strips with EasyOCR CRAFT, recognise with TrOCR Traditional, cross-check with EasyOCR ch_tra and historical TrOCR fallback.",
+      "detector": "easyocr_craft",
+      "fallback_engine": "trocr_historical_fallback",
+      "primary_engine": "trocr_traditional_primary",
+      "reading_order": "tb-rl_or_lr-tb",
+      "verification_engine": "easyocr",
+      "verification_langs": ["ch_tra", "en"]
+    }
+  },
+  "target_languages": {
+    "en": "EN-GB",
+    "zh": "ZH-UTF8"
+  }
+}

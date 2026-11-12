@@ -1,0 +1,484 @@
+// Cross-province canonical actor, polity, clique, party, and military echelon registry (1912-1953, GMT+0).
+{
+  "actor_types": [
+    "bandit_or_irregular",
+    "civil_or_religious_figure",
+    "clique",
+    "commander",
+    "foreign_power",
+    "military_unit",
+    "party_or_society",
+    "polity",
+    "tusi_chieftain",
+    "tusi_polity"
+  ],
+  "actors": {
+    "anhui_clique": {
+      "actor_type": "clique",
+      "aliases": [
+        "Anfu Club",
+        "Anhui Clique",
+        "安福系",
+        "皖系"
+      ],
+      "canonical_name_en": "Anhui Clique",
+      "canonical_name_zh": "皖系"
+    },
+    "bogd_khanate_mongolia": {
+      "actor_type": "polity",
+      "aliases": [
+        "Autonomous Outer Mongolia",
+        "Bogd Khanate",
+        "Bogd Khanate of Mongolia",
+        "博克多汗国",
+        "外蒙古自治",
+        "Богд Хаант Монгол Улс"
+      ],
+      "canonical_name_en": "Bogd Khanate of Mongolia",
+      "canonical_name_zh": "大蒙古国（博克多汗国）"
+    },
+    "chinese_communist_party": {
+      "actor_type": "party_or_society",
+      "aliases": [
+        "CCP",
+        "CPC",
+        "Chinese Communist Party",
+        "中共",
+        "中国共产党",
+        "中國共產黨"
+      ],
+      "canonical_name_en": "Chinese Communist Party",
+      "canonical_name_zh": "中国共产党"
+    },
+    "chinese_soviet_republic": {
+      "actor_type": "polity",
+      "aliases": [
+        "Chinese Soviet Republic",
+        "Jiangxi Soviet",
+        "中華蘇維埃共和國",
+        "中华苏维埃共和国"
+      ],
+      "canonical_name_en": "Chinese Soviet Republic",
+      "canonical_name_zh": "中华苏维埃共和国"
+    },
+    "east_hebei_autonomous_council": {
+      "actor_type": "polity",
+      "aliases": [
+        "East Hebei Autonomous Council",
+        "East Hopei Autonomous Government",
+        "冀东防共自治政府",
+        "冀東防共自治政府"
+      ],
+      "canonical_name_en": "East Hebei Autonomous Council",
+      "canonical_name_zh": "冀东防共自治政府"
+    },
+    "empire_of_japan": {
+      "actor_type": "foreign_power",
+      "aliases": [
+        "Empire of Japan",
+        "Imperial Japan",
+        "Japan",
+        "大日本帝国",
+        "大日本帝國",
+        "日本"
+      ],
+      "canonical_name_en": "Empire of Japan",
+      "canonical_name_zh": "大日本帝国"
+    },
+    "fengtian_clique": {
+      "actor_type": "clique",
+      "aliases": [
+        "Fengtian Clique",
+        "Mukden Clique",
+        "奉系",
+        "東北軍系"
+      ],
+      "canonical_name_en": "Fengtian Clique",
+      "canonical_name_zh": "奉系"
+    },
+    "first_etr": {
+      "actor_type": "polity",
+      "aliases": [
+        "First East Turkestan Republic",
+        "Turkish Islamic Republic of East Turkestan",
+        "东突厥斯坦伊斯兰共和国",
+        "東突厥斯坦伊斯蘭共和國"
+      ],
+      "canonical_name_en": "First East Turkestan Republic",
+      "canonical_name_zh": "东突厥斯坦伊斯兰共和国"
+    },
+    "guominjun": {
+      "actor_type": "clique",
+      "aliases": [
+        "Guominjun",
+        "Kuo-min-chun",
+        "National People's Army",
+        "Northwest Army",
+        "国民军",
+        "國民軍",
+        "西北军"
+      ],
+      "canonical_name_en": "Guominjun",
+      "canonical_name_zh": "国民军"
+    },
+    "kuomintang": {
+      "actor_type": "party_or_society",
+      "aliases": [
+        "Chinese Nationalist Party",
+        "GMD",
+        "KMT",
+        "Kuomintang",
+        "中国国民党",
+        "中國國民黨",
+        "国民党",
+        "國民黨"
+      ],
+      "canonical_name_en": "Kuomintang",
+      "canonical_name_zh": "中国国民党"
+    },
+    "kwantung_army": {
+      "actor_type": "military_unit",
+      "aliases": [
+        "Kantogun",
+        "Kwantung Army",
+        "关东军",
+        "関東軍",
+        "關東軍"
+      ],
+      "canonical_name_en": "Kwantung Army",
+      "canonical_name_zh": "关东军"
+    },
+    "ma_clique": {
+      "actor_type": "clique",
+      "aliases": [
+        "Ma Clique",
+        "Ma Family Warlords",
+        "西北马家军",
+        "馬家軍",
+        "马家军"
+      ],
+      "canonical_name_en": "Ma Clique",
+      "canonical_name_zh": "马家军"
+    },
+    "manchukuo": {
+      "actor_type": "polity",
+      "aliases": [
+        "Empire of Manchuria",
+        "Manchukuo",
+        "Manzhouguo",
+        "伪满洲国",
+        "満州国",
+        "滿洲國",
+        "满洲国"
+      ],
+      "canonical_name_en": "Manchukuo",
+      "canonical_name_zh": "满洲国"
+    },
+    "mengjiang": {
+      "actor_type": "polity",
+      "aliases": [
+        "Mengjiang",
+        "Mengjiang United Autonomous Government",
+        "Mengkiang",
+        "蒙疆",
+        "蒙疆联合自治政府",
+        "蒙疆聯合自治政府"
+      ],
+      "canonical_name_en": "Mengjiang",
+      "canonical_name_zh": "蒙疆联合自治政府"
+    },
+    "mongolian_peoples_republic": {
+      "actor_type": "polity",
+      "aliases": [
+        "MPR",
+        "Mongolian People's Republic",
+        "Outer Mongolia (MPR)",
+        "蒙古人民共和国",
+        "蒙古人民共和國",
+        "Бүгд Найрамдах Монгол Ард Улс"
+      ],
+      "canonical_name_en": "Mongolian People's Republic",
+      "canonical_name_zh": "蒙古人民共和国"
+    },
+    "mongolian_peoples_revolutionary_party": {
+      "actor_type": "party_or_society",
+      "aliases": [
+        "MPRP",
+        "Mongolian People's Party",
+        "Mongolian People's Revolutionary Party",
+        "蒙古人民革命党",
+        "Монгол Ардын Хувьсгалт Нам"
+      ],
+      "canonical_name_en": "Mongolian People's Revolutionary Party",
+      "canonical_name_zh": "蒙古人民革命党"
+    },
+    "national_revolutionary_army": {
+      "actor_type": "military_unit",
+      "aliases": [
+        "NRA",
+        "National Revolutionary Army",
+        "国民革命军",
+        "國民革命軍",
+        "國軍"
+      ],
+      "canonical_name_en": "National Revolutionary Army",
+      "canonical_name_zh": "国民革命军"
+    },
+    "new_guangxi_clique": {
+      "actor_type": "clique",
+      "aliases": [
+        "Guangxi Clique",
+        "Kwangsi Clique",
+        "New Guangxi Clique",
+        "新桂系",
+        "桂系"
+      ],
+      "canonical_name_en": "New Guangxi Clique",
+      "canonical_name_zh": "新桂系"
+    },
+    "peoples_liberation_army": {
+      "actor_type": "military_unit",
+      "aliases": [
+        "Chinese Red Army",
+        "Eighth Route Army",
+        "New Fourth Army",
+        "PLA",
+        "People's Liberation Army",
+        "中国工农红军",
+        "中国人民解放军",
+        "中國人民解放軍",
+        "八路军",
+        "新四军"
+      ],
+      "canonical_name_en": "People's Liberation Army",
+      "canonical_name_zh": "中国人民解放军"
+    },
+    "prc": {
+      "actor_type": "polity",
+      "aliases": [
+        "PRC",
+        "People's Republic of China",
+        "中华人民共和国",
+        "中華人民共和國"
+      ],
+      "canonical_name_en": "People's Republic of China",
+      "canonical_name_zh": "中华人民共和国"
+    },
+    "rng_wang_jingwei": {
+      "actor_type": "polity",
+      "aliases": [
+        "Reorganised National Government of the Republic of China",
+        "Reorganized National Government",
+        "Wang Jingwei Regime",
+        "南京国民政府（汪伪）",
+        "汪伪政权",
+        "汪精衛國民政府"
+      ],
+      "canonical_name_en": "Reorganised National Government of the Republic of China",
+      "canonical_name_zh": "南京国民政府（汪精卫政权）"
+    },
+    "roc_beiyang": {
+      "actor_type": "polity",
+      "aliases": [
+        "Beiyang Government",
+        "Peking Government",
+        "Republic of China (Beiyang)",
+        "中华民国北洋政府",
+        "中華民國北洋政府",
+        "北洋政府"
+      ],
+      "canonical_name_en": "Republic of China (Beiyang)",
+      "canonical_name_zh": "中华民国（北洋政府）"
+    },
+    "roc_nationalist": {
+      "actor_type": "polity",
+      "aliases": [
+        "Nanking Government",
+        "Nationalist Government",
+        "ROC",
+        "Republic of China",
+        "中华民国",
+        "中华民国国民政府",
+        "中華民國",
+        "國民政府"
+      ],
+      "canonical_name_en": "Republic of China",
+      "canonical_name_zh": "中华民国"
+    },
+    "second_etr": {
+      "actor_type": "polity",
+      "aliases": [
+        "Ili Rebellion Government",
+        "Second East Turkestan Republic",
+        "三区革命政府",
+        "第二东突厥斯坦共和国",
+        "第二東突厥斯坦共和國"
+      ],
+      "canonical_name_en": "Second East Turkestan Republic",
+      "canonical_name_zh": "第二东突厥斯坦共和国"
+    },
+    "shanxi_clique": {
+      "actor_type": "clique",
+      "aliases": [
+        "Jin Clique",
+        "Shansi Clique",
+        "Shanxi Clique",
+        "晋绥军",
+        "晋系",
+        "晉系"
+      ],
+      "canonical_name_en": "Shanxi Clique",
+      "canonical_name_zh": "晋系"
+    },
+    "sichuan_clique": {
+      "actor_type": "clique",
+      "aliases": [
+        "Sichuan Clique",
+        "Szechwan Clique",
+        "川军派系",
+        "川系",
+        "川軍"
+      ],
+      "canonical_name_en": "Sichuan Clique",
+      "canonical_name_zh": "川系"
+    },
+    "tannu_uriankhai": {
+      "actor_type": "polity",
+      "aliases": [
+        "Tannu Uriankhai",
+        "唐努乌梁海",
+        "唐努烏梁海",
+        "Таңды Тыва"
+      ],
+      "canonical_name_en": "Tannu Uriankhai",
+      "canonical_name_zh": "唐努乌梁海"
+    },
+    "tibetan_kashag": {
+      "actor_type": "polity",
+      "aliases": [
+        "Ganden Phodrang",
+        "Kashag",
+        "Tibetan Kashag",
+        "བཀའ་ཤག",
+        "噶厦政府",
+        "西藏噶厦"
+      ],
+      "canonical_name_en": "Tibetan Kashag",
+      "canonical_name_zh": "西藏噶厦"
+    },
+    "tuvan_peoples_republic": {
+      "actor_type": "polity",
+      "aliases": [
+        "Tannu Tuva",
+        "Tuvan People's Republic",
+        "Тыва Арат Республика",
+        "Тувинская Народная Республика",
+        "图瓦人民共和国",
+        "圖瓦人民共和國"
+      ],
+      "canonical_name_en": "Tuvan People's Republic",
+      "canonical_name_zh": "图瓦人民共和国"
+    },
+    "tuvan_peoples_revolutionary_party": {
+      "actor_type": "party_or_society",
+      "aliases": [
+        "TPRP",
+        "Tuvan People's Revolutionary Party",
+        "Тыва Араттың Революстуг Намы",
+        "图瓦人民革命党"
+      ],
+      "canonical_name_en": "Tuvan People's Revolutionary Party",
+      "canonical_name_zh": "图瓦人民革命党"
+    },
+    "uryankhay_krai": {
+      "actor_type": "polity",
+      "aliases": [
+        "Uryankhay Krai",
+        "Урянхайский край",
+        "乌梁海边疆区",
+        "烏梁海邊疆區"
+      ],
+      "canonical_name_en": "Uryankhay Krai",
+      "canonical_name_zh": "乌梁海边疆区"
+    },
+    "ussr": {
+      "actor_type": "foreign_power",
+      "aliases": [
+        "Soviet Union",
+        "USSR",
+        "СССР",
+        "Союз Советских Социалистических Республик",
+        "苏联",
+        "蘇聯"
+      ],
+      "canonical_name_en": "Soviet Union",
+      "canonical_name_zh": "苏联"
+    },
+    "xinjiang_clique": {
+      "actor_type": "clique",
+      "aliases": [
+        "Sinkiang Clique",
+        "Xinjiang Clique",
+        "盛世才政权",
+        "新疆军阀",
+        "新系"
+      ],
+      "canonical_name_en": "Xinjiang Clique",
+      "canonical_name_zh": "新疆军阀"
+    },
+    "yunnan_clique": {
+      "actor_type": "clique",
+      "aliases": [
+        "Dian Clique",
+        "Yunnan Clique",
+        "滇系",
+        "滇軍"
+      ],
+      "canonical_name_en": "Yunnan Clique",
+      "canonical_name_zh": "滇系"
+    },
+    "zhili_clique": {
+      "actor_type": "clique",
+      "aliases": [
+        "Chihli Clique",
+        "Zhili Clique",
+        "直系",
+        "直隸派"
+      ],
+      "canonical_name_en": "Zhili Clique",
+      "canonical_name_zh": "直系"
+    }
+  },
+  "calendar_conversions": {
+    "lunar_chinese_or_tibetan_rabjung": "Convert astronomically to Gregorian GMT+0; if only lunar month/year is known, emit 00 Month YYYY or 00 Unknown YYYY.",
+    "minguo": "1911 + minguo_year (Minguo 1 = 1912)",
+    "olnoo_orgogdson": "1910 + mongol_year (Olnoo Orgogdson 1 = 1911)",
+    "russian_julian_pre_1918_02": "Add 13 days for dates between 01 January 1912 and 31 January 1918 Julian to align with Gregorian GMT+0.",
+    "showa": "1925 + showa_year (Showa 1 = 1926)",
+    "taisho": "1911 + taisho_year (Taisho 1 = 1912)"
+  },
+  "echelon_standard_en_gb": {
+    "保安团": "Peace Preservation Regiment",
+    "军": "Corps",
+    "集团军": "Group Army",
+    "警备司令部": "Garrison Command",
+    "连": "Company",
+    "旅": "Brigade",
+    "路军": "Route Army",
+    "民团": "Mintuan Militia",
+    "旗兵": "Banner Troops",
+    "师": "Division",
+    "团": "Regiment",
+    "营": "Battalion",
+    "支队": "Detachment",
+    "纵队": "Column"
+  },
+  "romanisation_rules": {
+    "japanese": "Modified Hepburn without macrons in canonical actor_id; standard Hepburn in display names.",
+    "manchu": "Mollendorff transliteration.",
+    "mandarin": "Hanyu Pinyin without tone marks for personal and place names unless an established English historical form is explicitly defined in actors.",
+    "mongolian": "Standard Khalkha Cyrillic transliteration (BGN/PCGN) for modern names; established academic spelling for Bogd Khanate figures.",
+    "russian_tuvan": "BGN/PCGN romanisation.",
+    "tibetan": "THL simplified phonetic transcription paired with Wylie in aliases."
+  }
+}
