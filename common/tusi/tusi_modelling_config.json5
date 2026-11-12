@@ -1,0 +1,410 @@
+// Spatial host domain, hydrological barrier, and verification map configuration for Tusi Kriging modelling
+{
+  "kriging_defaults": {
+    "corridor_bonus": 0.85,
+    "corridor_radius_deg": 0.08,
+    "max_support_pts_per_tusi": 8,
+    "max_bg_pts": 36,
+    "nugget": 0.02,
+    "sill": 1.0,
+    "smooth_buffer_deg": 0.032
+  },
+  "clusters": [
+    {
+      "cluster_id": "kham_north_central",
+      "tusi_ids": [
+        "dege_xuanweisi",
+        "lincong_anfusi",
+        "mazhu_anfusi",
+        "baili_zhangguansi",
+        "kongsa_anfusi",
+        "dongke_tusi",
+        "zhanggu_anfusi"
+      ],
+      "host_unit_ids": [
+        "cnty_sichuan_dengkefudifang_197887",
+        "cnty_sichuan_daofu_weiyuan_197880"
+      ],
+      "split_east_of_river": ["tongtian", "yangtze"],
+      "barrier_rivers": ["yalong", "yangtze", "tongtian", "jinsha"],
+      "grid_step_deg": 0.04,
+      "variogram_range_deg": 0.90,
+      "river_penalty_deg": 0.55,
+      "allow_background": true,
+      "use_distant_towns_as_bg": false,
+      "bg_exclude_radius_deg": 0.45,
+      "bg_seeds": [
+        [98.097, 32.977, "Shiqu (Zaquka)"],
+        [101.120, 30.980, "Daofu County Seat"],
+        [101.473, 30.486, "Bamei / Taining"]
+      ],
+      "gns_files": ["v5_gns_sichuan_gbk.zip"]
+    },
+    {
+      "cluster_id": "kham_south",
+      "tusi_ids": [
+        "batang_xuanfusi",
+        "litang_xuanfusi",
+        "muli_anfusi"
+      ],
+      "host_unit_ids": [
+        "cnty_sichuan_baanfudifang_197982",
+        "cnty_sichuan_hekou_xian_197881",
+        "cnty_sichuan_daocheng_xian_197981",
+        "cnty_sichuan_yanyuan_xian_197878"
+      ],
+      "split_east_of_river": ["yangtze", "jinsha"],
+      "barrier_rivers": ["yalong", "yangtze", "jinsha"],
+      "grid_step_deg": 0.04,
+      "variogram_range_deg": 0.95,
+      "river_penalty_deg": 0.65,
+      "allow_background": true,
+      "use_distant_towns_as_bg": false,
+      "bg_exclude_radius_deg": 0.48,
+      "bg_seeds": [
+        [101.512, 27.422, "Yanyuan County Seat"],
+        [101.856, 27.188, "Songpingzi (SE Yanyuan)"],
+        [101.010, 30.030, "Hekou / Yajiang Seat"],
+        [100.286, 28.615, "Daocheng / Gonggaling"],
+        [100.273, 28.112, "Dongyi (Daocheng South)"]
+      ],
+      "gns_files": ["v5_gns_sichuan_gbk.zip"]
+    },
+    {
+      "cluster_id": "gyalrong",
+      "tusi_ids": [
+        "zhuosijia_xuanfusi",
+        "dangba_zhangguansi",
+        "songgang_zhangguansi",
+        "zhuokeji_zhangguansi",
+        "suomo_xuanweisi",
+        "wasi_xuanweisi"
+      ],
+      "host_unit_ids": [
+        "cnty_fill_sichuan_maogong_ting",
+        "cnty_fill_sichuan_lifan_ting",
+        "cnty_sichuan_wenchuan_xian_197859",
+        "cnty_sichuan_guan_xian_197840"
+      ],
+      "barrier_rivers": ["dadu", "min jiang"],
+      "grid_step_deg": 0.03,
+      "variogram_range_deg": 0.55,
+      "river_penalty_deg": 0.40,
+      "allow_background": true,
+      "use_distant_towns_as_bg": false,
+      "bg_exclude_radius_deg": 0.24,
+      "bg_seeds": [
+        [102.360, 31.000, "Maogong / Xiaojin"],
+        [103.170, 31.440, "Lifan / Zagu'nao"],
+        [103.620, 30.990, "Guanxian Plain"],
+        [103.500, 30.820, "Southern Guanxian"]
+      ],
+      "gns_files": ["v5_gns_sichuan_gbk.zip"]
+    },
+    {
+      "cluster_id": "aba_gannan_golok",
+      "tusi_ids": [
+        "aba_moergai_confederation",
+        "guoluo_confederation",
+        "labuleng_monastic_domain",
+        "zhuoni_xuanweisi"
+      ],
+      "host_unit_ids": [
+        "cnty_fill_sichuan_songpan_ting",
+        "cnty_gansu_taozhou_ting_197244",
+        "cnty_gansu_xunhua_ting_197218",
+        "cnty_qinghai_tuerhutenanqian_qi_198185",
+        "cnty_qinghai_ceqiantou_qi_198184"
+      ],
+      "clip_unit_bbox": {
+        "cnty_gansu_xunhua_ting_197218": [101.0, 34.9, 103.1, 35.48]
+      },
+      "barrier_rivers": ["huang", "tao", "bailong"],
+      "grid_step_deg": 0.045,
+      "variogram_range_deg": 1.05,
+      "river_penalty_deg": 0.45,
+      "allow_background": true,
+      "use_distant_towns_as_bg": false,
+      "bg_exclude_radius_deg": 0.55,
+      "bg_seeds": [
+        [103.600, 32.640, "Songpan Town"],
+        [104.240, 33.260, "Nanping / Jiuzhaigou"],
+        [104.040, 34.430, "Minxian / Minzhou"],
+        [104.350, 33.800, "Wudu / Diebu East"],
+        [101.550, 34.650, "Henan Mongol Banner (Ceqiantou)"]
+      ],
+      "gns_files": ["v5_gns_sichuan_gbk.zip", "v5_gns_gansu_gbk.zip", "v5_gns_qinghai_gbk.zip"]
+    },
+    {
+      "cluster_id": "hehuang",
+      "tusi_ids": [
+        "han_tusi_xunhua",
+        "li_jia_tusi",
+        "qi_jia_tusi",
+        "lu_tusi_liancheng"
+      ],
+      "host_unit_ids": [
+        "cnty_gansu_xunhua_ting_197218",
+        "cnty_gansu_nianbo_xian_197216",
+        "cnty_gansu_xining_xian_197213",
+        "cnty_gansu_pingfan_xian_197211"
+      ],
+      "clip_unit_bbox": {
+        "cnty_gansu_xunhua_ting_197218": [101.0, 35.48, 103.1, 36.0]
+      },
+      "barrier_rivers": ["huang", "huang shui", "datong"],
+      "grid_step_deg": 0.03,
+      "variogram_range_deg": 0.45,
+      "river_penalty_deg": 0.40,
+      "allow_background": true,
+      "bg_exclude_radius_deg": 0.18,
+      "bg_seeds": [
+        [101.780, 36.620, "Xining City"],
+        [101.608, 36.446, "Shangxinzhuang"],
+        [102.430, 36.480, "Nianbo / Ledu Seat"],
+        [103.425, 36.252, "Kushuibao (SE Pingfan)"],
+        [103.200, 37.350, "Northern Pingfan"],
+        [102.000, 35.650, "Western Xunhua"]
+      ],
+      "gns_files": ["v5_gns_gansu_gbk.zip", "v5_gns_qinghai_gbk.zip"]
+    },
+    {
+      "cluster_id": "liangshan",
+      "tusi_ids": [
+        "qiongbu_xuanfusi",
+        "shama_xuanfusi",
+        "adu_zhangguansi",
+        "leibo_qianwanguan_zhangguansi",
+        "daliangshan_nuosu_core"
+      ],
+      "host_unit_ids": [
+        "cnty_sichuan_yuegui_ting_197876",
+        "cnty_sichuan_zhaojue_xian_197984",
+        "cnty_sichuan_leibo_ting_197884",
+        "cnty_sichuan_mianning_xian_197877",
+        "cnty_sichuan_xichang_xian_197985"
+      ],
+      "clip_south_of_river": ["dadu"],
+      "barrier_rivers": ["dadu", "jinsha", "yangtze"],
+      "grid_step_deg": 0.03,
+      "variogram_range_deg": 0.55,
+      "river_penalty_deg": 0.50,
+      "allow_background": true,
+      "use_distant_towns_as_bg": false,
+      "bg_exclude_radius_deg": 0.24,
+      "bg_seeds": [
+        [102.260, 27.890, "Xichang City"],
+        [102.154, 27.744, "Hexi (Xichang)"],
+        [102.180, 27.400, "Dechang / Southern Anning"],
+        [102.170, 28.550, "Mianning Seat"],
+        [101.850, 28.450, "Western Mianning"]
+      ],
+      "gns_files": ["v5_gns_sichuan_gbk.zip"]
+    },
+    {
+      "cluster_id": "yunnan_red_river",
+      "tusi_ids": [
+        "nalou_zhangguansi",
+        "mengnong_zhangguansi",
+        "situo_zhangguansi",
+        "xichu_zhangguansi",
+        "zuoneng_zhangguansi",
+        "luokong_zhangguansi",
+        "kuirong_zhangguansi",
+        "wazha_zhangguansi"
+      ],
+      "host_unit_ids": [
+        "cnty_yunnan_jianshui_xian_197603",
+        "cnty_yunnan_yuanjiang_zhou_197611",
+        "cnty_yunnan_shiping_zhou_197560"
+      ],
+      "split_southwest_of_river": ["red"],
+      "barrier_rivers": ["red", "tengtiao", "lixian"],
+      "grid_step_deg": 0.025,
+      "variogram_range_deg": 0.40,
+      "river_penalty_deg": 0.35,
+      "allow_background": true,
+      "use_distant_towns_as_bg": false,
+      "bg_exclude_radius_deg": 0.22,
+      "bg_seeds": [
+        [101.700, 23.150, "Western Yuanjiang"],
+        [101.650, 22.700, "SW Yuanjiang / Babian"]
+      ],
+      "gns_files": ["v5_gns_yunnan_gbk.zip"]
+    },
+    {
+      "cluster_id": "yunnan_mengban",
+      "tusi_ids": [
+        "mengban_tuqianzong"
+      ],
+      "host_unit_ids": [
+        "cnty_yunnan_longling_ting_197629"
+      ],
+      "clip_unit_bbox": {
+        "cnty_yunnan_longling_ting_197629": [98.40, 24.08, 99.15, 24.52]
+      },
+      "barrier_rivers": ["nu", "lu jiang", "longchuan"],
+      "grid_step_deg": 0.02,
+      "variogram_range_deg": 0.30,
+      "river_penalty_deg": 0.30,
+      "allow_background": true,
+      "use_distant_towns_as_bg": false,
+      "bg_exclude_radius_deg": 0.16,
+      "bg_seeds": [
+        [98.760, 24.480, "Longling South Edge"],
+        [98.960, 24.300, "Salween Gorge East"]
+      ],
+      "gns_files": ["v5_gns_yunnan_gbk.zip"]
+    },
+    {
+      "cluster_id": "yunnan_wa",
+      "tusi_ids": [
+        "banhong_zongguan",
+        "ximeng_kawa_confederation"
+      ],
+      "host_unit_ids": [
+        "cnty_yunnan_zhenbian_ting_197610"
+      ],
+      "barrier_rivers": ["lancang", "mekong"],
+      "grid_step_deg": 0.028,
+      "variogram_range_deg": 0.45,
+      "river_penalty_deg": 0.30,
+      "allow_background": true,
+      "bg_exclude_radius_deg": 0.22,
+      "bg_seeds": [
+        [99.930, 22.565, "Menglang / Lancang"],
+        [99.836, 23.050, "Shangyun"],
+        [100.321, 22.864, "Lasa (East Zhenbian)"],
+        [100.040, 22.204, "Jingmai"]
+      ],
+      "gns_files": ["v5_gns_yunnan_gbk.zip"]
+    },
+    {
+      "cluster_id": "guizhou_bijie",
+      "tusi_ids": ["datun_tusi"],
+      "host_unit_ids": ["cnty_guizhou_bijie_xian_197699"],
+      "barrier_rivers": ["chishui"],
+      "grid_step_deg": 0.025,
+      "variogram_range_deg": 0.30,
+      "river_penalty_deg": 0.25,
+      "allow_background": true,
+      "bg_exclude_radius_deg": 0.14,
+      "bg_seeds": [
+        [105.290, 27.300, "Bijie County Seat"],
+        [104.956, 27.162, "Qixingguan"]
+      ],
+      "gns_files": ["v5_gns_guizhou_gbk.zip"]
+    },
+    {
+      "cluster_id": "guizhou_dushan",
+      "tusi_ids": ["lantu_zhangguansi"],
+      "host_unit_ids": ["cnty_guizhou_dushan_zhou_197655"],
+      "barrier_rivers": ["duliu"],
+      "grid_step_deg": 0.025,
+      "variogram_range_deg": 0.32,
+      "river_penalty_deg": 0.25,
+      "allow_background": true,
+      "bg_exclude_radius_deg": 0.16,
+      "bg_seeds": [
+        [107.540, 25.450, "Southern Dushan"],
+        [107.450, 25.800, "Dushan West"]
+      ],
+      "gns_files": ["v5_gns_guizhou_gbk.zip"]
+    },
+    {
+      "cluster_id": "guizhou_kaiyang",
+      "tusi_ids": ["guaixi_zhangguansi"],
+      "host_unit_ids": ["cnty_guizhou_kai_zhou_197658"],
+      "barrier_rivers": ["qingshui"],
+      "grid_step_deg": 0.025,
+      "variogram_range_deg": 0.28,
+      "river_penalty_deg": 0.25,
+      "allow_background": true,
+      "bg_exclude_radius_deg": 0.13,
+      "bg_seeds": [
+        [106.885, 26.904, "Wanggu (South Kaizhou)"],
+        [107.195, 26.893, "Matouhu (SE Kaizhou)"]
+      ],
+      "gns_files": ["v5_gns_guizhou_gbk.zip"]
+    },
+    {
+      "cluster_id": "guizhou_guangshun",
+      "tusi_ids": ["mugua_zhangguansi"],
+      "host_unit_ids": ["cnty_guizhou_guangshun_zhou_197681", "cnty_guizhou_anshun_fu_197683"],
+      "barrier_rivers": [],
+      "grid_step_deg": 0.025,
+      "variogram_range_deg": 0.32,
+      "river_penalty_deg": 0.25,
+      "allow_background": true,
+      "bg_exclude_radius_deg": 0.16,
+      "bg_seeds": [
+        [105.930, 26.250, "Anshun Fu Seat"],
+        [106.602, 26.437, "Tianezhai (NE Guangshun)"]
+      ],
+      "gns_files": ["v5_gns_guizhou_gbk.zip"]
+    },
+    {
+      "cluster_id": "guizhou_yongning",
+      "tusi_ids": ["dingying_zhangguansi"],
+      "host_unit_ids": ["cnty_guizhou_yongning_zhou_197641", "cnty_guizhou_zhenning_zhou_197666"],
+      "barrier_rivers": ["beipan"],
+      "grid_step_deg": 0.025,
+      "variogram_range_deg": 0.32,
+      "river_penalty_deg": 0.25,
+      "allow_background": true,
+      "bg_exclude_radius_deg": 0.15,
+      "bg_seeds": [
+        [105.674, 25.572, "Jinjing (South Yongning)"],
+        [106.150, 26.200, "Eastern Zhenning"]
+      ],
+      "gns_files": ["v5_gns_guizhou_gbk.zip"]
+    }
+  ],
+  "diagnostic_maps": [
+    {
+      "filename": "tusi_verify_kham_sichuan.png",
+      "title": "Project-ZONGWU Tusi Verification: Xikang (Kham), Gyalrong & Liangshan (1912-1953)",
+      "extent": [97.4, 104.5, 26.8, 33.6],
+      "region_filter": ["xikang_kham", "nw_sw_sichuan"],
+      "river_labels": [
+        [98.95, 29.85, "Jinsha (Yangtze)"],
+        [100.75, 29.85, "Yalong"],
+        [102.18, 30.25, "Dadu"],
+        [103.58, 31.60, "Min"]
+      ]
+    },
+    {
+      "filename": "tusi_verify_gansu_qinghai.png",
+      "title": "Project-ZONGWU Tusi Verification: Gansu, Hehuang, Golok & Yushu (1912-1953)",
+      "extent": [93.2, 104.8, 31.6, 37.6],
+      "region_filter": ["gansu_qinghai"],
+      "river_labels": [
+        [101.80, 34.05, "Yellow River (Huang He)"],
+        [103.55, 34.72, "Tao"],
+        [102.50, 36.55, "Huangshui / Datong"]
+      ]
+    },
+    {
+      "filename": "tusi_verify_yunnan.png",
+      "title": "Project-ZONGWU Tusi Verification: Dehong, Wa Hills & Red River Jiangwai (1912-1953)",
+      "extent": [97.2, 103.6, 21.6, 25.4],
+      "region_filter": ["yunnan"],
+      "river_labels": [
+        [98.85, 24.40, "Salween (Nu)"],
+        [100.35, 23.40, "Mekong (Lancang)"],
+        [102.62, 23.56, "Red River (Yuanjiang)"]
+      ]
+    },
+    {
+      "filename": "tusi_verify_guangxi_guizhou.png",
+      "title": "Project-ZONGWU Tusi Verification: Guangxi & Guizhou (1912-1953)",
+      "extent": [104.6, 109.2, 21.8, 28.0],
+      "region_filter": ["guangxi_guizhou"],
+      "legend_loc": "upper right",
+      "river_labels": [
+        [107.00, 23.60, "Youjiang / Hongshui"],
+        [107.90, 25.70, "Duliu"]
+      ]
+    }
+  ]
+}

@@ -27,19 +27,22 @@ Save raw files under the appropriate taxonomy branch:
 Handle each source format as follows:
 
 1. **Native PDF (`format: "pdf"`)**: Download cleanly with polite request throttling and retry backoff to `<source_slug>_orig.pdf`. If the primary URL fails or returns a rate-limit/access gate, fall back to listed open mirrors; if all open URLs are gated, update `access_status` (`"blocked_paywall"`, `"blocked_captcha"` or `"unavailable"`) and `scrape_status: "blocked"`.
-2. **IIIF / Image Page Sequences (`format: "iiif_images"`)**: Download full-resolution page images in strict page order and losslessly compile them into `<source_slug>_orig.pdf` (preserving native pixel dimensions without downsampling). For multi-year newspaper runs, split output into monthly or volume containers (`<pub_slug>_YYYY_MM_orig.pdf`, maximum 500 pages per PDF) so OCR stages remain bounded.
-3. **HTML Chapters (`format: "html_chapters"`)**: Fetch the full Table of Contents and all chapters cleanly, rendering UTF-8 text and embedded plates into `<source_slug>_orig.pdf` with clear chapter headers.
+2. **DjVu Archives (`format: "djvu"`)**: Common on Wikimedia Commons and Internet Archive. Download the original DjVu binary (via Wikimedia `Special:FilePath` or MediaWiki `imageinfo` URL) and losslessly render/convert pages into `<source_slug>_orig.pdf` preserving full resolution and embedded text where present.
+3. **IIIF / Image Page Sequences (`format: "iiif_images"`)**: Download full-resolution page images in strict page order and losslessly compile them into `<source_slug>_orig.pdf` (preserving native pixel dimensions without downsampling). For multi-year newspaper runs, split output into monthly or volume containers (`<pub_slug>_YYYY_MM_orig.pdf`, maximum 500 pages per PDF) so OCR stages remain bounded.
+4. **HTML Chapters (`format: "html_chapters"`)**: Fetch the full Table of Contents and all chapters cleanly, rendering UTF-8 text and embedded plates into `<source_slug>_orig.pdf` with clear chapter headers.
 
-## Step 3. Inspect Table of Contents (`目录`) and Record Metadata
+## Step 3. Inspect Table of Contents (`目录`) and Verify Time-Domain Coverage
 
 1. Do not discard non-military chapters: retain the full book whenever available so administrative history, population tables and party records stay intact.
-2. Inspect the Table of Contents (`目录`, typically following ~30 photo pages and ~5 prefaces in `1980–2010` county chronicles) via PyMuPDF (`fitz`) or page-image preview to populate `priority_sections` inside `<source_slug>_meta.json5`:
-   - `major_events_pages` (`大事记`)
-   - `admin_history_pages` (`建置沿革` / `行政区划`)
-   - `military_pages` (`军事`)
-   - `population_pages` (`人口`)
-   - `parties_pages` (`政党`)
-3. Compute the `sha256` digest, `page_count` and `retrieved_at_utc` (`YYYY-MM-DDTHH:MM:SSZ` in GMT+0), and write `<source_slug>_meta.json5`. If `sha256` matches an existing entry in `./chronicles/source_registry.json5`, deduplicate by storing `canonical_source_path` and removing the redundant binary copy.
+2. Inspect the Table of Contents (`目录`, typically following ~30 photo pages and ~5 prefaces in `1980–2010` county chronicles) and publication masthead via PyMuPDF (`fitz`) or page-image preview:
+   - **Time-domain check**: Verify that `content_years_covered` inside the downloaded file genuinely overlaps `1912–1953`. If a downloaded file proves to be a pre-1912 dynastic reprint (`光绪`/`宣统` without post-1911 content) or a post-1985-only `续志` continuation missing `1912–1953` chapters, flag `scrape_status: "failed"` with note `"out_of_time_domain_1912_1953"` and trigger re-indexing for a valid Round-1 / `重修` edition.
+   - Populate `priority_sections` inside `<source_slug>_meta.json5`:
+     - `major_events_pages` (`大事记`)
+     - `admin_history_pages` (`建置沿革` / `行政区划`)
+     - `military_pages` (`军事`)
+     - `population_pages` (`人口`)
+     - `parties_pages` (`政党`)
+3. Compute the `sha256` digest, `page_count` and `retrieved_at_utc` (`YYYY-MM-DDTHH:MM:SSZ` in GMT+0), and write `<source_slug>_meta.json5` (including `modern_unit_id`, `covered_historical_adm3`, `gazetteer_tier_or_round` and verified `content_years_covered`). If `sha256` matches an existing entry in `./chronicles/source_registry.json5`, deduplicate by storing `canonical_source_path` and removing the redundant binary copy.
 
 ## Step 4. Verify Integrity and Update Registries
 

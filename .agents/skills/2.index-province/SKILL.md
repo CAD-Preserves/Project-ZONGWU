@@ -5,37 +5,61 @@ description: Indexes and compiles a gazetteer, newspaper, and Tusi source manife
 
 # Index Province Sources
 
-Compile a complete, deduplicated source manifest (`./chronicles/<province_slug>/index_manifest.json5`) for one first-level division—covering county chronicles (`adm_3`), contemporaneous regional/provincial newspapers (`1912–1953`), Tusi records (where applicable) and peripheral-language archives—so `/3.scrape-province` can acquire every source cleanly.
+Compile a complete, deduplicated, time-domain-verified source manifest (`./chronicles/<province_slug>/index_manifest.json5`) for one first-level division—resolving `1912–1953` counties via modern PRC county-level divisions and Taiwan/Mongolia/Tuva local-history baselines, discovering bulk dumps on Wikimedia Commons and open archives, and indexing contemporaneous `1912–1953` newspapers and Tusi records for `/3.scrape-province`.
 
-Read [taxonomy_and_schemas.md](../1.download-all-provinces/references/taxonomy_and_schemas.md) for exact JSON5 schemas and `./common/ocr/ocr_translation_config.json5` for valid `language_orig` and `script_direction` codes.
+Read [taxonomy_and_schemas.md](../1.download-all-provinces/references/taxonomy_and_schemas.md) for exact JSON5 schemas, time-domain rules and regional edge cases, and `./common/ocr/ocr_translation_config.json5` for valid `language_orig` and `script_direction` codes.
 
-## Step 1. Resolve Spatial Scope (1912–1953)
+## Step 1. Resolve Spatial Scope and Modern Crosswalk
 
 1. Look up `<province_slug>` in `./common/defines/province_defines.json5` to obtain `name`, `name_zh`, `category`, `active_years` and `gis_unit_ids`.
-2. Inspect `./gis/adm_2_<year>.geojson` and `./gis/adm_3_<year>.geojson` across the division's `active_years` to extract every constituent level-2 (`adm_2`) and level-3 (`adm_3`) unit, normalising each county/banner/soum/kozhuun to its canonical `snake_case` `<county_slug>`.
-3. If `category == "tusi"` or if Tusis overlapped the province's territory, inspect `./common/tusi/tusi_catalog.json5` to list all overlapping `tusi_id` entries, successor autonomous counties and parent provinces.
+2. Inspect `./gis/adm_2_<year>.geojson` and `./gis/adm_3_<year>.geojson` across `active_years` to enumerate every constituent historical `adm_2` and `adm_3` (`<county_slug>`), plus overlapping Tusi entries in `./common/tusi/tusi_catalog.json5`.
+3. Load `./common/defines/modern_gazetteer_crosswalk.json5` and `./common/defines/local_history_edge_cases.json5` (created by `/1.download-PRC`) to map every historical `adm_3` unit onto its covering **modern PRC county-level divisions (`GB/T 2260`)** or **Taiwanese, Mongolian and Tuvan local-history units** (`modern_unit_id`, `covered_historical_adm3`, search queries and edge-case flags).
 
-## Step 2. Build Search Queries per Territory Type
+## Step 2. Generalised Repository and Dump Discovery
 
-Construct multilingual search queries for each constituent unit:
+Before running narrow unit-by-unit queries, execute a generalised discovery sweep to locate where relevant digital dumps, bulk scans and mirror collections actually reside:
 
-- **Mainland China counties**: Search both the shortened `<CountyName>县志` / `旗志` (stripping `土家族苗族自治县` or similar ethnic suffixes) and the full modern name (`<FullName>志`), targeting `1980–2010` *xinzhi* editions (`新编地方志`). Record historical 1912–1953 name variants (`州`, `厅`, `府`) for cross-referencing.
-- **Taiwan**: Map Japanese-era *Shū*/*Chō* (`州`/`廳`) and post-1945 counties/cities to modern `鄉鎮縣轄市志`, `縣志` and *Taiwan Sōtokufu* archival compilations (`ja` and `zh_hant`).
-- **Mongolia**: Map Bogd Khanate banners and MPR aimags/soums (`1912–1953`) to Mongolian aimag/soum histories (`mn_hudum` and `mn_cyrl`), *Ünen* runs and Russian/Chinese borderland studies.
-- **Tuvan Republic**: Map Tannu Uriankhai, Uryankhay Krai, Tuvan People's Republic khoshuuns and Tuva AO rayons (`1912–1953`) to Tuvan/Russian regional histories (`ru` and `tyv`), *Tuvinskaya Pravda* and *Shyn*.
-- **Tusi Polities**: Search `<TusiName>土司志`, `<TusiName>土司谱牒`, successor autonomous-county gazetteers, CPPCC `文史资料` series, `民族问题五种丛书` surveys, Tibetan *deb-ther* and frontier journals (`边政公论`, `康导月刊`).
+1. **Wikimedia Commons and Wikisource**:
+   - Query the MediaWiki API (`commons.wikimedia.org/w/api.php` using `list=search` and `generator=categorymembers`) and `zh` / `ja` / `ru.wikisource.org` across provincial gazetteer and Republican/colonial press categories (for example `Category:地方志`, `Category:中華民國地方志`, `Category:中國近代報紙`, `Category:臺灣日日新報`, `File:NLC...`, `File:CADAL...`, plus Japanese, Russian and Mongolian archival categories).
+   - Extract direct file pages (`PDF`, `DjVu`), multi-volume category trees and original upload metadata (checking edition/era titles before adding to the manifest).
+2. **Open Archives, Academic Dumps and Web Mirrors**:
+   - Run generalised `search_web` discovery queries combining province/region/newspaper names with dump and file-host patterns (`filetype:pdf`, `filetype:djvu`, `site:archive.org`, Harvard Dataverse, Zenodo, HuggingFace, GitHub/GitLab dataset mirrors, NLC open portals, Taiwan Memory / Sinica `臺灣方志網`, NDL Digital Collections / JACAR, CyberLeninka / TIGPI and university digital repositories).
+   - Record discovered dump indices, bulk archive identifiers and mirror URLs in `scraper_notes` so `/3.scrape-province` downloads directly from the cleanest open host.
 
-## Step 3. Discover County Chronicles and Newspapers
+## Step 3. Unit-by-Unit Query Construction and Edge Cases
 
-1. **County Chronicles**: Search Internet Archive (`archive.org`), NLC open gazetteer catalogues, Taiwan Memory, university digital collections and public mirrors. For each county, record candidate editions (preferring complete `1980–2010` editions over 1940s drafts unless a 1940s chronicle is uniquely detailed), `language_orig`, `script_direction`, `urls`, `format` (`pdf`, `iiif_images`, `html_chapters`) and concrete `scraper_notes` (for example pagination patterns, image manifest URLs or multi-volume structure).
-2. **Contemporaneous Newspapers (`1912–1953`)**: Because newspapers operate between province and county (`provincial`, `prefectural`/`道`, or `municipal`/treaty-port scales), discover relevant titles via academic gazetteers, Republican press directories, NDL/JACAR (Japanese), Harbin/Russian archives and treaty-port collections. Record `spatial_scope`, `covered_adm2`, `covered_counties`, `date_span`, `affiliation`, `language_orig` and issue/volume download targets.
-3. **Access Classification**: Set `access_status` honestly (`"open"`, `"mirror_open"`, `"blocked_paywall"`, `"blocked_captcha"` or `"unavailable"`). Never recommend credential spoofing or CAPTCHA bypassing in `scraper_notes`.
+Construct targeted queries for every mapped modern unit and historical entity:
 
-## Step 4. Cross-Division Deduplication Check
+- **Mainland PRC Counties (`县`, `自治县`, `县级市`, `市辖区`, `旗`, `自治旗`, `特区`, `林区`)**:
+  - Search both the shortened `<BaseName>县志` / `旗志` (stripping ethnic autonomous suffixes) and the full official title, alongside post-1953 renamings and `市志` titles for upgraded cities.
+  - For historic core counties absorbed into urban **`市辖区`**, index **both** the district `区志` and the overarching municipal `市志` (`大事记` + `军事志`).
+  - Target First-Round (`第一轮修志`, ca. `1980–2005`) or full-revision `重修` volumes covering `1912–1953`.
+- **Taiwan**:
+  - Index `1990–2015` `重修縣市志` (`GADM TWN_2`) paired with `GADM TWN_3` township/district chronicles (`鄉鎮縣轄市區志`, including `山地鄉`) and `1912–1945` Japanese *Shū*/*Chō*/*Gun*/*Banchi* official surveys (`州管內概況及事務概要`, `郡要覽`, `理蕃誌稿`).
+  - Disambiguate **ROC Fujian `金門縣志` (Kinmen) and `連江縣志` (Matsu)** from PRC mainland Fuzhou `连江县志`.
+- **Mongolia**:
+  - Follow the tiered Cyrillic (`mn_cyrl`) fallback: *soum* monograph (`Сумын түүх`) -> *aimag* encyclopaedia/history (`Аймгийн түүх` / `Нэвтэрхий толь`) -> Mongolian Academy of Sciences (`ШУА`) & pre-1921 Qing/ROC frontier treatises (`库伦志略`, `乌里雅苏台志略`, `科布多政务总册`).
+  - Apply post-1994 enclave aimag remapping (`Darkhan-Uul`, `Orkhon`, `Govisümber`), `1912–1931` *khoshuun* links and Kazakh bilingual indexing for `Bayan-Ölgii`.
+- **Tuvan Republic**:
+  - Index modern *kozhuun* local histories (`ru` and `tyv`) paired with republic-wide **TIGPI (`ТИГПИ` / `ТНИИЯЛИ`)** compendia (*Istoriya Tuvy*, *Uchenye zapiski*), remapping post-1953 *kozhuun* splits and flagging `Davst / Uvs Basin` border adjustments.
+- **Tusi Polities**: Search `<TusiName>土司志`, `<TusiName>土司谱牒`, successor PRC autonomous-county gazetteers, CPPCC `文史资料`, `民族问题五种丛书`, Tibetan *deb-ther* and frontier journals (`边政公论`, `康导月刊`).
+- **Contemporaneous Newspapers (`1912–1953`)**: Discover provincial, prefectural (`道`) and municipal/treaty-port titles (`spatial_scope`, `covered_adm2`, `covered_counties`, `date_span`, `affiliation`, `language_orig`).
+- **Access Classification**: Set `access_status` honestly (`"open"`, `"mirror_open"`, `"blocked_paywall"`, `"blocked_captcha"`, `"unavailable"`). Never recommend credential spoofing or CAPTCHA bypassing in `scraper_notes`.
 
-Inspect `./chronicles/source_registry.json5` before finalising entries. If a county or Tusi chronicle is already indexed under an overlapping province (for example `zhili` and `hebei`, `sichuan` and `xikang`, or a Tusi and its parent province), set `shared_from_province` to the canonical province slug and reuse the identical `source_slug`.
+## Step 4. Strict `1912–1953` Time-Domain Relevance Filter
 
-## Step 5. Write and Verify `index_manifest.json5`
+Never confuse publication year (`pub_year`) with historical content coverage (`content_years_covered`):
 
-1. Save `./chronicles/<province_slug>/index_manifest.json5` using 2-space indentation and the exact schema in [taxonomy_and_schemas.md](../1.download-all-provinces/references/taxonomy_and_schemas.md).
-2. Verify that every `adm_3` unit from Step 1 appears under `counties`, at least one provincial/regional newspaper search pass is logged under `newspapers`, every entry includes `language_orig`, `script_direction` and `access_status`, and the file parses cleanly with `gis_helpers.load_json5()`.
+1. **Reject pre-1912 imperial gazetteers**: Discard `明`, `清`, `康熙`, `乾隆`, `光绪` and `宣统` editions whose `content_years_covered` ends before `1912` (the most common false positive in Wikimedia Commons and NLC/CADAL dumps).
+2. **Reject post-1953-only continuations**: Reject standalone post-1985 PRC `第二轮续志` volumes or Taiwan `續修` continuations starting after `1953` unless paired with a base chronicle covering `1912–1953`.
+3. **Tag partial Republican/colonial imprints (`1912–1953`)**: When a Wikimedia, NLC or NDL gazetteer was printed between `1912` and `1952`, set `time_coverage_role: "partial_contemporaneous_1912_1953"` and `content_years_covered: [1912, <pub_year>]`, and pair it with a `1980–2010` full-span chronicle or newspaper run so `1937–1953` is never missing.
+4. **Clip newspapers and periodicals**: Index only issues or volumes whose dates overlap `1912-01-01` through `1953-12-31` (`GMT+0`).
+
+## Step 5. Cross-Division Deduplication Check
+
+Inspect `./chronicles/source_registry.json5` before finalising entries. Because a single modern PRC `县志`/`市志`, Taiwanese county chronicle, Mongolian *aimag* volume or Tuvan TIGPI compendium frequently covers multiple `1912–1953` `<county_slug>` or `<province_slug>` divisions, set `shared_from_province` to the canonical province slug and reuse the identical `source_slug` wherever already indexed.
+
+## Step 6. Write and Verify `index_manifest.json5`
+
+1. Save `./chronicles/<province_slug>/index_manifest.json5` using 2-space indentation and the schema in [taxonomy_and_schemas.md](../1.download-all-provinces/references/taxonomy_and_schemas.md).
+2. Verify that every historical `adm_3` unit resolves to at least one modern crosswalk unit (`modern_unit_id`, `covered_historical_adm3`), every accepted source passes the `1912–1953` `content_years_covered` filter, every entry specifies `language_orig`, `script_direction`, `format`, `gazetteer_tier_or_round`, `time_coverage_role` and `access_status`, and the file parses cleanly with `gis_helpers.load_json5()`.

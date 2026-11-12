@@ -9,10 +9,12 @@ Project-ZONGWU reconstructs historical *de jure* and *de facto* territorial cont
 ### Shared Configuration and Registry Files
 
 - `./common/defines/province_defines.json5` — Authoritative registry of all first-level divisions (`province_slug`, canonical names, categories, `active_years`, `gis_unit_ids` and `./chronicles/<province_slug>/` directory paths), exported by `/1.download-CHGIS`.
+- `./common/defines/modern_gazetteer_crosswalk.json5` — Bidirectional spatial crosswalk linking `1912–1953` `<province_slug>`, `<county_slug>` and `tusi_id` units to modern PRC county-level (`GB/T 2260`) divisions and Taiwanese, Mongolian and Tuvan local-history units, exported by `/1.download-PRC`.
+- `./common/defines/local_history_edge_cases.json5` — Declarative regional edge-case rules for Mainland PRC (Round-1 vs Round-2 `续志`, metropolitan `市辖区`, autonomous suffixes), Taiwan (`重修` vs `續修`, colonial Japanese surveys, Kinmen/Matsu `連江縣志` disambiguation), Mongolia (enclave aimags, *khoshuun*-to-*soum* mapping, Kazakh Bayan-Ölgii) and Tuva (*kozhuuns*, TIGPI compendia, Davst border strip), written by `/1.download-PRC`.
 - `./common/tusi/tusi_catalog.json5` — Catalogue of all 1912–1953 Tusi polities, parent provinces, active dates, lineage titles and CHGIS/kriged geometry modes.
 - `./common/ocr/ocr_translation_config.json5` — Model endpoints (`ZihCiLin/trocr-traditional-chinese-baseline`, `ZihCiLin/trocr-traditional-chinese-historical-finetune`, `EasyOCR`), script-direction routing (`tb-rl`, `tb-lr`, `lr-tb`, `rl-tb`), DPI and validation thresholds.
 - `./common/chronology/actor_glossary.json5` — Global cross-province registry of canonical names and aliases for all polities, cliques, parties, military units, Tusi chieftains, commanders and civil or religious figures, plus military echelon translations and calendar conversion rules.
-- `./chronicles/source_registry.json5` — Global deduplication index keyed by `source_slug` and `sha256`. When a county or Tusi spans historical splits, renames or wartime partitions (for example `zhili`/`hebei`/`east_hebei`, `sichuan`/`chuanbei`/`xikang` or a Tusi polity and its successor autonomous county), the PDF is downloaded and processed once under its primary division and linked via `canonical_source_path` across overlapping divisions.
+- `./chronicles/source_registry.json5` — Global deduplication index keyed by `source_slug` and `sha256`. When a county, modern PRC `县志` or Tusi spans historical splits, renames or wartime partitions (for example `zhili`/`hebei`/`east_hebei`, `sichuan`/`chuanbei`/`xikang` or a Tusi polity and its successor autonomous county), the PDF is downloaded and processed once under its primary division and linked via `canonical_source_path` across overlapping divisions.
 
 ### Server Pipeline Sequence (`./core/server/`)
 
@@ -21,7 +23,8 @@ Project-ZONGWU reconstructs historical *de jure* and *de facto* territorial cont
 3. `C_build_annual_admin_series.py` — Generates annual 1 January (`00:00 GMT+0`) `adm_1_<year>.geojson`, `adm_2_<year>.geojson` and `adm_3_<year>.geojson` snapshots for 1912–1953.
 4. `D_scanline_rasterise_adm.py` — Exports visual verification rasters to `./tests/CHGIS_adm_<level>_<year>.png`.
 5. `E_export_chronicles_and_defines.py` — Initialises `./chronicles/<province_slug>/` folders, `./common/defines/province_defines.json5` and `./localisation/{en_gb,fr,de}.json5`.
-6. Optional provincial automation scripts follow the same alphabetical contract: `F_index_province_sources.py`, `G_scrape_province_sources.py`, `H_ocr_and_translate_province.py` and `I_compile_province_chronology.py`.
+6. `F_download_and_crosswalk_modern_gis.py` — Downloads `./gis/modern/{prc_adm_1..3,twn_adm_1..3,mng_adm_1..2,tuva_adm_1..2}.geojson` and exports `./common/defines/modern_gazetteer_crosswalk.json5` plus `./tests/PRC_modern_adm_<1|2|3>.png`.
+7. Optional provincial automation scripts follow the same alphabetical contract: `G_index_province_sources.py`, `H_scrape_province_sources.py`, `I_ocr_and_translate_province.py` and `J_compile_province_chronology.py`.
 
 ---
 
@@ -69,7 +72,7 @@ Every first-level division defined in `./common/defines/province_defines.json5` 
 
 ### Spatial Granularity Rules
 
-- `counties/` operates at **`adm_3`** granularity (xian, zhou, ting, banner, soum, kozhuun, Japanese-era Taiwan county/city). Use the canonical `snake_case` county slug derived from `adm_3_<year>.geojson`.
+- `counties/` remains keyed to the historical `1912–1953` `<county_slug>` derived from `adm_3_<year>.geojson` (or `prc_<slug>` linked via `covered_historical_adm3` when a modern PRC county was split out of a frontier `厅` or `府`). Because `1980–2010` Chinese gazetteers are published at modern PRC county granularity, `source_registry.json5` deduplicates any modern PRC `县志` or peripheral monograph shared across multiple `1912–1953` counties or provinces.
 - `newspapers/` sits directly under `<province_slug>/newspapers/` because contemporaneous 1912–1953 newspapers normally operate between province and county (`provincial`, `prefectural`/`道`, or `municipal`/treaty-port catchment). Each publication records its exact `spatial_scope`, `covered_adm2` and `covered_counties` inside `index_manifest.json5`.
 - `tusi_sources/` captures Tusi-specific genealogies (`土司谱牒`), *Wenshi Ziliao* (`文史资料`), *Five Series* (`民族问题五种丛书`) ethnographic surveys, monastic *deb-ther* and frontier journals (`边政公论`, `康导月刊`). For `category == "tusi"` divisions, county-level successor gazetteers (such as autonomous county chronicles overlapping the Tusi seat) may also sit in `counties/` or link via `shared_from_province`.
 
@@ -98,6 +101,37 @@ All JSON5 files use 2-space indentation, a leading `//` comment header and UTF-8
 }
 ```
 
+### 3.1b `./common/defines/modern_gazetteer_crosswalk.json5`
+
+```json5
+// Bidirectional spatial crosswalk from 1912-1953 divisions to modern local-history units.
+{
+  "by_historical_province": {
+    "sichuan": {
+      "youyang_zhou": [
+        {
+          "area_overlap_ratio": 0.94,
+          "edge_cases": ["autonomous_suffix_strip"],
+          "modern_unit_id": "prc_500242_youyang",
+          "search_queries": ["酉阳县志", "酉阳土家族苗族自治县志"],
+          "unit_type": "autonomous_xian"
+        }
+      ]
+    }
+  },
+  "by_modern_unit": {
+    "prc_500242_youyang": {
+      "covered_historical_adm3": ["youyang_zhou"],
+      "covered_provinces": ["sichuan", "chuandong"],
+      "gb_code": "500242",
+      "name_zh": "酉阳土家族苗族自治县",
+      "region": "mainland_prc"
+    }
+  },
+  "schema_version": 1
+}
+```
+
 ### 3.2 `./chronicles/<province_slug>/index_manifest.json5`
 
 ```json5
@@ -111,8 +145,12 @@ All JSON5 files use 2-space indentation, a leading `//` comment header and UTF-8
     "youyang_zhou": [
       {
         "access_status": "open",
+        "content_years_covered": [1912, 1985],
+        "covered_historical_adm3": ["youyang_zhou"],
         "format": "pdf",
+        "gazetteer_tier_or_round": "prc_round_1",
         "language_orig": "zh_hans",
+        "modern_unit_id": "prc_500242_youyang",
         "ocr_status": "pending",
         "pub_year": 1992,
         "scrape_status": "pending",
@@ -121,6 +159,7 @@ All JSON5 files use 2-space indentation, a leading `//` comment header and UTF-8
         "shared_from_province": "",
         "scraper_notes": "Single PDF on Internet Archive; verify ToC for 大事记 and 军事.",
         "source_slug": "youyang_xianzhi_1992",
+        "time_coverage_role": "full_1912_1953",
         "title_orig": "酉阳县志",
         "urls": ["https://archive.org/details/..."]
       }
@@ -137,6 +176,7 @@ All JSON5 files use 2-space indentation, a leading `//` comment header and UTF-8
       "date_span": ["1937-01-01", "1949-11-30"],
       "issues_or_volumes": [
         {
+          "content_years_covered": [1938, 1938],
           "format": "iiif_images",
           "issue_or_vol_slug": "xinminbao_1938_01",
           "language_orig": "zh_hant",
@@ -144,6 +184,7 @@ All JSON5 files use 2-space indentation, a leading `//` comment header and UTF-8
           "scrape_status": "pending",
           "script_direction": "tb-rl",
           "scraper_notes": "Vertical Traditional layout; compile daily issues per month.",
+          "time_coverage_role": "newspaper_window_1912_1953",
           "urls": ["https://..."]
         }
       ],
@@ -158,7 +199,7 @@ All JSON5 files use 2-space indentation, a leading `//` comment header and UTF-8
 }
 ```
 
-Allowed `access_status` values: `"open"`, `"mirror_open"`, `"blocked_paywall"`, `"blocked_captcha"`, `"unavailable"`. Allowed `scrape_status` and `ocr_status` values: `"pending"`, `"complete"`, `"shared"`, `"blocked"`, `"failed"`.
+Allowed `format` values: `"pdf"`, `"djvu"`, `"iiif_images"`, `"html_chapters"`. Allowed `gazetteer_tier_or_round` values: `"prc_round_1"`, `"prc_round_2_chongxiu"`, `"taiwan_chongxiu_county"`, `"taiwan_township"`, `"japanese_colonial_survey"`, `"mongolia_soum"`, `"mongolia_aimag"`, `"tuva_kozhuun"`, `"tuva_tigpi_compendium"`, `"tusi_special"`, `"republican_contemporaneous"`. Allowed `time_coverage_role` values: `"full_1912_1953"`, `"partial_contemporaneous_1912_1953"`, `"newspaper_window_1912_1953"`. Allowed `access_status` values: `"open"`, `"mirror_open"`, `"blocked_paywall"`, `"blocked_captcha"`, `"unavailable"`. Allowed `scrape_status` and `ocr_status` values: `"pending"`, `"complete"`, `"shared"`, `"blocked"`, `"failed"`.
 
 ### 3.3 `<source_slug>_meta.json5`
 
@@ -166,7 +207,11 @@ Allowed `access_status` values: `"open"`, `"mirror_open"`, `"blocked_paywall"`, 
 // Provenance and section index for <source_slug>_orig.pdf.
 {
   "canonical_source_path": "",
+  "content_years_covered": [1912, 1985],
+  "covered_historical_adm3": ["youyang_zhou"],
+  "gazetteer_tier_or_round": "prc_round_1",
   "language_orig": "zh_hans",
+  "modern_unit_id": "prc_500242_youyang",
   "page_count": 842,
   "priority_sections": {
     "admin_history_pages": [45, 72],
@@ -249,3 +294,22 @@ Every event must use **GMT+0 Gregorian dates** and follow this exact bullet cont
 | `mnc` / `sjo` | Manchu / Sibe | Heilongjiang, Jilin, Hulunbuir, Ili (Xinjiang) banner garrisons | Banner genealogies, *booi* / *niru* rolls, late-Qing/early-ROC memorials | **`tb-lr` (vertical left-to-right)** | Gregorian / Minguo |
 | `ug` | Uyghur / Kazakh (Arabic) | Xinjiang, Altai, First & Second East Turkestan Republics | *Shinjang Geziti*, Ili/Kashgar press, oasis chronicles | **`rl-tb` (horizontal right-to-left)** | Gregorian / Islamic Hijri |
 | `en` / `fr` / `de` | Western Concession Press | Shanghai, Tianjin, Hankou, Guangzhou, Qingdao, Kunming | *North-China Herald*, *Peking & Tientsin Times*, *L'Écho de Chine*, *Tsingtauer Neueste Nachrichten* | `lr-tb` | Gregorian (`GMT+0`) |
+
+---
+
+## 6. Modern Local-History Granularity, Dump Hosts and Time-Domain Rules
+
+| Territory | Modern Publication Unit | Key Edge Cases | Preferred Editions & Fallbacks |
+| :--- | :--- | :--- | :--- |
+| **Mainland PRC** | Modern county-level unit (`县`, `自治县`, `县级市`, `市辖区`, `旗`, `自治旗`, `特区`, `林区`) | Post-1953 renamings (`迪化`->`乌鲁木齐`), `撤县设市`, urbanised `市辖区` (needs both `区志` and `市志`), frontier `厅`/`府` split into multiple modern counties, autonomous ethnicity suffixes | First-Round (`第一轮修志`, `1980–2005`) or full-revision `重修`; reject standalone post-1985 `第二轮续志` |
+| **Taiwan** | `GADM TWN_2` (`縣市志`) + `GADM TWN_3` (`鄉鎮縣轄市區志`) | Censored 1950s–1960s first editions; post-1980 `續修` omitting pre-1950s; ROC Fujian `金門縣志` & `連江縣志` (Matsu) vs PRC mainland `连江县志` (`350122`) | `1990–2015` `重修縣市志` + township `鄉鎮市區志` (incl. `山地鄉`) paired with `1912–1945` Japanese *Shū*/*Chō*/*Gun* surveys |
+| **Mongolia** | Modern `21 aimags` + `~330 soums` (`нутаг судлал`) | No Chinese `县志`; post-1994 enclave aimags (`Darkhan-Uul`, `Orkhon`, `Govisümber`); `1912–1931` *khoshuun* crosswalk; Kazakh bilingual histories in `Bayan-Ölgii` | Tiered fallback: *soum* history (`Сумын түүх`) -> *aimag* encyclopaedia (`Аймгийн түүх`) -> MAS (`ШУА`) & pre-1921 treatises |
+| **Tuvan Republic** | `17 kozhuuns` + `2 cities` + republic-level TIGPI series | No Chinese `县志`; post-1953 *kozhuun* splits (`Chedi-Khol`); Tuva-Mongolia `Davst / Uvs Basin` border strips | *Kozhuun* monographs (`ru`/`tyv`) paired with **TIGPI (`ТИГПИ`)** *Istoriya Tuvy* and *Uchenye zapiski* |
+
+### Strict `1912–1953` Time-Domain Filter
+
+Never equate `pub_year` with historical time coverage:
+1. **Reject pre-1912 imperial gazetteers** (`明`, `清`, `康熙`, `乾隆`, `光绪`, `宣统` editions whose `content_years_covered` ends before `1912`—a frequent false positive on Wikimedia Commons and CADAL/NLC scans).
+2. **Reject post-1953-only continuations** (`第二轮续志` starting in `1978` or `1986`, or Taiwan `續修` starting after `1953`) unless paired with a base chronicle covering `1912–1953`.
+3. **Tag Republican/colonial contemporaneous gazetteers (`1912–1953` imprint)** as `time_coverage_role: "partial_contemporaneous_1912_1953"` with `content_years_covered: [1912, <pub_year>]` and pair them with `1980–2010` full-span chronicles or newspapers so `1937–1953` is never left uncovered.
+4. **Clip all newspapers and periodicals** strictly to issues dated between `1912-01-01` and `1953-12-31` (`GMT+0`).

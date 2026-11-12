@@ -35,7 +35,7 @@ Consult [taxonomy_and_schemas.md](../1.download-all-provinces/references/taxonom
 2. Visually inspect each 1 January (`00:00 GMT+0`) image for historical and contemporaneous territorial accuracy across Mainland China, Taiwan, Mongolia, Tuva and Tusi enclaves.
 3. If any visual inspection reveals a historical or geometric error, you must state `'I HAVE FAILED MYSELF'` and return to Step 1 to fix the underlying rules or polygons before continuing.
 
-## Step 4. Chronicles Scaffolding and Handoff to `/1.download-all-provinces`
+## Step 4. Chronicles Scaffolding and Handoff to `/1.download-PRC`
 
 1. Run `./core/server/E_export_chronicles_and_defines.py` to create `./chronicles/<province_slug>/` for every first-level division and Tusi polity (`category: "tusi"`), alongside `./common/defines/province_defines.json5` and `./localisation/{en_gb,fr,de}.json5`.
-2. Verify that `./common/defines/province_defines.json5`, `./common/tusi/tusi_catalog.json5` and annual `./gis/adm_<1|2|3>_<1912..1953>.geojson` files are complete and consistent so `/1.download-all-provinces` can execute seamlessly next.
+2. Verify that `./common/defines/province_defines.json5`, `./common/tusi/tusi_catalog.json5` and annual `./gis/adm_<1|2|3>_<1912..1953>.geojson` files are complete and consistent, then hand off to `/1.download-PRC` ([SKILL.md](../1.download-PRC/SKILL.md)) to construct the modern PRC county and Taiwan/Mongolia/Tuva local-history crosswalk before running `/1.download-all-provinces` ([SKILL.md](../1.download-all-provinces/SKILL.md)).

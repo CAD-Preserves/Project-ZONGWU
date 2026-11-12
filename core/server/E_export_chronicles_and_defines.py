@@ -241,7 +241,7 @@ class ChroniclesDefinesExporter:
           "category": "tusi",
           "name": name_en,
           "name_zh": name_zh,
-          "polity": entry.get("polity_parent") or entry.get("province_1912") or "China",
+          "polity": entry.get("parent_province") or entry.get("polity_parent") or entry.get("province_1912") or "China",
           "unit_id": tusi_id or slug,
           "year": yr,
         })
