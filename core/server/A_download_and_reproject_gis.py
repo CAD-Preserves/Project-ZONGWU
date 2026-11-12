@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import zipfile
+from shapely import STRtree
 from shapely.geometry import LineString, MultiLineString, Polygon, box, shape
 from shapely.ops import unary_union
 from shapely.prepared import prep
@@ -182,6 +183,8 @@ def B_build_1911_baseline (arg1_paths, arg2_cfg, arg3_gis_dir):
     lev1_py = gis_helpers.normalise_lev1_name(rec.get("LEV1_PY"), rec.get("LEV1_CH"))
     name_py = str(rec.get("NAME_PY") or "").strip()
     name_ch = str(rec.get("NAME_CH") or "").strip()
+    if name_py == "Xuzhou Fu" and lev1_py == "Anhui":
+      lev1_py = "Jiangsu"
     lon = None
     lat = None
     if rec.get("X_COORD") not in (None, "", 0) and rec.get("Y_COORD") not in (None, "", 0):
@@ -310,17 +313,19 @@ def B_build_1911_baseline (arg1_paths, arg2_cfg, arg3_gis_dir):
     }
     adm3_features.append((props, item["geom"]))
 
-  # Fill direct-administered frontier prefectures missing from v6_1911_cnty
-  cnty_union_cache = {l1: unary_union(geoms) for l1, geoms in cnty_geoms_by_l1.items()}
+  # Fill direct-administered frontier prefectures missing from v6_1911_cnty using global spatial index
+  all_cnty_geoms = [item["geom"] for item in cnty_items]
+  cnty_tree = STRtree(all_cnty_geoms)
   for props2, geom2 in adm2_features:
     l1 = props2["parent_adm1"]
     if l1 == "Taiwan":
       continue
-    existing = cnty_union_cache.get(l1)
+    hits = [all_cnty_geoms[idx] for idx in cnty_tree.query(geom2)]
+    existing = unary_union(hits) if hits else None
     diff = geom2 if existing is None else geom2.difference(existing)
     diff = gis_helpers.clean_polygonal_geometry(diff)
-    # Keep significant direct-administered territories (> 0.002 deg^2, ~20 km^2)
-    if diff is not None and diff.area > 0.002:
+    # Keep significant direct-administered territories (> 0.005 deg^2, ~50 km^2)
+    if diff is not None and diff.area > 0.005:
       adm3_features.append((
         {
           "adm_level": 3,
