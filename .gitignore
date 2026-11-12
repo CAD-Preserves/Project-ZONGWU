@@ -1,3 +1,4 @@
 chronicles
 tests
 /**/__pycache__
+*.pyc
