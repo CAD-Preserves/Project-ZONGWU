@@ -1,4 +1,3 @@
-// Verified historical catalogue of Tusi and autonomous frontier polities (1912-1953)
 {
   "metadata": {
     "title": "Republican and Early PRC Tusi & Autonomous Frontier Polities Catalog (1912-1953)",
@@ -16,7 +15,20 @@
         "reason": "Formally abolished during Zhao Erfeng's gaituguiliu in 1911 and already reorganised as Kangding Prefecture in the CHGIS 1911 baseline (cnty_sichuan_kangding_fu_197879)."
       }
     ],
-    "total_entries": 130
+    "total_entries": 130,
+    "chgis_direct_count": 84,
+    "kriging_modelled_count": 46,
+    "excluded_chgis_units": {
+      "cnty_qinghai_alikeer_si_198186": "Alike Baihu migrated northward across the Yellow River into Guinan/Tongde/Zeku during the 18th-19th centuries, was excluded from the Republican Yushu Twenty-Five Tribes confederation, and collided across the Yellow River with Golok.",
+      "cnty_sichuan_mingzheng_si_197870": "Mingzheng (Chakla) Xuanweisi underwent gaituguiliu in 1911 before the 1912 Republican baseline."
+    },
+    "yushu_25_tribes_mapping": {
+      "zhujie": "Mapped to chengduo_baihu (cnty_qinghai_chengduo_si_198015; Zhenqin / Juchieh Monastery).",
+      "lada": "Mapped to labu_baihu (cnty_qinghai_labu_si_198014; Labu Lada Village).",
+      "zhongba": "Shared across longbu_baihu and longba_baihu (Chenduo-Yushu frontier pastures).",
+      "buqing": "Mapped across laerji_dianba_lieyu_baihu and geerji_baihu western/central pastures."
+    },
+    "kham_hor_harmonisation": "All Six Hor States (zhanggu_anfusi, zhuwo_anfusi, kongsa_anfusi, mazhu_anfusi, dongke_tusi, baili_zhangguansi) harmonised uniformly to end_year 1953 under the 1956-1957 Ganzi democratic reform abolition criterion."
   },
   "tusis": [
     {
@@ -800,48 +812,13 @@
         "cnty_guangxi_mingying_tuzhou_197400"
       ],
       "geometry_mode": "chgis_direct",
-      "seat_lon": 107.1837,
-      "seat_lat": 22.9946,
+      "seat_lon": 107.19,
+      "seat_lat": 23.0098,
       "known_settlements": [
         [
-          107.2144,
-          22.8812,
-          "Shangjiao (上叫)"
-        ],
-        [
-          107.2193,
-          22.9085,
-          "Napai (那排)"
-        ],
-        [
-          107.0986,
-          22.9654,
-          "Longban (陇伴)"
-        ],
-        [
-          107.1257,
-          22.995,
-          "Mami (马蜜)"
-        ],
-        [
-          107.1676,
-          23.0064,
-          "Lengjiajie (愣加街)"
-        ],
-        [
-          107.1873,
-          23.0177,
-          "Mucun (母村)"
-        ],
-        [
-          107.1922,
-          23.0496,
-          "Jiaxu (加墟)"
-        ],
-        [
-          107.2193,
-          23.0132,
-          "Langcun (朗村)"
+          107.19,
+          23.0098,
+          "Mingying / Quanming Valley (茗盈)"
         ]
       ],
       "start_year": 1912,
@@ -1520,48 +1497,13 @@
         "cnty_guangxi_taiping_tuzhou_197321"
       ],
       "geometry_mode": "chgis_direct",
-      "seat_lon": 107.2025,
-      "seat_lat": 22.6093,
+      "seat_lon": 107.1593,
+      "seat_lat": 22.6359,
       "known_settlements": [
         [
-          107.069,
-          22.6865,
-          "Nongkan (弄堪)"
-        ],
-        [
-          107.0807,
-          22.5247,
-          "Bahuaixu (岜怀墟)"
-        ],
-        [
-          107.0907,
-          22.5592,
-          "Xiancun (限村)"
-        ],
-        [
-          107.0542,
-          22.6094,
-          "Naba (那岜)"
-        ],
-        [
-          107.1158,
-          22.6388,
-          "Jiuzhou (旧州)"
-        ],
-        [
-          107.1848,
-          22.6615,
-          "Fencun (分村)"
-        ],
-        [
-          107.2736,
-          22.5685,
-          "Renhetang (人合塘)"
-        ],
-        [
-          107.289,
-          22.616,
-          "Rongcun (容村)"
+          107.1593,
+          22.6359,
+          "Taiping Tuzhou Seat (太平土州)"
         ]
       ],
       "start_year": 1912,
@@ -2870,18 +2812,23 @@
         "cnty_yunnan_lasa_si_197625"
       ],
       "geometry_mode": "chgis_direct",
-      "seat_lon": 97.7981,
-      "seat_lat": 24.4277,
+      "seat_lon": 97.8004,
+      "seat_lat": 24.1961,
       "known_settlements": [
-        [
-          97.7981,
-          24.4277,
-          "Lasa (腊撒)"
-        ],
         [
           97.8004,
           24.1961,
-          "Zhangfeng (章凤)"
+          "Zhangfeng / Lasa Southern Seat (章凤/腊撒)"
+        ],
+        [
+          97.8245,
+          24.288,
+          "Central Lasa Valley (腊撒坝心)"
+        ],
+        [
+          97.8347,
+          24.2871,
+          "Longbajie (陇把街)"
         ],
         [
           97.7686,
@@ -2889,19 +2836,9 @@
           "Nanduo (南多)"
         ],
         [
-          97.8004,
-          24.1961,
-          "Zhangfengzhen (章凤镇)"
-        ],
-        [
           97.8569,
           24.2085,
           "Duohuang (多晃)"
-        ],
-        [
-          97.8347,
-          24.2871,
-          "Longbajie (陇把街)"
         ],
         [
           97.8747,
@@ -3298,24 +3235,34 @@
       "region": "yunnan",
       "chgis_unit_ids": [],
       "geometry_mode": "kriging_modelled",
-      "seat_lon": 98.4667,
-      "seat_lat": 24.2167,
+      "seat_lon": 98.65,
+      "seat_lat": 24.2,
       "known_settlements": [
         [
-          98.4667,
-          24.2167,
-          "Mengban / Zhongshan (勐板/中山)"
+          98.65,
+          24.2,
+          "Mengban / Laoguanzai (勐板/老官寨)"
         ],
         [
-          98.6,
-          24.45,
-          "Mangshi (芒市)"
+          98.5889,
+          24.1652,
+          "Zhongshan (中山)"
+        ],
+        [
+          98.65,
+          24.2667,
+          "Pinghe (平河)"
+        ],
+        [
+          98.71,
+          24.16,
+          "East Mengban Border / Longling Slope (东勐板/木城坡)"
         ]
       ],
       "start_year": 1912,
       "end_year": 1953,
       "abolition_note": "Tenth of the Ten Dehong Tusis; established in 1899 under the Jiang clan south-east of Mangshi and remained active on 1 January 1953 until Dehong land reform in 1955.",
-      "natural_boundary_notes": "Hilly southern flank of Luxi/Mangshi descending towards the Salween (Nu) River gorge.",
+      "natural_boundary_notes": "Hereditary Tuqianzong established in 1899 after Sino-British boundary demarcation across the eastern and southeastern hills of Mangshi into the Longling borderlands (Zhongshan, Pinghe, Laoguanzai; ~98.59-98.73E, 24.12-24.27N), distinct from western Mangshi's Mengjia valley.",
       "citations": [
         "DMA/GNS China (v5_gns_yunnan_gbk): Cangyuan, Ximeng, Honghe, Yuanyang, Jianshui, Luchun",
         "Honghe Hani and Yi Autonomous Prefecture Gazetteer & Yunnan Frontier Tusi Chronology"
@@ -3404,18 +3351,23 @@
       "region": "yunnan",
       "chgis_unit_ids": [],
       "geometry_mode": "kriging_modelled",
-      "seat_lon": 102.7233,
-      "seat_lat": 23.3969,
+      "seat_lon": 102.8003,
+      "seat_lat": 23.3089,
       "known_settlements": [
+        [
+          102.8003,
+          23.3089,
+          "Potou Huixin / Nalou Yamen (坡头回新/司署)"
+        ],
         [
           102.7233,
           23.3969,
           "Guanting (官厅)"
         ],
         [
-          102.8389,
-          23.4975,
-          "Goujie (苟街)"
+          102.8522,
+          23.3739,
+          "Potou (坡头)"
         ],
         [
           103.0478,
@@ -3426,7 +3378,7 @@
       "start_year": 1912,
       "end_year": 1953,
       "abolition_note": "Foremost Yi chieftaincy of the Red River Jiangwai system (Pu Jun / Pu Guotai lineage); retained armed territorial control across the Republican period until 1950-1953 Honghe land and democratic reforms.",
-      "natural_boundary_notes": "Southern Jianshui and northern Yuanyang uplands along the south bank of the Red River.",
+      "natural_boundary_notes": "Major Yi/Hani chieftaincy whose historic Nalou Zhangguansi Yamen stands at Potou Huixin Village (23.3089N, 102.8003E) on the immediate northern rim overlooking the Red River gorge (~23.28N). Its Chadian/Jiangwai domain spanned southern Jianshui (Guanting, Potou, Puxiong) towards the Gejiu-Mengzi frontier and adjacent Red River south-bank slopes east of Mengnong (Majie, 102.6833E, 23.2500N).",
       "citations": [
         "DMA/GNS China (v5_gns_yunnan_gbk): Cangyuan, Ximeng, Honghe, Yuanyang, Jianshui, Luchun",
         "Honghe Hani and Yi Autonomous Prefecture Gazetteer & Yunnan Frontier Tusi Chronology"
@@ -3677,13 +3629,13 @@
         "cnty_sichuan_dongbuhanhu_si_197871"
       ],
       "geometry_mode": "chgis_direct",
-      "seat_lon": 102.8333,
-      "seat_lat": 30.3833,
+      "seat_lon": 102.8136,
+      "seat_lat": 30.3694,
       "known_settlements": [
         [
-          102.8333,
-          30.3833,
-          "Muping / Baoxing (穆坪/宝兴)"
+          102.8136,
+          30.3694,
+          "Muping / Baoxing Town Centre (穆坪镇/宝兴)"
         ],
         [
           102.7333,
@@ -3961,7 +3913,7 @@
       ],
       "start_year": 1912,
       "end_year": 1953,
-      "abolition_note": "One of the Hor States of northern Kham; though nominally disestablished in 1911, the Beri house swiftly resumed authority after the Xinhai Revolution and persisted through the 1936 Red Army Beri Monastery accord and 1 January 1953.",
+      "abolition_note": "Subordinated into Ganzi Tibetan Autonomous Region local administration following the 1950 PLA advance, while hereditary Tusi offices, chieftain courts, and estate privileges remained active on 1 January 1953 until formal abolition in the 1956-1957 Ganzi democratic reform.",
       "natural_boundary_notes": "Yalong River valley immediately west of Ganzi town.",
       "citations": [
         "DMA/GNS China (v5_gns_sichuan_gbk): Dege, Litang, Batang, Muli, Ganzi, Luhuo, Jinchuan",
@@ -3997,8 +3949,8 @@
         ]
       ],
       "start_year": 1912,
-      "end_year": 1950,
-      "abolition_note": "Leading Hor chieftaincy centred at Ganzi; restored after 1911 and led by chieftain Dechen Wangmo until peaceful integration into the newly established Xikang Tibetan Autonomous Region in November 1950.",
+      "end_year": 1953,
+      "abolition_note": "Subordinated into Ganzi Tibetan Autonomous Region local administration following the 1950 PLA advance, while hereditary Tusi offices, chieftain courts, and estate privileges remained active on 1 January 1953 until formal abolition in the 1956-1957 Ganzi democratic reform.",
       "natural_boundary_notes": "Upper Yalong plain at Ganzi and northern pastoral valleys.",
       "citations": [
         "DMA/GNS China (v5_gns_sichuan_gbk): Dege, Litang, Batang, Muli, Ganzi, Luhuo, Jinchuan",
@@ -4029,8 +3981,8 @@
         ]
       ],
       "start_year": 1912,
-      "end_year": 1950,
-      "abolition_note": "Hereditary Hor chieftaincy west of Ganzi often allied or jointly administered with Kongsar; restored after 1911 and terminated upon the 1950 Ganzi liberation and establishment of the Xikang Tibetan Autonomous Region.",
+      "end_year": 1953,
+      "abolition_note": "Subordinated into Ganzi Tibetan Autonomous Region local administration following the 1950 PLA advance, while hereditary Tusi offices, chieftain courts, and estate privileges remained active on 1 January 1953 until formal abolition in the 1956-1957 Ganzi democratic reform.",
       "natural_boundary_notes": "Western Ganzi basin along the Yalong tributary valleys between Rongbaca and Kagong.",
       "citations": [
         "DMA/GNS China (v5_gns_sichuan_gbk): Dege, Litang, Batang, Muli, Ganzi, Luhuo, Jinchuan",
@@ -4066,8 +4018,8 @@
         ]
       ],
       "start_year": 1912,
-      "end_year": 1950,
-      "abolition_note": "Eastern Hor principality at Luhuo; despite Zhao Erfeng's 1911 seizure of seals, Hor Drango headmen reasserted local power in the Republican period until 1950 Ganzi/Xikang military-administrative integration.",
+      "end_year": 1953,
+      "abolition_note": "Subordinated into Ganzi Tibetan Autonomous Region local administration following the 1950 PLA advance, while hereditary Tusi offices, chieftain courts, and estate privileges remained active on 1 January 1953 until formal abolition in the 1956-1957 Ganzi democratic reform.",
       "natural_boundary_notes": "Xianshui River valley around Luhuo between Ganzi and Daofu.",
       "citations": [
         "DMA/GNS China (v5_gns_sichuan_gbk): Dege, Litang, Batang, Muli, Ganzi, Luhuo, Jinchuan",
@@ -4103,12 +4055,50 @@
         ]
       ],
       "start_year": 1912,
-      "end_year": 1952,
-      "abolition_note": "Eastern Ganzi Hor chieftaincy between Kongsar and Drango; retained residual tribal autonomy post-1911 and through 1950 until 1952-1953 Xikang county reorganisation.",
+      "end_year": 1953,
+      "abolition_note": "Subordinated into Ganzi Tibetan Autonomous Region local administration following the 1950 PLA advance, while hereditary Tusi offices, chieftain courts, and estate privileges remained active on 1 January 1953 until formal abolition in the 1956-1957 Ganzi democratic reform.",
       "natural_boundary_notes": "Northeastern Ganzi basin draining southward into the upper Xianshui River.",
       "citations": [
         "DMA/GNS China (v5_gns_sichuan_gbk): Dege, Litang, Batang, Muli, Ganzi, Luhuo, Jinchuan",
         "Ganzi Tibetan Autonomous Prefecture Gazetteer & Kham/Hor Tusi Histories (霍尔十三家)"
+      ]
+    },
+    {
+      "tusi_id": "zhuwo_anfusi",
+      "name_en": "Zhuwo (Hor Driwo) Anfusi",
+      "name_zh": "朱倭安抚司",
+      "rank_title": "Anfusi",
+      "parent_province": "Xikang",
+      "region": "xikang_kham",
+      "chgis_unit_ids": [],
+      "geometry_mode": "kriging_modelled",
+      "seat_lon": 100.3114,
+      "seat_lat": 31.6347,
+      "known_settlements": [
+        [
+          100.3114,
+          31.6347,
+          "Zhuwo / Driwo (朱倭)"
+        ],
+        [
+          100.2833,
+          31.65,
+          "Zhehor / Old Zhuwo (朱倭老寨)"
+        ],
+        [
+          100.4,
+          31.55,
+          "Dando (旦都)"
+        ]
+      ],
+      "start_year": 1912,
+      "end_year": 1953,
+      "abolition_note": "Subordinated into Ganzi Tibetan Autonomous Region local administration following the 1950 PLA advance, while hereditary Tusi offices, chieftain courts, and estate privileges remained active on 1 January 1953 until formal abolition in the 1956-1957 Ganzi democratic reform.",
+      "natural_boundary_notes": "One of the Five Hor States (Hor-sde lnga / 霍尔五土司) along the upper Xianshui River (Luhuo County), occupying the Zhuwo-Dando valley northwest of Zhanggu and southeast of Donggu.",
+      "citations": [
+        "Ganzi Zangzu Zizhizhou Zhi (甘孜藏族自治州志)",
+        "Luhuo Xian Zhi (炉霍县志)",
+        "CHGIS v5 GNS Sichuan Gazetteer Points"
       ]
     },
     {
@@ -4300,18 +4290,28 @@
       "region": "nw_sw_sichuan",
       "chgis_unit_ids": [],
       "geometry_mode": "kriging_modelled",
-      "seat_lon": 103.55,
-      "seat_lat": 31.3667,
+      "seat_lon": 103.4971,
+      "seat_lat": 31.3621,
       "known_settlements": [
+        [
+          103.4971,
+          31.3621,
+          "Tuyushan / Miansi (涂禹山/绵虒)"
+        ],
         [
           103.55,
           31.3667,
-          "Miansi / Tuyu Mountain (绵虒/涂禹山)"
+          "Miansi Town (绵虒镇)"
         ],
         [
           103.5833,
           31.4667,
-          "Wenchuan (汶川)"
+          "Weizhou / Wenchuan (威州/汶川)"
+        ],
+        [
+          103.5,
+          31.1833,
+          "Tongji / Caopo Valley (通济/草坡三十二庄)"
         ],
         [
           103.4833,
@@ -4320,9 +4320,9 @@
         ]
       ],
       "start_year": 1912,
-      "end_year": 1952,
-      "abolition_note": "Suo clan hereditary pacification superintendency headquartered at Tuyu Mountain above Miansi in Wenchuan; formally abolished in 1952 with the dissolution of residual Tusi estates during Wenchuan land reform.",
-      "natural_boundary_notes": "Minjiang River gorge between Wenchuan and Dujiangyan.",
+      "end_year": 1953,
+      "abolition_note": "Active on 1 January 1953; hereditary Suo family Xuanweisi title and estates in the Minjiang/Caopo valleys were formally abolished during the 1956 Aba Tibetan Autonomous Prefecture democratic reform.",
+      "natural_boundary_notes": "Gyalrong chieftaincy anchored at Tuyushan / Miansi inside the Weizhou-Wenchuan Minjiang gorge, governing the Thirty-Two Villages (Sanshi'erzhuang) across Caopo and Xuankou well clear of outer ridge notches.",
       "citations": [
         "DMA/GNS China (v5_gns_sichuan_gbk): Maerkang, Wenchuan, Aba, Hongyuan, Yuexi, Zhaojue, Meigu, Butuo, Leibo",
         "Aba Tibetan and Qiang Autonomous Prefecture Gazetteer & Liangshan Yi Autonomous Prefecture Gazetteer"
@@ -4715,8 +4715,8 @@
         ]
       ],
       "start_year": 1912,
-      "end_year": 1949,
-      "abolition_note": "Li clan Tu (Monguor) hereditary chieftaincy at Xiangtang on the Huangshui-Datong confluence; retained residual lineage authority through the Ma-clique Republican era until 1949 Qinghai liberation.",
+      "end_year": 1931,
+      "abolition_note": "Abolished in August 1931 under the Qinghai Provincial Government decree (Mingling Chexiao Qinghai Tusi An / 《明令撤消青海土司案》) issued by Ma Lin and Ma Bufang and ratified by the Nanjing Executive Yuan, converting hereditary chieftaincies to regular county administration.",
       "natural_boundary_notes": "Eastern Hehuang valley along the lower Huangshui and Datong river confluence.",
       "citations": [
         "DMA/GNS China (v5_gns_gansu_gbk & v5_gns_qinghai_gbk)",
@@ -4747,8 +4747,8 @@
         ]
       ],
       "start_year": 1912,
-      "end_year": 1949,
-      "abolition_note": "Qi clan Tu (Monguor) hereditary chieftaincy north-east of Xining; persisted as a local native-office estate under Republican rule until abolition following the September 1949 liberation of Qinghai.",
+      "end_year": 1931,
+      "abolition_note": "Abolished in August 1931 under the Qinghai Provincial Government decree (Mingling Chexiao Qinghai Tusi An / 《明令撤消青海土司案》) issued by Ma Lin and Ma Bufang and ratified by the Nanjing Executive Yuan, converting hereditary chieftaincies to regular county administration.",
       "natural_boundary_notes": "Huzhu loess terraces and Beishan foothills north of the Huangshui River.",
       "citations": [
         "DMA/GNS China (v5_gns_gansu_gbk & v5_gns_qinghai_gbk)",
@@ -4773,15 +4773,20 @@
           "Jishi / Xunhua (积石/循化)"
         ],
         [
-          102.6667,
-          35.65,
-          "Gur / Mengda (古尔/孟达)"
+          102.5556,
+          35.8364,
+          "Qingshui (清水)"
+        ],
+        [
+          102.3833,
+          35.7833,
+          "Wendu (文都)"
         ]
       ],
       "start_year": 1912,
-      "end_year": 1949,
-      "abolition_note": "Han clan Salar hereditary chieftaincy governing the inner Salar gongba and river valleys at Jishi; dissolved upon the September 1949 liberation and reorganisation of Xunhua County.",
-      "natural_boundary_notes": "Yellow River Jishi Gorge terraces on the Qinghai-Gansu border.",
+      "end_year": 1931,
+      "abolition_note": "Abolished in August 1931 under the Qinghai Provincial Government decree (Mingling Chexiao Qinghai Tusi An / 《明令撤消青海土司案》) issued by Ma Lin and Ma Bufang and ratified by the Nanjing Executive Yuan, converting hereditary chieftaincies to regular county administration.",
+      "natural_boundary_notes": "Salar hereditary chieftaincy centred at Jishi Town (35.8478N, 102.4836E) strictly on the southern bank of the Yellow River channel (~35.86N), flanked by Qingshui and Wendu in the Xunhua valley.",
       "citations": [
         "DMA/GNS China (v5_gns_gansu_gbk & v5_gns_qinghai_gbk)",
         "Gannan Tibetan Autonomous Prefecture Gazetteer & Qinghai Minzu Tusi Shi"
@@ -4796,39 +4801,39 @@
       "region": "gansu_qinghai",
       "chgis_unit_ids": [],
       "geometry_mode": "kriging_modelled",
-      "seat_lon": 100.1,
-      "seat_lat": 34.4,
+      "seat_lon": 99.4,
+      "seat_lat": 33.6833,
       "known_settlements": [
-        [
-          100.1,
-          34.4,
-          "Maqin / Dawu (玛沁/大武)"
-        ],
         [
           99.4,
           33.6833,
-          "Dari / Jianshe (达日)"
+          "Darlag / Jianshe (达日/建设)"
         ],
         [
-          99.8667,
-          33.9667,
-          "Gande (甘德)"
+          99.6,
+          33.3667,
+          "Gyumai / Darlag South (吉迈/达日)"
+        ],
+        [
+          99.2,
+          33.65,
+          "Sangruma (桑日麻)"
         ],
         [
           100.7,
           32.9667,
-          "Banma / Sailaitang (班玛)"
+          "Banma / Sailaitang (班玛/赛来塘)"
         ],
         [
           101.4333,
           33.4333,
-          "Jigzhi / Jiuzhi (久治)"
+          "Jigzhi / Jiuzhi (久治/智青松多)"
         ]
       ],
       "start_year": 1912,
       "end_year": 1952,
       "abolition_note": "Fiercely independent nomadic federation of the Three Golok Tribes (Wangchenbum/Ashiqiang, Khangsar, Khanggan) south of Amnye Machen; defied Ma-clique expeditions throughout the Republic and was peacefully integrated in late 1952 (Guoluo Work Regiment and preparatory autonomous administration formed late 1952 - 1 Jan 1954).",
-      "natural_boundary_notes": "Amnye Machen massif and upper Yellow River alpine grasslands spanning Maqin, Dari, Gande, Banma, and Jiuzhi.",
+      "natural_boundary_notes": "Autonomous Golok Three Tribes confederation (Askyong, Khangsar, Khangrgan) centred across the Darlag-Banma-Jigzhi grasslands south of the upper Yellow River bend and Amne Machin massif, strictly outside the northern CHGIS Alikeer polygon.",
       "citations": [
         "DMA/GNS China (v5_gns_gansu_gbk & v5_gns_qinghai_gbk)",
         "Gannan Tibetan Autonomous Prefecture Gazetteer & Qinghai Minzu Tusi Shi"
@@ -4952,18 +4957,28 @@
         "cnty_qinghai_shangxiaalakeshuoer_si_198016"
       ],
       "geometry_mode": "chgis_direct",
-      "seat_lon": 96.45,
-      "seat_lat": 33.3,
+      "seat_lon": 96.7353,
+      "seat_lat": 32.1743,
       "known_settlements": [
         [
-          96.45,
-          33.3,
-          "Gyairong / Laxiu (拉休)"
+          96.7353,
+          32.1743,
+          "Chuilengduoer / Southern Laxiu (吹冷多尔/拉休南支)"
         ],
         [
-          96.5,
-          33.5333,
-          "Lhaze (下拉秀)"
+          96.8415,
+          32.095,
+          "Gyairong / Laxiu South (拉休南牧场)"
+        ],
+        [
+          96.3746,
+          33.4518,
+          "Upper-Lower Alakeshuo (上下阿拉克硕)"
+        ],
+        [
+          96.2738,
+          33.5155,
+          "Alakeshuo West (阿拉克硕西)"
         ]
       ],
       "start_year": 1912,
@@ -5024,13 +5039,18 @@
         "cnty_qinghai_chengduo_si_198015"
       ],
       "geometry_mode": "chgis_direct",
-      "seat_lon": 97.15,
-      "seat_lat": 33.2833,
+      "seat_lon": 97.1333,
+      "seat_lat": 33.3667,
       "known_settlements": [
         [
-          97.15,
-          33.2833,
+          97.1333,
+          33.3667,
           "Lab / Chengduo (称多)"
+        ],
+        [
+          97.1943,
+          33.5435,
+          "Zhenqin / Zhujie Core (珍秦/竹节)"
         ],
         [
           97.35,
@@ -5046,7 +5066,7 @@
       "start_year": 1912,
       "end_year": 1951,
       "abolition_note": "Eastern Yushu tribe controlling Xiewu and the Tongtian River crossings; dissolved on 25 December 1951.",
-      "natural_boundary_notes": "High-plateau pastoral domain on the Tangut-Kham divide demarcated by CHGIS V6 1911 polygons cnty_qinghai_chengduo_si_198015 under Yushusishizutusi.",
+      "natural_boundary_notes": "Chenduo Baihu along the Tongtian River corridor; Republican Yushu 25 Tribes records incorporate Zhujie Baihu (竹节百户, Zhenqin/Juchieh Monastery) within this Chenduo CHGIS polygon.",
       "citations": [
         "CHGIS V6 (1911): cnty_qinghai_chengduo_si_198015 (parent_adm2 Yushusishizutusi)",
         "Zhou Xiwu (周希武), Yushu Diaocha Ji (玉树调查记, 1914-1920)",
@@ -5076,7 +5096,7 @@
       "start_year": 1912,
       "end_year": 1951,
       "abolition_note": "Easternmost Tongtian River tribe adjoining Shiqu/Lingtsang; dissolved on 25 December 1951.",
-      "natural_boundary_notes": "High-plateau pastoral domain on the Tangut-Kham divide demarcated by CHGIS V6 1911 polygons cnty_qinghai_labu_si_198014 under Yushusishizutusi.",
+      "natural_boundary_notes": "High-plateau pastoral domain on the Tangut-Kham divide demarcated by CHGIS V6 1911 polygons cnty_qinghai_labu_si_198014 under Yushusishizutusi; Republican Yushu 25 Tribes records incorporate Lada Baihu (拉达百户, Labu Lada Village) within this Labu unit.",
       "citations": [
         "CHGIS V6 (1911): cnty_qinghai_labu_si_198014 (parent_adm2 Yushusishizutusi)",
         "Zhou Xiwu (周希武), Yushu Diaocha Ji (玉树调查记, 1914-1920)",
@@ -5237,7 +5257,7 @@
       "start_year": 1912,
       "end_year": 1951,
       "abolition_note": "Consolidated Longbu-Longdong tribe of the Longbao plateau west of Gyegu; dissolved on 25 December 1951.",
-      "natural_boundary_notes": "High-plateau pastoral domain on the Tangut-Kham divide demarcated by CHGIS V6 1911 polygons cnty_qinghai_longbu_si_198012, cnty_qinghai_longdong_si_198011 under Yushusishizutusi.",
+      "natural_boundary_notes": "High-plateau pastoral domain on the Tangut-Kham divide demarcated by CHGIS V6 1911 polygons cnty_qinghai_longbu_si_198012, cnty_qinghai_longdong_si_198011 under Yushusishizutusi; shares historical Republican Zhongba Baihu (中坝麦马/班马百户) Chenduo-Yushu frontier pastures alongside Longba.",
       "citations": [
         "CHGIS V6 (1911): cnty_qinghai_longbu_si_198012, cnty_qinghai_longdong_si_198011 (parent_adm2 Yushusishizutusi)",
         "Zhou Xiwu (周希武), Yushu Diaocha Ji (玉树调查记, 1914-1920)",
@@ -5345,36 +5365,6 @@
       ]
     },
     {
-      "tusi_id": "alike_baihu",
-      "name_en": "Alik (Alike) Baihu",
-      "name_zh": "阿里克百户（阿里克二司）",
-      "rank_title": "Baihu (Centurion)",
-      "parent_province": "Qinghai",
-      "region": "gansu_qinghai",
-      "chgis_unit_ids": [
-        "cnty_qinghai_alikeer_si_198186"
-      ],
-      "geometry_mode": "chgis_direct",
-      "seat_lon": 100.1397,
-      "seat_lat": 34.4285,
-      "known_settlements": [
-        [
-          100.1397,
-          34.4285,
-          "Alike (阿里克)"
-        ]
-      ],
-      "start_year": 1912,
-      "end_year": 1951,
-      "abolition_note": "North-eastern pastoral offshoot listed under the Qing Yushu 40 / Republican 25 tribal roll; dissolved on 25 December 1951.",
-      "natural_boundary_notes": "High-plateau pastoral domain on the Tangut-Kham divide demarcated by CHGIS V6 1911 polygons cnty_qinghai_alikeer_si_198186 under Yushusishizutusi.",
-      "citations": [
-        "CHGIS V6 (1911): cnty_qinghai_alikeer_si_198186 (parent_adm2 Yushusishizutusi)",
-        "Zhou Xiwu (周希武), Yushu Diaocha Ji (玉树调查记, 1914-1920)",
-        "DMA/GNS China (v5_gns_qinghai_gbk): Yushu, Nangqian, Chengduo, Zaduo, Zhiduo, Qumalai"
-      ]
-    },
-    {
       "tusi_id": "baili_baihu",
       "name_en": "Baili Baihu",
       "name_zh": "白利百户",
@@ -5450,13 +5440,18 @@
         "cnty_qinghai_yongshapu_si_198024"
       ],
       "geometry_mode": "chgis_direct",
-      "seat_lon": 98.1112,
-      "seat_lat": 33.9936,
+      "seat_lon": 97.8737,
+      "seat_lat": 34.1224,
       "known_settlements": [
+        [
+          97.8737,
+          34.1224,
+          "Yongshapu Core / Bayan Har Steppe (永夏/永沙普核心)"
+        ],
         [
           98.1112,
           33.9936,
-          "Yongshapu (永沙普)"
+          "East Yongshapu Pasture (永沙普东牧场)"
         ],
         [
           97.1167,
@@ -5659,7 +5654,7 @@
       "start_year": 1912,
       "end_year": 1951,
       "abolition_note": "Central Nangchen-Yushu sub-tribes consolidated within the Republican Yushu Twenty-Five Tribes system; dissolved on 25 December 1951.",
-      "natural_boundary_notes": "High-plateau pastoral domain on the Tangut-Kham divide demarcated by CHGIS V6 1911 polygons cnty_qinghai_laerji_si_198006, cnty_qinghai_dianba_si_198009, cnty_qinghai_lieyu_si_198010 under Yushusishizutusi.",
+      "natural_boundary_notes": "High-plateau pastoral domain on the Tangut-Kham divide demarcated by CHGIS V6 1911 polygons cnty_qinghai_laerji_si_198006, cnty_qinghai_dianba_si_198009, cnty_qinghai_lieyu_si_198010 under Yushusishizutusi; Republican Yushu 25 Tribes western/central Buqing Baihu (布庆百户) grazing ranges align across this group and adjacent Geerji.",
       "citations": [
         "CHGIS V6 (1911): cnty_qinghai_laerji_si_198006, cnty_qinghai_dianba_si_198009, cnty_qinghai_lieyu_si_198010 (parent_adm2 Yushusishizutusi)",
         "Zhou Xiwu (周希武), Yushu Diaocha Ji (玉树调查记, 1914-1920)",
