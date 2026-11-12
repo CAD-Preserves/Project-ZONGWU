@@ -1,0 +1,172 @@
+{
+  // Official and open-access historical GIS data sources for Project-ZONGWU (1911-1953)
+  "bounding_box": {
+    "max_lat": 54.5,
+    "max_lon": 136.0,
+    "min_lat": 17.0,
+    "min_lon": 72.0
+  },
+  "chgis_dataverse": {
+    "base_url": "https://dataverse.harvard.edu/api/access/datafile/",
+    "files": {
+      "chgis_1820_lakes": {
+        "encoding": "utf-8",
+        "file_id": 2966718,
+        "filename": "v6_1820_lks_pgn_utf.zip",
+        "role": "hydrology_lakes"
+      },
+      "chgis_1820_rivers": {
+        "encoding": "utf-8",
+        "file_id": 2966716,
+        "filename": "v6_1820_coded_rvr_lin_utf.zip",
+        "role": "hydrology_rivers"
+      },
+      "chgis_1911_cnty": {
+        "encoding": "utf-8",
+        "file_id": 2966692,
+        "filename": "v6_1911_cnty_pgn_utf.zip",
+        "role": "adm_3_1911"
+      },
+      "chgis_1911_pref": {
+        "encoding": "utf-8",
+        "file_id": 2966689,
+        "filename": "v6_1911_pref_pgn_utf.zip",
+        "role": "adm_2_1911"
+      },
+      "chgis_1911_prov": {
+        "encoding": "utf-8",
+        "file_id": 2966688,
+        "filename": "v6_1911_prov_pgn_utf.zip",
+        "role": "adm_1_1911"
+      },
+      "chgis_1911_towns": {
+        "encoding": "utf-8",
+        "file_id": 2966687,
+        "filename": "v6_1911_twn_pts_utf.zip",
+        "role": "settlements_1911"
+      },
+      "chgis_1926_prov": {
+        "encoding": "utf-8",
+        "file_id": 2691130,
+        "filename": "v5_1926_prov_pgn_utf.zip",
+        "role": "adm_1_1926_reference"
+      },
+      "chgis_1990_citas_cnty": {
+        "encoding": "utf-8",
+        "file_id": 2691164,
+        "filename": "v5_1990_citas_cnty_pgn_utf.zip",
+        "role": "frontier_county_subdivision_reference"
+      },
+      "gns_gansu": {
+        "encoding": "gb18030",
+        "file_id": 2691134,
+        "filename": "v5_gns_gansu_gbk.zip",
+        "role": "gns_settlements"
+      },
+      "gns_guangxi": {
+        "encoding": "gb18030",
+        "file_id": 2691177,
+        "filename": "v5_gns_guangxi_gbk.zip",
+        "role": "gns_settlements"
+      },
+      "gns_guizhou": {
+        "encoding": "gb18030",
+        "file_id": 2691185,
+        "filename": "v5_gns_guizhou_gbk.zip",
+        "role": "gns_settlements"
+      },
+      "gns_qinghai": {
+        "encoding": "gb18030",
+        "file_id": 2691138,
+        "filename": "v5_gns_qinghai_gbk.zip",
+        "role": "gns_settlements"
+      },
+      "gns_sichuan": {
+        "encoding": "gb18030",
+        "file_id": 2691120,
+        "filename": "v5_gns_sichuan_gbk.zip",
+        "role": "gns_settlements"
+      },
+      "gns_tibet": {
+        "encoding": "gb18030",
+        "file_id": 2691118,
+        "filename": "v5_gns_tibet_gbk.zip",
+        "role": "gns_settlements"
+      },
+      "gns_yunnan": {
+        "encoding": "gb18030",
+        "file_id": 2691140,
+        "filename": "v5_gns_yunnan_gbk.zip",
+        "role": "gns_settlements"
+      },
+      "ming_courier_routes": {
+        "encoding": "utf-8",
+        "file_id": 3005467,
+        "filename": "Ming_Routes_2016.zip",
+        "role": "historical_routes"
+      },
+      "teahorse_major_routes": {
+        "encoding": "utf-8",
+        "file_id": 2801578,
+        "filename": "TeaHorse_Major_Routes__2016-04-08.zip",
+        "role": "historical_routes"
+      },
+      "teahorse_minor_routes": {
+        "encoding": "utf-8",
+        "file_id": 2801580,
+        "filename": "TeaHorse_Minor_Routes_2016-04-08.zip",
+        "role": "historical_routes"
+      }
+    }
+  },
+  "coordinate_precision": 5,
+  "gadm": {
+    "files": {
+      "gadm_mng_1": {
+        "filename": "gadm41_MNG_1.json",
+        "url": "https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_MNG_1.json"
+      },
+      "gadm_mng_2": {
+        "filename": "gadm41_MNG_2.json.zip",
+        "url": "https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_MNG_2.json.zip"
+      },
+      "gadm_rus_2": {
+        "filename": "gadm41_RUS_2.json.zip",
+        "url": "https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_RUS_2.json.zip"
+      },
+      "gadm_twn_2": {
+        "filename": "gadm41_TWN_2.json.zip",
+        "url": "https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_TWN_2.json.zip"
+      }
+    }
+  },
+  "natural_earth": {
+    "files": {
+      "ne_railroads": {
+        "filename": "ne_10m_railroads.geojson",
+        "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_railroads.geojson"
+      },
+      "ne_rivers": {
+        "filename": "ne_10m_rivers_lake_centerlines.geojson",
+        "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_rivers_lake_centerlines.geojson"
+      },
+      "ne_roads": {
+        "filename": "ne_10m_roads.geojson",
+        "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_roads.geojson"
+      }
+    }
+  },
+  "projection_xian80_gk19": {
+    "central_meridian_deg": 111.0,
+    "false_easting_m": 19500000.0,
+    "false_northing_m": 0.0,
+    "inverse_flattening": 298.257,
+    "scale_factor": 1.0,
+    "semi_major_m": 6378140.0
+  },
+  "rasteriser": {
+    "aspect_cos_lat": 35.0,
+    "canvas_height": 1200,
+    "canvas_width": 1600
+  }
+}

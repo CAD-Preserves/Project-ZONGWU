@@ -1,0 +1,313 @@
+{
+  // Historical railway and trunk highway corridors (1912-1953) for China, Mongolia, and Tuva.
+  // Coordinates are in WGS84 [lon, lat]. Corridors are used to tag and supplement Natural Earth
+  // and CHGIS routes with contemporaneous opening years and operators.
+  "railways": [
+    {
+      "corridor_id": "rail_cer_main",
+      "line_name": "Chinese Eastern Railway (Manzhouli - Harbin - Suifenhe)",
+      "open_year": 1903,
+      "operator": "CER / North Manchuria Railway / PRC-USSR",
+      "waypoints": [[117.45, 49.59], [119.76, 49.21], [123.95, 47.35], [126.64, 45.75], [129.62, 44.58], [131.16, 44.39]]
+    },
+    {
+      "corridor_id": "rail_smr_main",
+      "line_name": "South Manchuria Railway (Harbin - Changchun - Shenyang - Dalian)",
+      "open_year": 1903,
+      "operator": "CER / South Manchuria Railway",
+      "waypoints": [[126.64, 45.75], [125.32, 43.88], [124.35, 43.16], [123.43, 41.80], [122.87, 40.66], [121.61, 38.91]]
+    },
+    {
+      "corridor_id": "rail_jingfeng",
+      "line_name": "Beijing - Fengtian Railway (Beiping - Tianjin - Shanhaiguan - Shenyang)",
+      "open_year": 1907,
+      "operator": "Beiyang / ROC / Manchukuo",
+      "waypoints": [[116.40, 39.90], [117.20, 39.13], [119.75, 40.00], [121.13, 41.10], [123.43, 41.80]]
+    },
+    {
+      "corridor_id": "rail_jinghan",
+      "line_name": "Beijing - Hankou Railway (Beiping - Shijiazhuang - Zhengzhou - Hankou)",
+      "open_year": 1906,
+      "operator": "ROC Ministry of Railways",
+      "waypoints": [[116.40, 39.90], [115.46, 38.87], [114.51, 38.04], [114.48, 36.60], [113.62, 34.75], [114.07, 32.13], [114.30, 30.59]]
+    },
+    {
+      "corridor_id": "rail_jinpu",
+      "line_name": "Tianjin - Pukou Railway (Tianjin - Jinan - Xuzhou - Pukou)",
+      "open_year": 1912,
+      "operator": "ROC Ministry of Railways",
+      "waypoints": [[117.20, 39.13], [116.36, 37.45], [117.00, 36.65], [117.18, 34.26], [117.39, 32.92], [118.78, 32.06]]
+    },
+    {
+      "corridor_id": "rail_jiaoji",
+      "line_name": "Qingdao - Jinan Railway (Jiaoji)",
+      "open_year": 1904,
+      "operator": "German / Japanese (1914-1922) / ROC",
+      "waypoints": [[120.38, 36.07], [119.16, 36.71], [118.05, 36.81], [117.00, 36.65]]
+    },
+    {
+      "corridor_id": "rail_huning_huhangyong",
+      "line_name": "Shanghai - Nanjing & Shanghai - Hangzhou - Ningbo Railways",
+      "open_year": 1909,
+      "operator": "ROC Ministry of Railways",
+      "waypoints": [[118.78, 32.06], [119.45, 32.20], [120.31, 31.49], [120.62, 31.30], [121.47, 31.23], [120.15, 30.27], [121.55, 29.87]]
+    },
+    {
+      "corridor_id": "rail_dianyue",
+      "line_name": "Yunnan - Vietnam Railway (Kunming - Hekou)",
+      "open_year": 1910,
+      "operator": "Compagnie Francaise des Chemins de Fer",
+      "waypoints": [[102.71, 25.04], [103.38, 23.37], [103.94, 22.51]]
+    },
+    {
+      "corridor_id": "rail_taiwan_trunk",
+      "line_name": "Taiwan Western Trunk Line (Keelung - Taipei - Taichung - Kaohsiung)",
+      "open_year": 1908,
+      "operator": "Japanese Gov-Gen Taiwan / ROC",
+      "waypoints": [[121.74, 25.13], [121.56, 25.04], [120.97, 24.80], [120.67, 24.14], [120.21, 22.99], [120.30, 22.62]]
+    },
+    {
+      "corridor_id": "rail_guangjiu",
+      "line_name": "Canton - Kowloon Railway (Guangzhou - Hong Kong)",
+      "open_year": 1911,
+      "operator": "ROC / British HK",
+      "waypoints": [[113.26, 23.13], [114.06, 22.54], [114.17, 22.30]]
+    },
+    {
+      "corridor_id": "rail_zhengtai",
+      "line_name": "Zhengding - Taiyuan Railway (Shijiazhuang - Taiyuan)",
+      "open_year": 1907,
+      "operator": "ROC",
+      "waypoints": [[114.51, 38.04], [113.58, 37.87], [112.55, 37.87]]
+    },
+    {
+      "corridor_id": "rail_anfeng",
+      "line_name": "Andong - Shenyang Railway",
+      "open_year": 1911,
+      "operator": "SMR / Manchukuo",
+      "waypoints": [[123.43, 41.80], [123.77, 41.30], [124.38, 40.13]]
+    },
+    {
+      "corridor_id": "rail_longhai_1915",
+      "line_name": "Longhai Railway (Xuzhou - Zhengzhou - Luoyang)",
+      "open_year": 1915,
+      "operator": "ROC Ministry of Railways",
+      "waypoints": [[117.18, 34.26], [115.65, 34.44], [114.31, 34.80], [113.62, 34.75], [112.45, 34.62]]
+    },
+    {
+      "corridor_id": "rail_jingsui_baotou",
+      "line_name": "Beiping - Suiyuan - Baotou Railway (Jingsui)",
+      "open_year": 1923,
+      "operator": "ROC Ministry of Railways",
+      "waypoints": [[116.40, 39.90], [114.88, 40.77], [113.30, 40.08], [111.75, 40.84], [109.84, 40.66]]
+    },
+    {
+      "corridor_id": "rail_longhai_1925",
+      "line_name": "Longhai Railway (Haizhou/Lianyungang - Xuzhou & Luoyang - Lingbao)",
+      "open_year": 1925,
+      "operator": "ROC Ministry of Railways",
+      "waypoints": [[119.22, 34.60], [117.18, 34.26], [112.45, 34.62], [110.89, 34.52]]
+    },
+    {
+      "corridor_id": "rail_nanxun",
+      "line_name": "Nanchang - Jiujiang Railway (Nanxun)",
+      "open_year": 1916,
+      "operator": "ROC",
+      "waypoints": [[115.99, 29.71], [115.86, 28.68]]
+    },
+    {
+      "corridor_id": "rail_taoliao_sitao",
+      "line_name": "Siping - Taonan - Angangxi Western Manchurian Lines",
+      "open_year": 1926,
+      "operator": "Fengtian Clique / SMR / Manchukuo",
+      "waypoints": [[124.35, 43.16], [123.51, 43.51], [122.84, 45.62], [123.87, 47.17]]
+    },
+    {
+      "corridor_id": "rail_jichang_jidun",
+      "line_name": "Changchun - Jilin - Dunhua - Tumen Railway",
+      "open_year": 1933,
+      "operator": "Manchukuo State Railway",
+      "waypoints": [[125.32, 43.88], [126.55, 43.84], [128.23, 43.37], [129.84, 42.96]]
+    },
+    {
+      "corridor_id": "rail_longhai_xian",
+      "line_name": "Longhai Railway (Lingbao - Xi'an)",
+      "open_year": 1934,
+      "operator": "ROC Ministry of Railways",
+      "waypoints": [[110.89, 34.52], [110.29, 34.61], [108.94, 34.27]]
+    },
+    {
+      "corridor_id": "rail_yuehan_full",
+      "line_name": "Guangzhou - Hankou Railway (Wuchang - Changsha - Shaoguan - Guangzhou)",
+      "open_year": 1936,
+      "operator": "ROC Ministry of Railways",
+      "waypoints": [[114.30, 30.59], [113.13, 29.36], [112.94, 28.23], [112.61, 26.89], [113.01, 25.77], [113.60, 24.81], [113.26, 23.13]]
+    },
+    {
+      "corridor_id": "rail_zhegan",
+      "line_name": "Zhejiang - Jiangxi Railway (Hangzhou - Nanchang - Pingxiang - Zhuzhou)",
+      "open_year": 1937,
+      "operator": "ROC Ministry of Railways",
+      "waypoints": [[120.15, 30.27], [119.65, 29.08], [117.94, 28.45], [115.86, 28.68], [113.85, 27.62], [113.13, 27.83]]
+    },
+    {
+      "corridor_id": "rail_tongpu",
+      "line_name": "Datong - Taiyuan - Fenglingdu Railway (Tongpu)",
+      "open_year": 1937,
+      "operator": "Shanxi Provincial / North China Rail",
+      "waypoints": [[113.30, 40.08], [112.55, 37.87], [111.52, 36.09], [111.00, 35.03], [110.30, 34.61]]
+    },
+    {
+      "corridor_id": "rail_longhai_baoji",
+      "line_name": "Longhai Railway (Xi'an - Baoji)",
+      "open_year": 1937,
+      "operator": "ROC Ministry of Railways",
+      "waypoints": [[108.94, 34.27], [107.14, 34.36]]
+    },
+    {
+      "corridor_id": "rail_manchukuo_north",
+      "line_name": "Manchukuo Northern & Eastern Strategic Railways (Harbin - Bei'an - Heihe & Mudanjiang - Jiamusi)",
+      "open_year": 1937,
+      "operator": "Manchukuo State Railway",
+      "waypoints": [[126.64, 45.75], [126.90, 46.63], [126.51, 48.24], [127.53, 50.25]]
+    },
+    {
+      "corridor_id": "rail_manchukuo_east",
+      "line_name": "Manchukuo Eastern Frontier Railway (Tumen - Mudanjiang - Jiamusi)",
+      "open_year": 1937,
+      "operator": "Manchukuo State Railway",
+      "waypoints": [[129.84, 42.96], [129.62, 44.58], [130.32, 46.80]]
+    },
+    {
+      "corridor_id": "rail_jincheng_chengde",
+      "line_name": "Jinzhou - Chengde Railway",
+      "open_year": 1936,
+      "operator": "Manchukuo State Railway",
+      "waypoints": [[121.13, 41.10], [120.46, 41.58], [117.93, 40.97]]
+    },
+    {
+      "corridor_id": "rail_xianggui",
+      "line_name": "Hunan - Guangxi Railway (Hengyang - Guilin - Liuzhou)",
+      "open_year": 1939,
+      "operator": "ROC Ministry of Communications",
+      "waypoints": [[112.61, 26.89], [110.29, 25.27], [109.43, 24.33]]
+    },
+    {
+      "corridor_id": "rail_qiangui",
+      "line_name": "Guizhou - Guangxi Railway (Liuzhou - Dushan)",
+      "open_year": 1944,
+      "operator": "ROC Ministry of Communications",
+      "waypoints": [[109.43, 24.33], [108.64, 24.48], [107.54, 25.82]]
+    },
+    {
+      "corridor_id": "rail_longhai_tianshui",
+      "line_name": "Longhai Railway (Baoji - Tianshui)",
+      "open_year": 1945,
+      "operator": "ROC / PRC",
+      "waypoints": [[107.14, 34.36], [105.72, 34.58]]
+    },
+    {
+      "corridor_id": "rail_transmongolian_ulaanbaatar",
+      "line_name": "Naushki - Ulaanbaatar Railway (MPR Northern Line)",
+      "open_year": 1949,
+      "operator": "USSR / MPR",
+      "waypoints": [[106.12, 50.32], [106.21, 50.25], [105.95, 49.48], [106.91, 47.92]]
+    },
+    {
+      "corridor_id": "rail_choibalsan",
+      "line_name": "Borzya - Choibalsan Railway",
+      "open_year": 1939,
+      "operator": "USSR / MPR",
+      "waypoints": [[115.48, 50.06], [114.50, 49.00], [114.53, 48.07]]
+    },
+    {
+      "corridor_id": "rail_chengyu",
+      "line_name": "Chengdu - Chongqing Railway (Chengyu)",
+      "open_year": 1952,
+      "operator": "PRC Ministry of Railways",
+      "waypoints": [[104.06, 30.67], [105.05, 29.59], [106.55, 29.56]]
+    },
+    {
+      "corridor_id": "rail_tianshui_lanzhou",
+      "line_name": "Tianshui - Lanzhou Railway (Tianlan)",
+      "open_year": 1952,
+      "operator": "PRC Ministry of Railways",
+      "waypoints": [[105.72, 34.58], [104.62, 35.58], [103.83, 36.06]]
+    },
+    {
+      "corridor_id": "rail_laibin_munanguan",
+      "line_name": "Xianggui Extension (Liuzhou - Nanning - Pingxiang)",
+      "open_year": 1951,
+      "operator": "PRC Ministry of Railways",
+      "waypoints": [[109.43, 24.33], [109.22, 23.75], [108.37, 22.82], [106.75, 22.10]]
+    }
+  ],
+  "trunk_roads": [
+    {
+      "corridor_id": "road_kalgan_urga",
+      "open_year": 1918,
+      "road_name": "Zhangjiakou - Zamyn-Uud - Ulaanbaatar Motor Road",
+      "waypoints": [[114.88, 40.77], [112.14, 43.71], [111.90, 43.72], [110.14, 44.89], [108.66, 46.35], [106.91, 47.92]]
+    },
+    {
+      "corridor_id": "road_chuysky_tuva",
+      "open_year": 1927,
+      "road_name": "Usinsky / Abakan - Kyzyl Trunk Road",
+      "waypoints": [[91.43, 53.72], [93.20, 52.20], [94.45, 51.72]]
+    },
+    {
+      "corridor_id": "road_tuva_mongolia",
+      "open_year": 1932,
+      "road_name": "Kyzyl - Ulaangom - Khovd Steppe Route",
+      "waypoints": [[94.45, 51.72], [92.07, 49.98], [91.64, 48.01]]
+    },
+    {
+      "corridor_id": "road_chuan_shaan",
+      "open_year": 1936,
+      "road_name": "Sichuan - Shaanxi Highway (Chengdu - Guangyuan - Hanzhong - Xi'an)",
+      "waypoints": [[104.06, 30.67], [105.84, 32.44], [107.03, 33.07], [108.94, 34.27]]
+    },
+    {
+      "corridor_id": "road_nw_soviet",
+      "open_year": 1938,
+      "road_name": "Northwest International Highway (Xi'an - Lanzhou - Hami - Dihua - Khorgos)",
+      "waypoints": [[108.94, 34.27], [103.83, 36.06], [100.45, 38.93], [98.51, 39.74], [93.51, 42.82], [87.62, 43.82], [81.32, 43.92]]
+    },
+    {
+      "corridor_id": "road_burma",
+      "open_year": 1938,
+      "road_name": "Burma Road (Kunming - Xiaguan - Baoshan - Wanding)",
+      "waypoints": [[102.71, 25.04], [100.22, 25.59], [99.16, 25.11], [98.07, 24.08]]
+    },
+    {
+      "corridor_id": "road_chuan_kang",
+      "open_year": 1941,
+      "road_name": "Sichuan - Xikang Highway (Chengdu - Ya'an - Kangding)",
+      "waypoints": [[104.06, 30.67], [103.00, 29.99], [101.96, 30.05]]
+    },
+    {
+      "corridor_id": "road_kang_zang",
+      "open_year": 1953,
+      "road_name": "Xikang - Tibet Trunk Route (Kangding - Ganzi - Chamdo - Lhasa, under construction 1950-1954)",
+      "waypoints": [[101.96, 30.05], [99.99, 31.62], [97.17, 31.14], [91.14, 29.65]]
+    },
+    {
+      "corridor_id": "road_qing_zang",
+      "open_year": 1950,
+      "road_name": "Qinghai - Tibet Caravan & Motor Route (Xining - Yushu / Golmud - Lhasa)",
+      "waypoints": [[101.78, 36.62], [99.11, 35.58], [97.01, 33.00], [92.05, 31.48], [91.14, 29.65]]
+    },
+    {
+      "corridor_id": "road_yunnan_sichuan",
+      "open_year": 1939,
+      "road_name": "Chuan-Dian & Dian-Qian Trunk Highways (Kunming - Guiyang - Chongqing)",
+      "waypoints": [[102.71, 25.04], [106.63, 26.65], [106.92, 27.73], [106.55, 29.56]]
+    },
+    {
+      "corridor_id": "road_xinjiang_south",
+      "open_year": 1940,
+      "road_name": "Southern Xinjiang Tarim Rim Road (Turpan - Korla - Aksu - Kashgar - Hotan)",
+      "waypoints": [[89.19, 42.95], [86.15, 41.76], [80.26, 41.17], [75.99, 39.47], [79.92, 37.11]]
+    }
+  ]
+}
