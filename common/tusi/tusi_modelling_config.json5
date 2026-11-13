@@ -2104,7 +2104,7 @@
         35.0,
         49.5
       ],
-      "legend_loc": "lower left",
+      "legend_loc": "outside_bottom",
       "river_labels": [
         [
           81.1,

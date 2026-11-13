@@ -9716,14 +9716,15 @@
       "start_year": 1912,
       "de_jure_gaituguiliu_year": null,
       "de_facto_start_year": 1912,
-      "de_facto_end_year": 1953,
-      "end_year": 1953,
+      "de_facto_end_year": 1950,
+      "end_year": 1950,
       "tusi_status": "de_jure_and_de_facto",
-      "abolition_note": "Easternmost Kerei Kazakh pastoral clans along the Bogda-Barkol northern piedmont; retained nomadic autonomy and armed tribal bands through the early 1950s (still active on 1 January 1953 prior to the 1954 establishment of Barkol and Mori Kazakh Autonomous Counties).",
+      "abolition_note": "Easternmost Kerei Kazakh pastoral confederation along the Bogda-Barkol northern piedmont; retained autonomous tribal leadership until PLA forces occupied Barkol in April 1950 and suppressed Osman Batur and Janymkhan remnants in 1950-1951, ending de facto tribal independence (Barkol and Mori Kazakh Autonomous Counties were later formed within PRC county administration in 1954).",
       "natural_boundary_notes": "Barkol basin and eastern Bogda Shan northern steppe corridor between Mori and Yiwu.",
       "citations": [
         "CHGIS V6 (1911): v6_1911_twn_pts (Muleihe, Tangbulake, Dashitou, Toushuigou)",
-        "Benson & Svanberg (1998)"
+        "Benson, Linda & Ingvar Svanberg (1998), China's Last Nomads",
+        "Hami Prefectural Gazetteer (哈密地区志)"
       ]
     },
     {
@@ -10245,7 +10246,7 @@
       "de_facto_end_year": 1932,
       "end_year": 1932,
       "tusi_status": "de_facto_post_gaituguiliu",
-      "abolition_note": "Semi-autonomous Uyghur jasagh khanate exempt from the 1884 Xinjiang provincehood reforms; ruled by Shah Maqsud (Maqsud Shah) until his death in May 1930, when Governor Jin Shuren proclaimed gaituguiliu and divided the khanate into Hami, Yiwu, and Yihe counties. Briefly revived in 1931-1932 by Yulbars Khan and Khoja Niyaz behind heir Nasir Shah during the Kumul Rebellion before collapsing into the wider Xinjiang civil war.",
+      "abolition_note": "Semi-autonomous Uyghur jasagh khanate exempt from the 1884 Xinjiang provincehood reforms; ruled by Shah Maqsud (Maqsud Shah) until his death in 6 June 1930, when Governor Jin Shuren proclaimed gaituguiliu and divided the khanate into Hami, Yiwu, and Yihe counties. Briefly revived in 1931-1932 by Yulbars Khan and Khoja Niyaz behind heir Nasir Shah during the Kumul Rebellion before collapsing into the wider Xinjiang civil war.",
       "natural_boundary_notes": "Hami Oasis basin and southern foothills of the Karlik Tagh (eastern Tian Shan), bordered by Barkol/Zhenxi across the Karlik divide to the north and the Taklamakan/Gobi corridor to the south.",
       "citations": [
         "CHGIS V6 (1911): v6_1911_twn_pts (Toubao, Sanbao, Talenaqincheng, Yikeshu, Geziyandun)",
@@ -11113,6 +11114,59 @@
         "Qinghai Provincial Gazetteer (青海省志) & Republican Mengzang Weiyuanhui registers",
         "Zhou Xiwu (周希武), Yushu Diaocha Ji (玉树调查记, 1914-1920)",
         "DMA/GNS China (v5_gns_qinghai_gbk)"
+      ]
+    },
+    {
+      "tusi_id": "lagyab_lhojang_panchen_estate",
+      "name_en": "Tashilhunpo Lagyab Lhojang & Sangsang Domain",
+      "name_zh": "扎什伦布拉加布洛江（桑桑）牧区庄园",
+      "rank_title": "Tashilhunpo Labrang Pastoral Estate (Lagyab Lhojang / Bla-brang)",
+      "polity_type": "monastic_polity",
+      "parent_province": "Xizang",
+      "region": "tibet_himalaya_xinjiang",
+      "chgis_unit_ids": [],
+      "geometry_mode": "borderpool_modelled",
+      "seat_lon": 87.184,
+      "seat_lat": 29.267,
+      "known_settlements": [
+        [
+          87.184,
+          29.267,
+          "Kaga / Ngamring (卡嘎/昂仁)"
+        ],
+        [
+          86.717,
+          29.414,
+          "Sangsang (桑桑)"
+        ],
+        [
+          87.583,
+          30.183,
+          "Meibaqieqin (美巴切勤)"
+        ],
+        [
+          87.413,
+          29.843,
+          "Lieba (列巴)"
+        ],
+        [
+          86.967,
+          29.683,
+          "Xiongba (雄巴)"
+        ]
+      ],
+      "start_year": 1912,
+      "de_jure_gaituguiliu_year": null,
+      "de_facto_start_year": 1912,
+      "de_facto_end_year": 1953,
+      "end_year": 1953,
+      "tusi_status": "de_jure_and_de_facto",
+      "abolition_note": "Large western Tsang pastoral estate (Lagyab Lhojang) of Tashilhunpo Monastery across Sangsang and northern Ngamring north of the Yarlung Tsangpo, interspersed with historic Ngamring dzong and local chieftains; remained fiscally distinct on 1 January 1953 until 1959.",
+      "natural_boundary_notes": "Northern Yarlung Tsangpo watershed across Ngamring (Sangsang-Kaga) and upper Xaitongmoin plateaus.",
+      "citations": [
+        "Goldstein, Melvyn C. & Cynthia M. Beall (1990), Nomads of Western Tibet (Lagyab Lhojang / Sangsang Tashilhunpo estate)",
+        "Jagou, Fabienne (2011), The Ninth Panchen Lama (1883-1937)",
+        "Tibet Autonomous Region 2009 Township Atlas: Kaga, Sangsang, Meibaqieqin, Lieba, Xiongba"
       ]
     },
     {
@@ -12073,13 +12127,13 @@
           "Upper Noa-Dihing / Dawodi (诺阿迪兴上游)"
         ]
       ],
-      "start_year": 1912,
+      "start_year": 1940,
       "de_jure_gaituguiliu_year": null,
-      "de_facto_start_year": 1912,
+      "de_facto_start_year": 1940,
       "de_facto_end_year": 1953,
       "end_year": 1953,
       "tusi_status": "de_jure_and_de_facto",
-      "abolition_note": "Lisu (Yobin) mountain migrants from northern Kachin/Nujiang settling the remote upper Noa-Dihing salient (Vijoynagar / Shidi) from the late 1930s-1940s; completely outside state administration until the 1961 Assam Rifles expedition (autonomous past 1 January 1953).",
+      "abolition_note": "Lisu (Yobin) mountain migrants from northern Kachin/Putao and Nujiang who began settling the remote upper Noa-Dihing salient (Vijoynagar / Dawodi) around 1940 (late 1930s-1940s); remained completely outside British, Tibetan, and early Indian state administration until the 1961 Assam Rifles expedition (autonomous past 1 January 1953).",
       "natural_boundary_notes": "Remote eastern salient of Changlang surrounded on three sides by Myanmar's Putao-Hukawng mountains.",
       "citations": [
         "Maitreya / Census of India (1961); Elwin (1957); Das, G., Tribes of Arunachal Pradesh"
@@ -17056,13 +17110,14 @@
       "start_year": 1912,
       "de_jure_gaituguiliu_year": 1914,
       "de_facto_start_year": 1912,
-      "de_facto_end_year": 1953,
-      "end_year": 1953,
+      "de_facto_end_year": 1952,
+      "end_year": 1952,
       "tusi_status": "de_facto_post_gaituguiliu",
-      "abolition_note": "Upper Siyom (Yargyap Chu) highland basin historically held as the Pachakshiri estate of the Tibetan Lhalu/Shata nobility and Samten Yongdrak Monastery; persisted under Tibetan-Memba local governance past 1 January 1953 until later NEFA post-1953 consolidation.",
+      "abolition_note": "Upper Siyom (Yargyap Chu) highland basin historically held as the Pachakshiri estate of the Tibetan Lhalu/Shata nobility and Samten Yongdrak Monastery; Assam Rifles frontier columns reached Mechuka and established Indian NEFA administration in 1951-1952, ending Lhasa/Lhalu estate tax collection prior to 1 January 1953.",
       "natural_boundary_notes": "Upper Yargyap Chu (Siyom headwaters) around Monigong and western Mechuka south of the eastern Himalaya.",
       "citations": [
-        "Lamb, Alastair, Tibet, China & India 1914-1950 (1989); Goldstein (1989); Grothmann, Kerstin, Highlanders of Pachakshiri"
+        "Grothmann, Kerstin (2012), 'Migration Narratives, Official Classifications, and Local Identities: The Memba of Pachakshiri'; Grothmann (2020), Pachakshiri",
+        "Lamb, Alastair (1989), Tibet, China & India 1914-1950; Goldstein (1989)"
       ]
     },
     {
@@ -17160,8 +17215,9 @@
       "abolition_note": "Westernmost of the three Tashilhunpo (Panchen Lama) pastoral enclaves situated along the Damzhung-Nagchu transit corridor; remained fiscally distinct from Kashag dzongs past 1 January 1953 until 1959.",
       "natural_boundary_notes": "Sangxiong–Xiangmao high plateau sub-basin east of Damzhung along the southern Nagchu watershed.",
       "citations": [
-        "Tibet Autonomous Region 2009 Township Atlas: Xiangmao, Luoma, Yangji",
-        "DMA/GNS Tibet (v5_gns_tibet_gbk): Sang-hsiung (91.6667, 30.9500)"
+        "Ref Image 4: Tibetan Feudatories Map (#21 Dekyi, Damzhung-Nagchu Panchen Labrang corridor)",
+        "Ryavec, Karl E. (2015), A Historical Atlas of Tibet; Jagou, Fabienne (2011), The Ninth Panchen Lama",
+        "Tibet Autonomous Region 2009 Township Atlas: Xiangmao, Luoma, Yangji; DMA/GNS Tibet: Sang-hsiung"
       ]
     },
     {
@@ -17202,8 +17258,9 @@
       "abolition_note": "Central Tashilhunpo Labrang pastoral enclave occupying the upper Youqia and Rongduo valleys between Damzhung and western Lhari; active on 1 January 1953 until 1959.",
       "natural_boundary_notes": "Central Youqia–Rongduo alpine basin south of Nagchu between the Lhünzhub divide and Lhari.",
       "citations": [
-        "Tibet Autonomous Region 2009 Township Atlas: Youqia, Rongduo, Sini",
-        "Nagqu Prefectural Gazetteer (那曲地区志)"
+        "Ref Image 4: Tibetan Feudatories Map (#22 Gamang, Damzhung-Lhari Panchen Labrang corridor)",
+        "Ryavec, Karl E. (2015), A Historical Atlas of Tibet; Nagqu Prefectural Gazetteer (那曲地区志)",
+        "Tibet Autonomous Region 2009 Township Atlas: Youqia, Rongduo, Sini"
       ]
     },
     {
@@ -17249,8 +17306,9 @@
       "abolition_note": "Easternmost of the three Tashilhunpo pastoral enclaves in the Nagchu-Lhari transition zone, paying butter and wool revenues to Shigatse until the 1959 reforms; active on 1 January 1953.",
       "natural_boundary_notes": "Western Lhari and south-eastern Nagchu headwater valleys (Zangbi–Cuomai–Linti corridor).",
       "citations": [
-        "Tibet Autonomous Region 2009 Township Atlas: Zangbi, Cuomai, Linti",
-        "DMA/GNS Tibet (v5_gns_tibet_gbk): Sangdê (92.3833, 31.1333)"
+        "Ref Image 4: Tibetan Feudatories Map (#23 Namchung, Nagchu-Lhari Panchen Labrang corridor)",
+        "Ryavec, Karl E. (2015), A Historical Atlas of Tibet; Jagou, Fabienne (2011), The Ninth Panchen Lama",
+        "Tibet Autonomous Region 2009 Township Atlas: Zangbi, Cuomai, Linti; DMA/GNS Tibet: Sangdê"
       ]
     },
     {
@@ -18928,58 +18986,6 @@
       "citations": [
         "NGA GNS Sichuan Gazetteer (v5_gns_sichuan_gbk)",
         "Aba Tibetan and Qiang Autonomous Prefecture Gazetteer (1994)"
-      ]
-    },
-    {
-      "tusi_id": "sakya_north_enclave",
-      "name_en": "Sakya Northern Tsang & Ngamring Enclave",
-      "name_zh": "萨迦北飞地（昂仁-谢通门北）",
-      "rank_title": "Sakya Hierarchate Northern Estate Domain (Sa-skya Bla-brang)",
-      "polity_type": "monastic_polity",
-      "parent_province": "Xizang",
-      "region": "tibet_himalaya_xinjiang",
-      "chgis_unit_ids": [],
-      "geometry_mode": "borderpool_modelled",
-      "seat_lon": 87.184,
-      "seat_lat": 29.267,
-      "known_settlements": [
-        [
-          87.184,
-          29.267,
-          "Kaga / Ngamring (卡嘎/昂仁)"
-        ],
-        [
-          86.717,
-          29.414,
-          "Sangsang (桑桑)"
-        ],
-        [
-          87.583,
-          30.183,
-          "Meibaqieqin (美巴切勤)"
-        ],
-        [
-          87.413,
-          29.843,
-          "Lieba (列巴)"
-        ],
-        [
-          86.967,
-          29.683,
-          "Xiongba (雄巴)"
-        ]
-      ],
-      "start_year": 1912,
-      "de_jure_gaituguiliu_year": null,
-      "de_facto_start_year": 1912,
-      "de_facto_end_year": 1953,
-      "end_year": 1953,
-      "tusi_status": "de_jure_and_de_facto",
-      "abolition_note": "Detached northern pastures and agricultural manors of the Sakya Principality across Ngamring and northern Xaitongmoin north of the Yarlung Tsangpo; remained under Sakya fiscal jurisdiction on 1 January 1953 until 1959.",
-      "natural_boundary_notes": "Northern Yarlung Tsangpo watershed across Ngamring (Sangsang-Kaga) and upper Xaitongmoin plateaus.",
-      "citations": [
-        "Tibet Autonomous Region 2009 Township Atlas: Kaga, Sangsang, Meibaqieqin, Lieba, Xiongba",
-        "TBRC V2 (2014): G247 (ngam ring chos sde)"
       ]
     },
     {
@@ -21969,7 +21975,7 @@
       "de_facto_end_year": 1953,
       "end_year": 1953,
       "tusi_status": "de_jure_and_de_facto",
-      "abolition_note": "Extensive quasi-sovereign monastic domain of the Panchen Lama's Tashilhunpo Labrang across Shigatse, Lhazê, Namling, and Xaitongmoin; even after the 9th Panchen's flight to Qinghai/inland China in 1923, the Labrang estate apparatus persisted and was restored under the 10th Panchen and Panchen Kanpo Lija (1952), remaining active on 1 January 1953 until 1959.",
+      "abolition_note": "Extensive quasi-sovereign monastic domain of the Panchen Lama's Tashilhunpo Labrang across Shigatse, Lhazê, Namling, and Xaitongmoin; after the 9th Panchen Lama's December 1923 flight, the Lhasa Kashag placed Labrang estates under direct fiscal receivership from 1924 to 1951 while preserving the estate cadastre, before full restoration under the 1951 Seventeen-Point Agreement and 1952 return of the 10th Panchen Lama (active on 1 January 1953 until 1959).",
       "natural_boundary_notes": "Middle Yarlung Tsangpo valley and northern tributaries across Shigatse, Lhazê, Xaitongmoin, and Namling.",
       "citations": [
         "TBRC V2 (2014): G104 (bkra shis lhun po), G390 (phun tshogs gling)",
