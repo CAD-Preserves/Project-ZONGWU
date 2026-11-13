@@ -9,3 +9,7 @@ tests
 *.pdf
 *.pyc
 *.zip
+input/tusi/*.mp4
+input/tusi/*.webm
+input/tusi/*.mkv
+input/tusi/frames/

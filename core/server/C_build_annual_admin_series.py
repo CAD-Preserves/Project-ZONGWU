@@ -11,6 +11,7 @@ from shapely.geometry import box, mapping, shape
 from shapely.ops import unary_union
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import annual_tusi_helpers
 import gis_helpers
 
 
@@ -41,6 +42,7 @@ class AnnualAdminBuilder:
     self.tusi_chgis_unit_ids = set()
     self.tusi_geoms = {}
     self.tusi_geoms_post1931 = {}
+    self.tusi_host_atoms = {}
     self.tuva_kozhuuns = []
     self.twn_counties = []
     self.union_cache = {}
@@ -188,6 +190,10 @@ class AnnualAdminBuilder:
         if jimo_part is not None and jimo_part.area > 0.002:
           geom = jimo_part
 
+      if uid == "cnty_xizang_xizanggedifang_9999_2":
+        annual_tusi_helpers.append_xizang_watershed_atoms(self, feat, geom)
+        continue
+
       should_sub = any(uid.startswith(pref) for pref in prefixes)
       if should_sub:
         sub_pieces = []
@@ -264,6 +270,9 @@ class AnnualAdminBuilder:
           rg, rd = self._cache_geom(rem) if rem is not None else (None, None)
           if rg is not None and rg.area > 0.002:
             self.tusi_geoms_post1931[tid] = {"dict": rd, "geom": rg, "props": tg["props"]}
+
+    annual_tusi_helpers.apply_reference_frontline_masks(self)
+    self.tusi_host_atoms = annual_tusi_helpers.index_tusi_host_atoms(self.tusi_catalog, self.china_atoms, china_perm_union)
 
   def _cached_union (self, arg1_keys, arg2_geom_map):
     """Return cached unary_union (geom, mapping_dict) for a tuple/frozenset of keys."""
@@ -363,6 +372,10 @@ class AnnualAdminBuilder:
     elif year <= 1928:
       country = "Republic of China (Beiyang)"
 
+    front_res = annual_tusi_helpers.classify_frontline_atom(atom, year, country)
+    if front_res is not None:
+      return front_res
+
     # 3. Kwantung Leased Territory (1912-1945)
     is_kwantung = (gb in ("210212", "210213", "210251")) or (name_en == "Jin Zhou Ting" and not gb)
     if is_kwantung and year <= 1945:
@@ -411,11 +424,11 @@ class AnnualAdminBuilder:
         else:
           mk = self.reforms["manchukuo_provinces"]
           mk_rules = [
+            ("Xing'an West (Manchukuo)", mk["xingan_west_citas"], "linxi" in atom["orig_uid"]),
             ("Rehe (Manchukuo)", mk["rehe_citas"], in_rehe_1915),
             ("Xing'an North (Manchukuo)", mk["xingan_north_citas"], "hulun" in atom["orig_uid"] or "jilalin" in atom["orig_uid"]),
             ("Xing'an East (Manchukuo)", mk["xingan_east_citas"], False),
-            ("Xing'an South (Manchukuo)", mk["xingan_south_citas"], l2 == "Zhelimu Meng"),
-            ("Xing'an West (Manchukuo)", mk["xingan_west_citas"], False),
+            ("Xing'an South (Manchukuo)", mk["xingan_south_citas"], l2 == "Zhelimu Meng" or "kailu" in atom["orig_uid"]),
             ("Heihe (Manchukuo)", mk["heihe_citas"], False),
             ("Jiandao (Manchukuo)", mk["jiandao_citas"], False),
             ("Jinzhou (Manchukuo)", mk["jinzhou_citas"], False),
@@ -481,7 +494,8 @@ class AnnualAdminBuilder:
 
       # 1950-1953 PRC 6 Northeast Provinces + Inner Mongolia AR
       if year >= 1950:
-        if gb.startswith("1521") or gb.startswith("1522") or gb.startswith("1523") or (gb == "" and l2 == "Zhelimu Meng") or "hulun" in atom["orig_uid"] or "jilalin" in atom["orig_uid"]:
+        xw_citas = self.reforms["manchukuo_provinces"]["xingan_west_citas"]
+        if gb.startswith("1521") or gb.startswith("1522") or gb.startswith("1523") or self._match_citas_group(gb, xw_citas) or (gb == "" and l2 == "Zhelimu Meng") or "linxi" in atom["orig_uid"] or "kailu" in atom["orig_uid"] or "hulun" in atom["orig_uid"] or "jilalin" in atom["orig_uid"]:
           return ("Inner Mongolia Autonomous Region", "内蒙古自治区", l2, adm3, country, "", "autonomous_region")
         if in_rehe_1915:
           return ("Rehe", "热河", l2, adm3, country, "", "province")
@@ -547,7 +561,7 @@ class AnnualAdminBuilder:
 
     # Xizang (Tibet)
     if l1 == "Xizang":
-      if gb.startswith("5421") and year >= 1951:
+      if (gb.startswith("5421") or l2 == "Chamdo") and year >= 1951:
         return ("Chamdo", "昌都", "Chamdo", adm3, country, "", "special_region")
       return ("Xizang", "西藏", l2, adm3, country, "", "province")
 
@@ -915,42 +929,8 @@ class AnnualAdminBuilder:
         "geometry": u_dict,
       })
 
-    # Emit active Tusis as first-level autonomous divisions across adm_1, adm_2, and adm_3 (Step 4 requirement)
-    dehong_occ_tokens = self.reforms.get("dehong_west_salween_1943_1944_tokens", [])
-    for t in active_tusis:
-      tid = t["tusi_id"]
-      tg = tg_map[tid]
-      t_country = "People's Republic of China" if year >= 1950 else ("Republic of China (Beiyang)" if year <= 1928 else "Republic of China")
-      t_occ = ""
-      if year in (1943, 1944) and any(tok in tid.lower() or tok in str(t.get("name_en", "")).lower() for tok in dehong_occ_tokens):
-        t_occ = "Japan"
-        t_country = "Yunnan (Japanese Occupied)"
-      for lvl, feats_out in ((1, adm1_features), (2, adm2_features), (3, adm3_features)):
-        feats_out.append({
-          "type": "Feature",
-          "properties": {
-            "abolition_note": t.get("abolition_note", ""),
-            "adm_level": lvl,
-            "category": "tusi",
-            "country": t_country,
-            "de_facto_end_year": int(t.get("de_facto_end_year", t.get("end_year", 1953))),
-            "de_facto_start_year": int(t.get("de_facto_start_year", t.get("start_year", 1911))),
-            "de_jure_gaituguiliu_year": t.get("de_jure_gaituguiliu_year"),
-            "name_ch": t["name_zh"],
-            "name_en": t["name_en"],
-            "occupied_by": t_occ,
-            "parent_adm1": t["parent_province"] if lvl > 1 else "",
-            "parent_adm2": t["name_en"] if lvl == 3 else "",
-            "polity_type": t.get("polity_type", "tusi"),
-            "rank_title": t.get("rank_title", "Tusi"),
-            "start_year": int(t.get("start_year", 1911)),
-            "tusi_status": t.get("tusi_status", "de_jure_and_de_facto"),
-            "unit_id": f"tusi_{tid}",
-            "unit_type": "tusi",
-            "year": year,
-          },
-          "geometry": tg["dict"],
-        })
+    # Emit active Tusis as first-level autonomous divisions across adm_1, adm_2, and adm_3
+    annual_tusi_helpers.emit_annual_tusis(self, year, active_tusis, tg_map, adm1_features, adm2_features, adm3_features)
 
     c1 = self._write_fast_geojson(os.path.join(self.gis_dir, f"adm_1_{year}.geojson"), adm1_features)
     c2 = self._write_fast_geojson(os.path.join(self.gis_dir, f"adm_2_{year}.geojson"), adm2_features)

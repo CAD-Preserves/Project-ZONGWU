@@ -17,6 +17,7 @@ from shapely.ops import linemerge, polygonize, unary_union
 from skimage.segmentation import watershed
 
 import gis_helpers
+import tusi_topo_helpers
 
 
 class BorderpoolGraphEngine:
@@ -72,15 +73,16 @@ class BorderpoolGraphEngine:
 
     self._load_borderpool_layers()
 
-  def _assign_atoms_topographic (self, arg1_atoms, arg2_adj, arg3_seeds, arg4_seat_atoms, arg5_k_pol):
+  def _assign_atoms_topographic (self, arg1_atoms, arg2_adj, arg3_seeds, arg4_seat_atoms, arg5_k_pol, arg6_reach_scales=None):
     """Run multi-source Dijkstra, settlement-corridor backbone, and seat-connected contiguity over atoms.
-    @param arg1_atoms Polygon atoms; arg2_adj graph edges; arg3_seeds seeds dict; arg4_seat_atoms seat idxs; arg5_k_pol polity count.
+    @param arg1_atoms Polygon atoms; arg2_adj graph edges; arg3_seeds seeds dict; arg4_seat_atoms seat idxs; arg5_k_pol polity count; arg6_reach_scales optional per-class step multipliers.
     @return Integer list of class labels per atom.
     """
     # Convert from parameters
     adj = arg2_adj
     atoms = arg1_atoms
     k_pol = int(arg5_k_pol)
+    reach_scales = list(arg6_reach_scales) if arg6_reach_scales else []
     seat_atoms = list(arg4_seat_atoms)
     seeds = arg3_seeds
 
@@ -140,10 +142,11 @@ class BorderpoolGraphEngine:
       d, cls_id, u = heapq.heappop(pq)
       if d > dist[u] + 1e-12:
         continue
+      scale_cls = reach_scales[cls_id] if cls_id < len(reach_scales) else 1.0
       for v, w in adj[u]:
         if v in locked and locked[v] != cls_id:
           continue
-        nd = d + w
+        nd = d + w*scale_cls
         if nd < dist[v]:
           dist[v] = nd
           labels[v] = cls_id
@@ -207,14 +210,15 @@ class BorderpoolGraphEngine:
     # Return statement
     return labels
 
-  def _build_atom_graph (self, arg1_atoms, arg2_barrier_names, arg3_seat_subs=None):
+  def _build_atom_graph (self, arg1_atoms, arg2_barrier_names, arg3_seat_subs=None, arg4_disable_subadmin=False):
     """Construct weighted planar adjacency graph over borderpool atoms (relief, river, county, road).
-    @param arg1_atoms Polygon atoms; arg2_barrier_names river names; arg3_seat_subs (seat_gbs, seat_gids).
+    @param arg1_atoms Polygon atoms; arg2_barrier_names river names; arg3_seat_subs (seat_gbs, seat_gids); arg4_disable_subadmin skip modern PRC subadmin costs.
     @return List of adjacency dicts: adj[u] = [(v, edge_cost), ...].
     """
     # Convert from parameters
     atoms = arg1_atoms
     barrier_names = [b.lower() for b in (arg2_barrier_names or [])]
+    disable_subadmin = bool(arg4_disable_subadmin)
     seat_gbs, seat_gids = arg3_seat_subs if arg3_seat_subs else (set(), set())
 
     # Declare local instance variables.
@@ -234,7 +238,7 @@ class BorderpoolGraphEngine:
     rp_lons = [p.x for p in rps]
     rp_lats = [p.y for p in rps]
     atom_elevs = self.elev_builder.sample_elevation(rp_lons, rp_lats)
-    subadmins = [self._lookup_atom_subadmin(p) for p in rps]
+    subadmins = [("", "")]*len(atoms) if disable_subadmin else [self._lookup_atom_subadmin(p) for p in rps]
 
     dom_box = unary_union(atoms).bounds
     clip_box = box(dom_box[0] - 0.1, dom_box[1] - 0.1, dom_box[2] + 0.1, dom_box[3] + 0.1)
@@ -286,10 +290,11 @@ class BorderpoolGraphEngine:
         elev_diff = abs(float(atom_elevs[u]) - float(atom_elevs[v]))
 
         cost = d_uv + ridge_w*(saddle_prom / 1000.0) + elev_w*(elev_diff / 1000.0)
-        gb_u, gid_u = subadmins[u]
-        gb_v, gid_v = subadmins[v]
-        if (gb_u and gb_v and gb_u != gb_v) or (gid_u and gid_v and gid_u != gid_v):
-          cost += sub_w + (sub_seat_w if (gb_u in seat_gbs or gb_v in seat_gbs or gid_u in seat_gids or gid_v in seat_gids) else 0.0)
+        if not disable_subadmin:
+          gb_u, gid_u = subadmins[u]
+          gb_v, gid_v = subadmins[v]
+          if (gb_u and gb_v and gb_u != gb_v) or (gid_u and gid_v and gid_u != gid_v):
+            cost += sub_w + (sub_seat_w if (gb_u in seat_gbs or gb_v in seat_gbs or gid_u in seat_gids or gid_v in seat_gids) else 0.0)
 
         if prep_riv is not None and prep_riv.intersects(mid):
           cost += riv_w
@@ -380,7 +385,8 @@ class BorderpoolGraphEngine:
 
     seat_atom_set = {a for a in seat_atoms if a >= 0}
     pos_coords = [(float(t["seat_lon"]), float(t["seat_lat"])) for t in polities]
-    seat_subs = [self._lookup_atom_subadmin(Point(px, py)) for px, py in pos_coords]
+    disable_subadmin = bool(cluster.get("disable_modern_subadmin", False))
+    seat_subs = [("", "")]*k_pol if disable_subadmin else [self._lookup_atom_subadmin(Point(px, py)) for px, py in pos_coords]
     seat_gbs = {s[0] for s in seat_subs if s[0]}
     seat_gids = {s[1] for s in seat_subs if s[1]}
 
@@ -393,9 +399,10 @@ class BorderpoolGraphEngine:
         d_own = math.hypot(kx - sx, ky - sy)
         if d_own < 1e-4:
           continue
-        kgb, kgid = self._lookup_atom_subadmin(Point(kx, ky))
-        if (kgb and kgb != sgb and kgb in seat_gbs) or (kgid and kgid != sgid and kgid in seat_gids):
-          continue
+        if not disable_subadmin:
+          kgb, kgid = self._lookup_atom_subadmin(Point(kx, ky))
+          if (kgb and kgb != sgb and kgb in seat_gbs) or (kgid and kgid != sgid and kgid in seat_gids):
+            continue
         too_close = any(math.hypot(kx - float(ot["seat_lon"]), ky - float(ot["seat_lat"])) < min(0.16, 0.45*d_own) for ok, ot in enumerate(polities) if ok != k)
         if too_close:
           continue
@@ -414,25 +421,26 @@ class BorderpoolGraphEngine:
     gadm_nm = {c["gid"]: c["name"].lower() for c in self.gadm3_counties if c["gid"]}
     citas_nm = {c["gb"]: c["name"] for c in self.citas_counties if c["gb"]}
     skip_stems = {"shang", "zhong", "dong", "qian", "old", "new", "north", "south", "east", "west"}
-    gid_matches = {}
-    for k, t in enumerate(polities):
-      sgb, sgid = seat_subs[k]
-      stem, zh2 = t["tusi_id"].split("_")[0].lower(), str(t.get("name_zh", ""))[:2]
-      if sgid and ((len(stem) >= 4 and stem not in skip_stems and gadm_nm.get(sgid, "").startswith(stem)) or (len(zh2) == 2 and citas_nm.get(sgb, "").startswith(zh2))):
-        gid_matches.setdefault(sgid, []).append(k)
-    nm_cost = float(self.weights.get("namesake_seed_cost", 0.28))
-    for sgid, ks_match in gid_matches.items():
-      if len(ks_match) != 1:
-        continue
-      ko = ks_match[0]
-      for u, a in enumerate(atoms):
-        if u in protected_bg_atoms or self._lookup_atom_subadmin(a.representative_point())[1] != sgid:
+    if not disable_subadmin:
+      gid_matches = {}
+      for k, t in enumerate(polities):
+        sgb, sgid = seat_subs[k]
+        stem, zh2 = t["tusi_id"].split("_")[0].lower(), str(t.get("name_zh", ""))[:2]
+        if sgid and ((len(stem) >= 4 and stem not in skip_stems and gadm_nm.get(sgid, "").startswith(stem)) or (len(zh2) == 2 and citas_nm.get(sgb, "").startswith(zh2))):
+          gid_matches.setdefault(sgid, []).append(k)
+      nm_cost = float(self.weights.get("namesake_seed_cost", 0.28))
+      for sgid, ks_match in gid_matches.items():
+        if len(ks_match) != 1:
           continue
-        rp = a.representative_point()
-        if all(math.hypot(rp.x - float(polities[ok]["seat_lon"]), rp.y - float(polities[ok]["seat_lat"])) >= 0.16 for ok in range(k_pol) if ok != ko):
-          seeds.setdefault(ko, []).append((u, nm_cost))
-          protected_bg_atoms.add(u)
-          n_anchors += 1
+        ko = ks_match[0]
+        for u, a in enumerate(atoms):
+          if u in protected_bg_atoms or self._lookup_atom_subadmin(a.representative_point())[1] != sgid:
+            continue
+          rp = a.representative_point()
+          if all(math.hypot(rp.x - float(polities[ok]["seat_lon"]), rp.y - float(polities[ok]["seat_lat"])) >= 0.16 for ok in range(k_pol) if ok != ko):
+            seeds.setdefault(ko, []).append((u, nm_cost))
+            protected_bg_atoms.add(u)
+            n_anchors += 1
 
     # 3. External background class (k_pol) with strict CHGIS COUNT_PY & CITAS-county hygiene
     if allow_bg:
@@ -482,9 +490,10 @@ class BorderpoolGraphEngine:
             continue
           ai = locate_atom(tx, ty)
           if ai >= 0 and ai not in protected_bg_atoms:
-            gb, _ = self._lookup_atom_subadmin(atoms[ai].representative_point())
-            if gb and gb in citas_with_tusi_seat and gb not in citas_with_explicit_bg:
-              continue
+            if not disable_subadmin:
+              gb, _ = self._lookup_atom_subadmin(atoms[ai].representative_point())
+              if gb and gb in citas_with_tusi_seat and gb not in citas_with_explicit_bg:
+                continue
             seeds.setdefault(k_pol, []).append((ai, sec_cost*1.5))
             n_anchors += 1
 
@@ -504,20 +513,21 @@ class BorderpoolGraphEngine:
             arg4_lines.append(b_ln.intersection(arg3_clip_geom))
 
 
-  def _consolidate_sliver_atoms (self, arg1_atoms, arg2_protected_idxs):
+  def _consolidate_sliver_atoms (self, arg1_atoms, arg2_protected_idxs, arg3_disable_subadmin=False):
     """Merge tiny unseeded micro-sliver atoms into their longest-shared-edge neighbour (preferring same county).
-    @param arg1_atoms Polygon atoms; arg2_protected_idxs protected indices.
+    @param arg1_atoms Polygon atoms; arg2_protected_idxs protected indices; arg3_disable_subadmin ignore PRC subadmin when False-checking.
     @return Consolidated list of clean Shapely Polygon atoms.
     """
     # Convert from parameters
     atoms = list(arg1_atoms)
+    disable_subadmin = bool(arg3_disable_subadmin)
     protected = set(arg2_protected_idxs)
 
     min_area = float(self.weights.get("min_sliver_area_deg2", 0.00025))
     if len(atoms) <= 1:
       return atoms
 
-    gbs = [self._lookup_atom_subadmin(a.representative_point()) for a in atoms]
+    gbs = [("", "")]*len(atoms) if disable_subadmin else [self._lookup_atom_subadmin(a.representative_point()) for a in atoms]
     alive = [True]*len(atoms)
     tree = STRtree(atoms)
     small_order = sorted([i for i, a in enumerate(atoms) if i not in protected and a.area < min_area], key=lambda i: atoms[i].area)
@@ -883,42 +893,46 @@ class BorderpoolGraphEngine:
     # Return statement
     return {"checked_chains": checked, "mean_sinuosity": round(sin_sum / max(1, checked), 4), "voronoi_violations": violations}
 
-  def build_borderpool_atoms (self, arg1_host_domain, arg2_seat_pts, arg3_barrier_names):
+  def build_borderpool_atoms (self, arg1_host_domain, arg2_seat_pts, arg3_barrier_names, arg4_cfg=None, arg5_bg_pts=None):
     """Build watertight topographic & subadministrative borderpool atoms for a host domain."""
     barrier_names = [b.lower() for b in (arg3_barrier_names or [])]
+    cfg = arg4_cfg if isinstance(arg4_cfg, dict) else {}
     host_domain, seat_pts = arg1_host_domain, list(arg2_seat_pts)
     area, buf_dom = float(host_domain.area), host_domain.buffer(0.01)
-    lines = self._extract_boundaries(host_domain)
-
-    self._collect_poly_boundaries(self.adm3_tree, self.adm3_geoms, buf_dom, lines)
-    self._collect_poly_boundaries(self.citas_tree, self.citas_counties, buf_dom, lines, lambda r: r["geom"])
-    self._collect_poly_boundaries(self.gadm3_tree, self.gadm3_counties, buf_dom, lines, lambda r: r["geom"])
-
-    if area <= 28.0:
-      self._collect_poly_boundaries(self.hybas_trees.get(10), self.hybas.get(10, []), buf_dom, lines)
+    if bool(cfg.get("disable_modern_subadmin", False)):
+      lines = tusi_topo_helpers.build_pure_topographic_cutters(self, host_domain, seat_pts, arg5_bg_pts or [], barrier_names, cfg)
     else:
-      for lvl in (8, 9):
-        self._collect_poly_boundaries(self.hybas_trees.get(lvl), self.hybas.get(lvl, []), buf_dom, lines)
-      t10 = self.hybas_trees.get(10)
-      if t10 is not None and seat_pts:
-        core_zones = unary_union([Point(sx, sy).buffer(0.85) for sx, sy in seat_pts]).intersection(buf_dom)
-        self._collect_poly_boundaries(t10, self.hybas.get(10, []), core_zones, lines)
+      lines = self._extract_boundaries(host_domain)
 
-    min_ord = 3 if area <= 15.0 else 4
-    if self.hydrorivers_tree is not None:
-      for idx in self.hydrorivers_tree.query(buf_dom):
-        ord_s, rg = self.hydrorivers[int(idx)]
-        if ord_s >= min_ord and rg.intersects(buf_dom):
-          lines.append(rg.intersection(buf_dom))
-    for wp, wg in self.waterways:
-      nm = (str(wp.get("name_en") or "") + " " + str(wp.get("name_ch") or "")).lower()
-      if (any(bn in nm for bn in barrier_names) or "NaturalEarth" in str(wp.get("source") or "")) and wg.intersects(buf_dom):
-        lines.append(wg.intersection(buf_dom))
-    if self.contour_tree is not None:
-      for idx in self.contour_tree.query(buf_dom):
-        lvl, cg = self.contour_lines[int(idx)]
-        if lvl in (500, 1000, 1500, 2000, 3000, 4000) and cg.intersects(buf_dom):
-          lines.append(cg.intersection(buf_dom))
+      self._collect_poly_boundaries(self.adm3_tree, self.adm3_geoms, buf_dom, lines)
+      self._collect_poly_boundaries(self.citas_tree, self.citas_counties, buf_dom, lines, lambda r: r["geom"])
+      self._collect_poly_boundaries(self.gadm3_tree, self.gadm3_counties, buf_dom, lines, lambda r: r["geom"])
+
+      if area <= 28.0:
+        self._collect_poly_boundaries(self.hybas_trees.get(10), self.hybas.get(10, []), buf_dom, lines)
+      else:
+        for lvl in (8, 9):
+          self._collect_poly_boundaries(self.hybas_trees.get(lvl), self.hybas.get(lvl, []), buf_dom, lines)
+        t10 = self.hybas_trees.get(10)
+        if t10 is not None and seat_pts:
+          core_zones = unary_union([Point(sx, sy).buffer(0.85) for sx, sy in seat_pts]).intersection(buf_dom)
+          self._collect_poly_boundaries(t10, self.hybas.get(10, []), core_zones, lines)
+
+      min_ord = 3 if area <= 15.0 else 4
+      if self.hydrorivers_tree is not None:
+        for idx in self.hydrorivers_tree.query(buf_dom):
+          ord_s, rg = self.hydrorivers[int(idx)]
+          if ord_s >= min_ord and rg.intersects(buf_dom):
+            lines.append(rg.intersection(buf_dom))
+      for wp, wg in self.waterways:
+        nm = (str(wp.get("name_en") or "") + " " + str(wp.get("name_ch") or "")).lower()
+        if (any(bn in nm for bn in barrier_names) or "NaturalEarth" in str(wp.get("source") or "")) and wg.intersects(buf_dom):
+          lines.append(wg.intersection(buf_dom))
+      if self.contour_tree is not None:
+        for idx in self.contour_tree.query(buf_dom):
+          lvl, cg = self.contour_lines[int(idx)]
+          if lvl in (500, 1000, 1500, 2000, 3000, 4000) and cg.intersects(buf_dom):
+            lines.append(cg.intersection(buf_dom))
 
     atoms = self._polygonise_inside(lines, host_domain)
     split_atoms = []
@@ -932,12 +946,15 @@ class BorderpoolGraphEngine:
   def partition_cluster_borderpool (self, arg1_polities, arg2_host_domain, arg3_cfg, arg4_allow_bg, arg5_all_seats):
     """Run the full Borderpool Graph pipeline inside arg2_host_domain and return clean polygons per Tusi."""
     all_seats, allow_bg, cfg = arg5_all_seats, bool(arg4_allow_bg), arg3_cfg
+    disable_subadmin = bool(cfg.get("disable_modern_subadmin", False))
     host_domain, polities = arg2_host_domain, list(arg1_polities)
     barrier_names = cfg.get("barrier_rivers", [])
+    bg_pts = [(float(bgs[0]), float(bgs[1])) for bgs in cfg.get("bg_seeds", [])]
     out_geoms, prot = {}, set()
+    reach_scales = tusi_topo_helpers.resolve_polity_reach_scales(polities, cfg, allow_bg)
     seat_pts = [(float(t["seat_lon"]), float(t["seat_lat"])) for t in polities]
 
-    atoms = self.build_borderpool_atoms(host_domain, seat_pts, barrier_names)
+    atoms = self.build_borderpool_atoms(host_domain, seat_pts, barrier_names, cfg, bg_pts)
     a_tree = STRtree(atoms)
     for t in polities:
       pts = [(float(t["seat_lon"]), float(t["seat_lat"]))] + [(float(k[0]), float(k[1])) for k in t.get("known_settlements", [])]
@@ -946,31 +963,15 @@ class BorderpoolGraphEngine:
         for idx in a_tree.query(pt):
           if atoms[int(idx)].contains(pt) or atoms[int(idx)].distance(pt) < 1e-6:
             prot.add(int(idx))
-    atoms = self._consolidate_sliver_atoms(atoms, prot)
+    atoms = self._consolidate_sliver_atoms(atoms, prot, disable_subadmin)
 
     seeds, seat_atoms, k_pol, n_anchors = self._collect_cluster_anchors(polities, atoms, host_domain, cfg, allow_bg, all_seats)
-    seat_subs_p = [self._lookup_atom_subadmin(Point(sx, sy)) for sx, sy in seat_pts]
-    adj = self._build_atom_graph(atoms, barrier_names, ({s[0] for s in seat_subs_p if s[0]}, {s[1] for s in seat_subs_p if s[1]}))
+    seat_subs_p = [("", "")]*len(seat_pts) if disable_subadmin else [self._lookup_atom_subadmin(Point(sx, sy)) for sx, sy in seat_pts]
+    adj = self._build_atom_graph(atoms, barrier_names, ({s[0] for s in seat_subs_p if s[0]}, {s[1] for s in seat_subs_p if s[1]}), disable_subadmin)
     n_edges = sum(len(x) for x in adj) // 2
-    labels = self._assign_atoms_topographic(atoms, adj, seeds, seat_atoms, k_pol)
+    labels = self._assign_atoms_topographic(atoms, adj, seeds, seat_atoms, k_pol, reach_scales)
 
-    other_sps = [(p["tusi_id"], Point(float(p["seat_lon"]), float(p["seat_lat"]))) for p in polities]
-    for k, t in enumerate(polities):
-      k_atoms = [atoms[i] for i in range(len(atoms)) if labels[i] == k]
-      if not k_atoms:
-        continue
-      sp = Point(float(t["seat_lon"]), float(t["seat_lat"]))
-      merged = gis_helpers.clean_polygonal_geometry(unary_union(k_atoms))
-      if merged is None or merged.is_empty:
-        continue
-      if merged.geom_type == "MultiPolygon":
-        merged = next((sub for sub in merged.geoms if sub.contains(sp) or sub.distance(sp) < 1e-6), max(merged.geoms, key=lambda s: s.area))
-      if merged.geom_type == "Polygon" and len(merged.interiors) > 0:
-        kept_rings = [r for r in merged.interiors if any(Polygon(r).contains(osp) or Polygon(r).distance(osp) < 1e-5 for pid, osp in other_sps if pid != t["tusi_id"]) or Polygon(r).difference(host_domain).area >= 0.5*Polygon(r).area]
-        merged = Polygon(merged.exterior, kept_rings)
-      if not (merged.contains(sp) or merged.distance(sp) < 1e-6):
-        merged = gis_helpers.clean_polygonal_geometry(unary_union([merged, sp.buffer(0.002).intersection(host_domain)]))
-      out_geoms[t["tusi_id"]] = merged
+    out_geoms = tusi_topo_helpers.assemble_and_smooth_cluster_polygons(self, atoms, labels, polities, host_domain, cfg)
 
     # Return statement
     return out_geoms, len(atoms), n_anchors, n_edges

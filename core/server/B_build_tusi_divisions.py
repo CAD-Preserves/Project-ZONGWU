@@ -204,7 +204,7 @@ class TusiModeller:
     parent_poly = gis_helpers.clean_polygonal_geometry(parent_geoms[0] if len(parent_geoms) == 1 else unary_union(parent_geoms))
 
     for t in self.tusis:
-      if t.get("geometry_mode") == "chgis_direct":
+      if t.get("geometry_mode") in ("chgis_direct", "reference_vectorised"):
         continue
       sp = Point(float(t["seat_lon"]), float(t["seat_lat"]))
       if parent_poly.contains(sp) or parent_poly.distance(sp) < 1e-6:
@@ -344,8 +344,43 @@ class TusiModeller:
     # Return statement
     return arr, recs
 
+  def _build_tier_r_reference (self):
+    """Load planar reference-vectorised polygons for Tibet, Yushu, Hor, Arunachal and Western Kham.
+
+    @return Tuple (ref_geoms_dict, tier_r_union).
+    """
+    # Declare local instance variables.
+    geo_rel = self.config.get("reference_geojson", "gis/sources/tibet_yushu_reference_polygons.geojson")
+    geo_path = os.path.join(self.base_dir, geo_rel)
+    ref_geoms = {}
+
+    if not os.path.exists(geo_path):
+      print(f"[ERROR] Missing reference_geojson at {geo_path}", file=sys.stderr)
+      return ref_geoms, None
+
+    with open(geo_path, "r", encoding="utf-8") as fh:
+      feats = json.load(fh).get("features", [])
+
+    for feat in feats:
+      props = feat.get("properties", {})
+      if props.get("feature_role") != "polity":
+        continue
+      tid = props.get("tusi_id")
+      if tid not in self.tusi_by_id or self.tusi_by_id[tid].get("geometry_mode") != "reference_vectorised":
+        continue
+      geom = gis_helpers.clean_polygonal_geometry(shape(feat["geometry"]))
+      if geom is not None and not geom.is_empty:
+        ref_geoms[tid] = geom
+        self.tier_map[tid] = "tier_r"
+
+    tier_r_union = gis_helpers.clean_polygonal_geometry(unary_union(list(ref_geoms.values()))) if ref_geoms else None
+    print(f"[STEP 1B] Tier R reference: {len(ref_geoms)} polities loaded from {geo_rel}")
+
+    # Return statement
+    return ref_geoms, tier_r_union
+
   def _resolve_all_overlaps (self, arg1_tusi_geoms, arg2_tusi_by_id):
-    """Round all 425 polygons to 5 decimals and resolve every pairwise overlap sliver.
+    """Round all modelled polygons to 5 decimals and resolve every pairwise overlap sliver.
 
     @param arg1_tusi_geoms Dict mapping tusi_id to Shapely polygon.
     @param arg2_tusi_by_id Dict mapping tusi_id to catalog entry.
@@ -359,12 +394,14 @@ class TusiModeller:
     all_sps = [(tid_o, Point(float(t_o["seat_lon"]), float(t_o["seat_lat"]))) for tid_o, t_o in tusi_by_id.items()]
     buf_eps = 1.2*(10.0**(-self.precision))
     cleaned = {}
-    tier_prio = {"tier_a": 0, "tier_b": 1, "tier_c": 2}
-    ordered_ids = sorted(tusi_geoms.keys(), key=lambda tid: (tier_prio.get(self.tier_map.get(tid, "tier_c"), 2), tid))
+    tier_prio = {"tier_r": 0, "tier_a": 1, "tier_b": 2, "tier_c": 3}
+    ordered_ids = sorted(tusi_geoms.keys(), key=lambda tid: (tier_prio.get(self.tier_map.get(tid, "tier_c"), 3), tid))
 
     def sanitize_part (geom, tid_key, keep_holes=False):
-      if geom is None or geom.is_empty or self.tier_map.get(tid_key) == "tier_a":
+      if geom is None or geom.is_empty:
         return geom
+      if self.tier_map.get(tid_key) in ("tier_r", "tier_a"):
+        return gis_helpers.clean_polygonal_geometry(geom)
       if geom.geom_type == "MultiPolygon":
         sp = Point(float(tusi_by_id[tid_key]["seat_lon"]), float(tusi_by_id[tid_key]["seat_lat"]))
         geom = next((sub for sub in geom.geoms if sub.contains(sp) or sub.distance(sp) < 1e-9), max(geom.geoms, key=lambda s: s.area))
@@ -387,7 +424,7 @@ class TusiModeller:
         if tid_a not in cleaned:
           continue
         ga = cleaned[tid_a]
-        pa = tier_prio.get(self.tier_map.get(tid_a, "tier_c"), 2)
+        pa = tier_prio.get(self.tier_map.get(tid_a, "tier_c"), 3)
         for x in range(i + 1, len(ordered_ids)):
           tid_b = ordered_ids[x]
           if tid_b not in cleaned:
@@ -397,7 +434,7 @@ class TusiModeller:
             continue
           if ga.intersects(gb) and ga.intersection(gb).area > 1e-11:
             changed = True
-            pb = tier_prio.get(self.tier_map.get(tid_b, "tier_c"), 2)
+            pb = tier_prio.get(self.tier_map.get(tid_b, "tier_c"), 3)
             trim_b = (pb > pa) or (pb == pa and gb.area >= ga.area)
             keep_g, trim_id = (ga, tid_b) if trim_b else (gb, tid_a)
             cut_g = keep_g if pass_i == 0 else keep_g.buffer(buf_eps, join_style="mitre")
@@ -489,10 +526,16 @@ class TusiModeller:
     return {"mean_sinuosity": voronoi["mean_sinuosity"], "modelled_holes": len(hole_issues), "modelled_multiparts": len(multipart_issues), "seats_inside": seat_inside_cnt, "total": len(tusi_geoms), "voronoi_violations": len(voronoi["voronoi_violations"])}
 
   def build_all_tusis (self):
-    """Execute the three-tier spatial pipeline for all 425 polities and verify assertions."""
+    """Execute the spatial pipeline for all catalog polities and verify assertions."""
     direct_geoms, tier_a_union = self._build_tier_a_direct()
-    excluded_parts = [tier_a_union] if tier_a_union is not None else []
+    ref_geoms, tier_r_union = self._build_tier_r_reference()
+    excluded_parts = []
+    if tier_a_union is not None:
+      excluded_parts.append(tier_a_union)
+    if tier_r_union is not None:
+      excluded_parts.append(tier_r_union)
     raw_geoms, tier_b_geoms, tier_c_geoms = dict(direct_geoms), {}, {}
+    raw_geoms.update(ref_geoms)
 
     for tb_cfg in self.config.get("tier_b_clusters", []):
       parent_poly, b_part = self._build_tier_b_subdivided(tb_cfg)
@@ -501,7 +544,7 @@ class TusiModeller:
       raw_geoms.update(b_part)
 
     excluded_union = gis_helpers.clean_polygonal_geometry(unary_union(excluded_parts))
-    tier_c_candidates = [t for t in self.tusis if t.get("geometry_mode") != "chgis_direct" and t["tusi_id"] not in tier_b_geoms]
+    tier_c_candidates = [t for t in self.tusis if t.get("geometry_mode") not in ("chgis_direct", "reference_vectorised") and t["tusi_id"] not in tier_b_geoms]
     clusters = self.config.get("kriging_clusters", [])
     cluster_doms = {cl["cluster_id"]: self._resolve_cluster_raw_domain(cl) for cl in clusters}
     assigned_c = {cl["cluster_id"]: [] for cl in clusters}
@@ -527,10 +570,10 @@ class TusiModeller:
     self.tusi_geoms = cleaned
 
     # Return statement
-    return {"borderpool_modelled": len(tier_b_geoms) + len(tier_c_geoms), "chgis_direct": len(direct_geoms), "max_overlap_deg2": max_ov, "overlap_pairs": ov_pairs, "tier_b": len(tier_b_geoms), "tier_c": len(tier_c_geoms), "total": val_summary["total"], "validation": val_summary}
+    return {"borderpool_modelled": len(tier_b_geoms) + len(tier_c_geoms), "chgis_direct": len(direct_geoms), "max_overlap_deg2": max_ov, "overlap_pairs": ov_pairs, "reference_vectorised": len(ref_geoms), "tier_b": len(tier_b_geoms), "tier_c": len(tier_c_geoms), "total": val_summary["total"], "validation": val_summary}
 
   def export_geojson (self):
-    """Write all 425 modelled polity features to ./gis/tusi_1912_1953.geojson (WGS84, 5 decimals).
+    """Write all modelled polity features to ./gis/tusi_1912_1953.geojson (WGS84, 5 decimals).
 
     @return Tuple (output_filepath, feature_count).
     """
@@ -598,7 +641,10 @@ class TusiModeller:
               ax.plot(*line.xy, color="#cbbba8", linewidth=0.30, alpha=0.50, zorder=2)
         if self.bp_engine.citas_tree is not None:
           for c_idx in self.bp_engine.citas_tree.query(vp_box):
-            for poly in iter_polys(self.bp_engine.citas_counties[int(c_idx)]["geom"]):
+            c_rec = self.bp_engine.citas_counties[int(c_idx)]
+            if str(c_rec.get("gb") or "").startswith("54"):
+              continue
+            for poly in iter_polys(c_rec["geom"]):
               ax.plot(*poly.exterior.xy, color="#bfb5a4", linewidth=0.35, linestyle="-.", alpha=0.65, zorder=2)
         for feat in self.adm3_features:
           g = shape(feat["geometry"])
