@@ -221,6 +221,42 @@
       }
     }
   },
+  "modern_reference": {
+    "files": {
+      "gb2260_areas": {
+        "filename": "gb2260_areas.json",
+        "url": "https://raw.githubusercontent.com/modood/Administrative-divisions-of-China/master/dist/areas.json"
+      },
+      "gb2260_cities": {
+        "filename": "gb2260_cities.json",
+        "url": "https://raw.githubusercontent.com/modood/Administrative-divisions-of-China/master/dist/cities.json"
+      },
+      "gb2260_provinces": {
+        "filename": "gb2260_provinces.json",
+        "url": "https://raw.githubusercontent.com/modood/Administrative-divisions-of-China/master/dist/provinces.json"
+      },
+      "opencc_st_chars": {
+        "filename": "opencc_STCharacters.txt",
+        "url": "https://raw.githubusercontent.com/BYVoid/OpenCC/master/data/dictionary/STCharacters.txt"
+      },
+      "opencc_ts_chars": {
+        "filename": "opencc_TSCharacters.txt",
+        "url": "https://raw.githubusercontent.com/BYVoid/OpenCC/master/data/dictionary/TSCharacters.txt"
+      },
+      "rus_adm2_geoboundaries": {
+        "filename": "geoBoundaries_RUS_ADM2.geojson",
+        "url": "https://github.com/wmgeolab/geoBoundaries/raw/9469f09/releaseData/gbOpen/RUS/ADM2/geoBoundaries-RUS-ADM2_simplified.geojson"
+      },
+      "tw_townships_g0v": {
+        "filename": "twTown1982.geo.json",
+        "url": "https://raw.githubusercontent.com/g0v/twgeojson/master/json/twTown1982.geo.json"
+      },
+      "tw_townships_geoboundaries": {
+        "filename": "geoBoundaries_TWN_ADM2.geojson",
+        "url": "https://github.com/wmgeolab/geoBoundaries/raw/9469f09/releaseData/gbOpen/TWN/ADM2/geoBoundaries-TWN-ADM2_simplified.geojson"
+      }
+    }
+  },
   "natural_earth": {
     "files": {
       "ne_elevation_points": {
@@ -253,5 +289,12 @@
     "aspect_cos_lat": 35.0,
     "canvas_height": 1200,
     "canvas_width": 1600
+  },
+  "transport_straight_link_filter": {
+    "coarse_mean_segment_deg": 0.15,
+    "coarse_min_length_deg": 0.20,
+    "max_segment_deg": 0.28,
+    "source_schematic_ratio": 0.65,
+    "two_point_min_length_deg": 0.18
   }
 }

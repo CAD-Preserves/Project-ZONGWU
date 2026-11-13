@@ -1,0 +1,675 @@
+// Declarative local-history crosswalk rules, disambiguation tables, and edge cases for Mainland PRC, Taiwan, Mongolia, and Tuva.
+{
+  "schema_version": 1,
+  "chgis_homophone_disambiguation": {
+    "196598": "ningjin_xian_zhaozhou",
+    "196601": "ji_zhou_zhili",
+    "196647": "ningjin_xian_hejian",
+    "196680": "ji_zhou_shuntian",
+    "196783": "xingan_xian_linjiang",
+    "196816": "xingan_xian_guangxin",
+    "196860": "yu_zhou_kaifeng",
+    "196879": "xiangcheng_xian_chenzhou",
+    "196886": "xiangcheng_xian_xuzhou",
+    "196898": "qi_xian",
+    "196918": "yiyang_xian_henan",
+    "196927": "yiyang_xian_ruzhou",
+    "196932": "yu_zhou_nanyang",
+    "197015": "pinglu_xian_shuoping",
+    "197043": "pinglu_xian_jiezhou",
+    "197295": "yongding_zhangguansi",
+    "197309": "rong_xian_liuzhou",
+    "197409": "rong_xian_wuzhou",
+    "197804": "jian_zhou_baoning",
+    "197822": "jian_zhou_chengdu"
+  },
+  "mainland_prc": {
+    "allowed_unit_subtypes": [
+      "xian",
+      "autonomous_xian",
+      "county_level_shi",
+      "urban_qu",
+      "banner_qi",
+      "autonomous_qi",
+      "tequ",
+      "linqu",
+      "sar_district"
+    ],
+    "autonomous_ethnicity_tokens": [
+      "布依族苗族",
+      "布朗族傣族",
+      "藏族羌族",
+      "傣族拉祜族佤族",
+      "傣族佤族",
+      "傣族彝族",
+      "哈尼族彝族",
+      "哈尼族彝族傣族",
+      "回族土族",
+      "拉祜族佤族布朗族傣族",
+      "黎族苗族",
+      "满族蒙古族",
+      "苗族侗族",
+      "苗族土家族",
+      "土家族苗族",
+      "土家族",
+      "维吾尔族",
+      "哈萨克族",
+      "柯尔克孜族",
+      "塔吉克族",
+      "达斡尔族",
+      "鄂温克族",
+      "鄂伦春族",
+      "保安族东乡族撒拉族",
+      "东乡族",
+      "撒拉族",
+      "裕固族",
+      "布依族",
+      "朝鲜族",
+      "独龙族",
+      "毛南族",
+      "仫佬族",
+      "仡佬族",
+      "锡伯族",
+      "蒙古族",
+      "哈尼族",
+      "拉祜族",
+      "纳西族",
+      "景颇族",
+      "傈僳族",
+      "普米族",
+      "怒族",
+      "阿昌族",
+      "德昂族",
+      "基诺族",
+      "水族",
+      "侗族",
+      "苗族",
+      "瑶族",
+      "彝族",
+      "白族",
+      "傣族",
+      "佤族",
+      "壮族",
+      "回族",
+      "藏族",
+      "羌族",
+      "满族",
+      "黎族",
+      "畲族",
+      "土族",
+      "各族",
+      "达斡尔",
+      "鄂温克",
+      "鄂伦春",
+      "哈萨克",
+      "蒙古",
+      "锡伯",
+      "回",
+      "藏",
+      "满",
+      "蒙"
+    ],
+    "dimingzhi_templates": [
+      "<Name>地名志",
+      "<Name>地名录",
+      "<Prov>省志·地名志",
+      "中华人民共和国地名词典·<Prov>卷"
+    ],
+    "fuzhou_lianjiang_disambiguation": {
+      "notes": "Mainland PRC GB/T 2260 350122 is Lianjiang County, Fuzhou (连江县); never conflate with ROC Lienchiang County (Matsu, 連江縣).",
+      "prc_gb_code": "350122",
+      "prc_queries": ["连江县志", "福州市志", "连江县地名志"],
+      "roc_matsu_unit_id": "twn_adm2_lienchiang"
+    },
+    "hong_kong_and_macau": {
+      "810000": {
+        "name_en": "Hong Kong SAR",
+        "name_zh": "香港特别行政区",
+        "name_zh_hant": "香港特別行政區",
+        "search_queries": ["香港志", "香港年鉴", "Hong Kong Annual Report", "香港史", "新界地方志"]
+      },
+      "820000": {
+        "name_en": "Macau SAR",
+        "name_zh": "澳门特别行政区",
+        "name_zh_hant": "澳門特別行政區",
+        "parishes": {
+          "Cotai": ["路氹填海区", "820203"],
+          "NossaSenhoradeFátima": ["花地玛堂区", "820101"],
+          "NossaSenhoradoCarmo": ["嘉模堂区", "820201"],
+          "SantoAntónio": ["圣安多尼堂区", "820102"],
+          "SãoFranciscoXavier": ["圣方济各堂区", "820202"],
+          "SãoLourenço": ["风顺堂区", "820105"],
+          "SãoLázaro": ["望德堂区", "820104"],
+          "Sé": ["大堂区", "820103"]
+        },
+        "search_queries": ["澳门志", "澳门编年史", "澳門史料", "Anuário de Macau"]
+      }
+    },
+    "prc_prov_name_to_gb2": {
+      "Anhui": "34", "Beijing": "11", "Chongqing": "50", "Fujian": "35", "Gansu": "62",
+      "Guangdong": "44", "Guangxi": "45", "Guizhou": "52", "Hainan": "46", "Hebei": "13",
+      "Heilongjiang": "23", "Henan": "41", "Hong Kong": "81", "Hubei": "42", "Hunan": "43",
+      "Jiangsu": "32", "Jiangxi": "36", "Jilin": "22", "Liaoning": "21", "Macau": "82",
+      "NeiMongol": "15", "NingxiaHui": "64", "Qinghai": "63", "Shaanxi": "61", "Shandong": "37",
+      "Shanghai": "31", "Shanxi": "14", "Sichuan": "51", "Tianjin": "12", "XinjiangUygur": "65",
+      "Xizang": "54", "Yunnan": "53", "Zhejiang": "33"
+    },
+    "metropolitan_core_districts": {
+      "Beijing": {
+        "city_zh": "北京",
+        "gb_prefix": "11",
+        "historic_counties": ["宛平县", "大兴县", "北平市", "北京市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志", "市志·建置沿革志", "市志·公安志", "市志·政党志"]
+      },
+      "Changchun": {
+        "city_zh": "长春",
+        "gb_prefix": "2201",
+        "historic_counties": ["长春县", "新京特别市", "长春市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Changsha": {
+        "city_zh": "长沙",
+        "gb_prefix": "4301",
+        "historic_counties": ["长沙县", "善化县", "长沙市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Chengdu": {
+        "city_zh": "成都",
+        "gb_prefix": "5101",
+        "historic_counties": ["成都县", "华阳县", "成都市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Chongqing": {
+        "city_zh": "重庆",
+        "gb_prefix": "5001",
+        "historic_counties": ["巴县", "江北县", "重庆市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志", "市志·公安志"]
+      },
+      "Dalian": {
+        "city_zh": "大连",
+        "gb_prefix": "2102",
+        "historic_counties": ["金县", "大连市", "旅大市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Fuzhou": {
+        "city_zh": "福州",
+        "gb_prefix": "3501",
+        "historic_counties": ["闽县", "侯官县", "闽侯县", "福州市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Guangzhou": {
+        "city_zh": "广州",
+        "gb_prefix": "4401",
+        "historic_counties": ["番禺县", "南海县", "广州市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志", "市志·公安志"]
+      },
+      "Guiyang": {
+        "city_zh": "贵阳",
+        "gb_prefix": "5201",
+        "historic_counties": ["贵筑县", "贵阳市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Hangzhou": {
+        "city_zh": "杭州",
+        "gb_prefix": "3301",
+        "historic_counties": ["杭县", "仁和县", "钱塘县", "杭州市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Harbin": {
+        "city_zh": "哈尔滨",
+        "gb_prefix": "2301",
+        "historic_counties": ["滨江县", "阿城县", "呼兰县", "哈尔滨市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Hohhot": {
+        "city_zh": "呼和浩特",
+        "gb_prefix": "1501",
+        "historic_counties": ["归绥县", "绥远", "呼和浩特市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Jinan": {
+        "city_zh": "济南",
+        "gb_prefix": "3701",
+        "historic_counties": ["历城县", "济南市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Kaifeng": {
+        "city_zh": "开封",
+        "gb_prefix": "4102",
+        "historic_counties": ["开封县", "祥符县", "开封市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Kunming": {
+        "city_zh": "昆明",
+        "gb_prefix": "5301",
+        "historic_counties": ["昆明县", "昆明市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Lanzhou": {
+        "city_zh": "兰州",
+        "gb_prefix": "6201",
+        "historic_counties": ["皋兰县", "兰州市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Lhasa": {
+        "city_zh": "拉萨",
+        "gb_prefix": "5401",
+        "historic_counties": ["拉萨", "拉萨市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·地名志"]
+      },
+      "Nanchang": {
+        "city_zh": "南昌",
+        "gb_prefix": "3601",
+        "historic_counties": ["南昌县", "新建县", "南昌市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Nanjing": {
+        "city_zh": "南京",
+        "gb_prefix": "3201",
+        "historic_counties": ["江宁县", "上元县", "南京市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志", "市志·公安志"]
+      },
+      "Qingdao": {
+        "city_zh": "青岛",
+        "gb_prefix": "3702",
+        "historic_counties": ["即墨县", "胶澳", "青岛市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Shanghai": {
+        "city_zh": "上海",
+        "gb_prefix": "31",
+        "historic_counties": ["上海县", "宝山县", "川沙县", "嘉定县", "松江县", "上海市"],
+        "fenzhi_suffixes": ["市志", "通志·大事记", "军事志", "地名志", "公安志"]
+      },
+      "Shenyang": {
+        "city_zh": "沈阳",
+        "gb_prefix": "2101",
+        "historic_counties": ["沈阳县", "承德县", "奉天市", "沈阳市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Suzhou": {
+        "city_zh": "苏州",
+        "gb_prefix": "3205",
+        "historic_counties": ["吴县", "长洲县", "元和县", "苏州市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Taiyuan": {
+        "city_zh": "太原",
+        "gb_prefix": "1401",
+        "historic_counties": ["阳曲县", "太原县", "太原市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Tianjin": {
+        "city_zh": "天津",
+        "gb_prefix": "12",
+        "historic_counties": ["天津县", "静海县", "宝坻县", "武清县", "宁河县", "蓟县", "天津市"],
+        "fenzhi_suffixes": ["通志", "通志·大事记", "通志·军事志", "通志·地名志", "通志·公安志"]
+      },
+      "Urumqi": {
+        "city_zh": "乌鲁木齐",
+        "gb_prefix": "6501",
+        "historic_counties": ["迪化县", "迪化市", "乌鲁木齐县", "乌鲁木齐市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Wuhan": {
+        "city_zh": "武汉",
+        "gb_prefix": "4201",
+        "historic_counties": ["武昌县", "汉阳县", "江夏县", "夏口县", "汉口市", "武汉市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志", "市志·公安志"]
+      },
+      "Xiamen": {
+        "city_zh": "厦门",
+        "gb_prefix": "3502",
+        "historic_counties": ["思明县", "同安县", "厦门市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Xian": {
+        "city_zh": "西安",
+        "gb_prefix": "6101",
+        "historic_counties": ["长安县", "咸宁县", "西京", "西安市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Xining": {
+        "city_zh": "西宁",
+        "gb_prefix": "6301",
+        "historic_counties": ["西宁县", "西宁市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Yinchuan": {
+        "city_zh": "银川",
+        "gb_prefix": "6401",
+        "historic_counties": ["宁夏县", "宁朔县", "银川市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      },
+      "Zhengzhou": {
+        "city_zh": "郑州",
+        "gb_prefix": "4101",
+        "historic_counties": ["郑县", "郑州市"],
+        "fenzhi_suffixes": ["市志", "市志·大事记", "市志·军事志", "市志·地名志"]
+      }
+    },
+    "post_1953_renamings": {
+      "三亚": ["崖县"],
+      "东至": ["至德县", "建德县"],
+      "丹东": ["安东县", "安东市"],
+      "丹江口": ["均县"],
+      "乌鲁木齐": ["迪化县", "迪化市"],
+      "乐都": ["碾伯县"],
+      "仙桃": ["沔阳县"],
+      "余杭": ["杭县", "钱塘县", "仁和县"],
+      "佳县": ["葭县"],
+      "公主岭": ["怀德县"],
+      "全南": ["虔南县"],
+      "兰州": ["皋兰县"],
+      "剑阁": ["剑州"],
+      "吉首": ["乾城县", "乾州厅"],
+      "吉木萨尔": ["孚远县"],
+      "呼和浩特": ["归绥县", "绥远"],
+      "呼图壁": ["景化县"],
+      "和田": ["和阗县"],
+      "夏河": ["拉卜楞设治局"],
+      "大兴": ["大兴县", "顺天府"],
+      "天长": ["炳辉县"],
+      "宁晋": ["宁晋县"],
+      "宁津": ["宁津县"],
+      "安庆": ["怀宁县"],
+      "宝安": ["新安县", "宝安县"],
+      "察布查尔": ["宁西县"],
+      "小金": ["懋功县"],
+      "尚志": ["珠河县", "苇河县"],
+      "尼勒克": ["巩哈县"],
+      "巴南": ["巴县"],
+      "巴塘": ["巴安县"],
+      "巴里坤": ["镇西县"],
+      "广水": ["应山县"],
+      "康定": ["打箭炉厅", "康定县"],
+      "延安": ["肤施县"],
+      "张家界": ["大庸县"],
+      "彬县": ["邠县"],
+      "徐州": ["铜山县"],
+      "惠州": ["归善县", "惠阳县"],
+      "新干": ["新淦县"],
+      "新龙": ["瞻化县"],
+      "明光": ["嘉山县"],
+      "景洪": ["车里县"],
+      "杭州": ["杭县", "仁和县", "钱塘县"],
+      "松江": ["松江县", "华亭县", "娄县"],
+      "柳州": ["马平县", "柳江县"],
+      "桐乡": ["崇德县"],
+      "梅州": ["梅县", "嘉应州"],
+      "梧州": ["苍梧县"],
+      "武夷山": ["崇安县"],
+      "武穴": ["广济县"],
+      "永州": ["零陵县"],
+      "汉中": ["南郑县"],
+      "汝州": ["临汝县", "汝州"],
+      "汝阳": ["伊阳县"],
+      "泊头": ["交河县"],
+      "海口": ["琼山县"],
+      "淮安": ["山阳县", "淮阴县", "淮安县"],
+      "深圳": ["宝安县", "新安县"],
+      "温州": ["永嘉县"],
+      "渝北": ["江北县"],
+      "浦东": ["川沙县", "南汇县"],
+      "爱辉": ["瑷珲县", "黑河"],
+      "理县": ["理番县"],
+      "理塘": ["理化县"],
+      "盖州": ["盖平县"],
+      "米泉": ["乾德县"],
+      "简阳": ["简州"],
+      "绍兴": ["山阴县", "会稽县", "绍兴县"],
+      "花垣": ["永绥县"],
+      "芒市": ["潞西县", "芒市土司"],
+      "莱州": ["掖县"],
+      "融水": ["融县"],
+      "融安": ["融县"],
+      "衡山": ["衡山县"],
+      "赤壁": ["蒲圻县"],
+      "连云港": ["海州", "东海县"],
+      "那坡": ["镇边县"],
+      "鄞州": ["鄞县"],
+      "金川": ["靖化县"],
+      "金寨": ["立煌县"],
+      "银川": ["宁夏县", "宁朔县"],
+      "门源": ["亹源县"],
+      "阿勒泰": ["承化县"],
+      "雷州": ["海康县"],
+      "霍城": ["绥定县"],
+      "香格里拉": ["中甸县"],
+      "黄山": ["徽州", "歙县", "太平县", "屯溪"],
+      "黑河": ["瑷珲县", "爱辉县"],
+      "龙口": ["黄县"],
+      "七台河": ["勃利县"],
+      "临夏": ["导河县"],
+      "临沧": ["缅宁县"],
+      "五大连池": ["德都县"],
+      "中山": ["香山县"],
+      "于田": ["于阗县"],
+      "兖州": ["滋阳县"],
+      "凤庆": ["顺宁县"],
+      "南宁": ["邕宁县", "宣化县"],
+      "卫辉": ["汲县"],
+      "塔什库尔干": ["蒲犁县"],
+      "富县": ["鄜县"],
+      "宛平": ["宛平县", "顺天府"],
+      "旬阳": ["洵阳县"],
+      "方城": ["裕州"],
+      "桂林": ["临桂县"],
+      "潮州": ["海阳县", "潮安县"],
+      "玉林": ["郁林州", "郁林县"],
+      "瓦房店": ["复县"],
+      "福州": ["闽县", "侯官县", "闽侯县"],
+      "葫芦岛": ["锦西县"],
+      "贵阳": ["贵筑县"],
+      "辛集": ["束鹿县"],
+      "勐海": ["佛海县"],
+      "勐腊": ["镇越县", "南峤县"],
+      "顺平": ["完县"],
+      "韶关": ["曲江县"],
+      "鹿泉": ["获鹿县"],
+      "万州": ["万县"],
+      "闽侯": ["闽县", "侯官县"],
+      "噶尔": ["噶大克"],
+      "宁波": ["鄞县"]
+    }
+  },
+  "mongolia": {
+    "aimag_cyrillic_names": {
+      "Arhangay": {"name_mn_cyrl": "Архангай аймаг", "name_zh": "后杭爱省"},
+      "Bayan-Ölgiy": {"name_mn_cyrl": "Баян-Өлгий аймаг", "name_zh": "巴彦乌列盖省"},
+      "Bayanhongor": {"name_mn_cyrl": "Баянхонгор аймаг", "name_zh": "巴彦洪戈尔省"},
+      "Bulgan": {"name_mn_cyrl": "Булган аймаг", "name_zh": "布尔干省"},
+      "Darhan-Uul": {"name_mn_cyrl": "Дархан-Уул аймаг", "name_zh": "达尔汗乌勒省"},
+      "Dornod": {"name_mn_cyrl": "Дорнод аймаг", "name_zh": "东方省"},
+      "Dornogovi": {"name_mn_cyrl": "Дорноговь аймаг", "name_zh": "东戈壁省"},
+      "Dundgovi": {"name_mn_cyrl": "Дундговь аймаг", "name_zh": "中戈壁省"},
+      "Dzavhan": {"name_mn_cyrl": "Завхан аймаг", "name_zh": "扎布汗省"},
+      "Govi-Altay": {"name_mn_cyrl": "Говь-Алтай аймаг", "name_zh": "戈壁阿尔泰省"},
+      "Govisümber": {"name_mn_cyrl": "Говьсүмбэр аймаг", "name_zh": "戈壁苏木贝尔省"},
+      "Hentiy": {"name_mn_cyrl": "Хэнтий аймаг", "name_zh": "肯特省"},
+      "Hovd": {"name_mn_cyrl": "Ховд аймаг", "name_zh": "科布多省"},
+      "Hövsgöl": {"name_mn_cyrl": "Хөвсгөл аймаг", "name_zh": "库苏古尔省"},
+      "Orhon": {"name_mn_cyrl": "Орхон аймаг", "name_zh": "鄂尔浑省"},
+      "Selenge": {"name_mn_cyrl": "Сэлэнгэ аймаг", "name_zh": "色楞格省"},
+      "Sühbaatar": {"name_mn_cyrl": "Сүхбаатар аймаг", "name_zh": "苏赫巴托尔省"},
+      "Töv": {"name_mn_cyrl": "Төв аймаг", "name_zh": "中央省"},
+      "Ulaanbaatar": {"name_mn_cyrl": "Улаанбаатар хот", "name_zh": "乌兰巴托市"},
+      "Uvs": {"name_mn_cyrl": "Увс аймаг", "name_zh": "乌布苏省"},
+      "Ömnögovi": {"name_mn_cyrl": "Өмнөговь аймаг", "name_zh": "南戈壁省"},
+      "Övörhangay": {"name_mn_cyrl": "Өвөрхангай аймаг", "name_zh": "前杭爱省"}
+    },
+    "bilingual_kazakh_aimags": ["Bayan-Ölgii", "Bayan-Ölgiy"],
+    "bogd_khanate_and_1924_crosswalk": {
+      "Arhangay": {"1912_1923": "Sain Noyon Khan Aimag", "1924_1931": "Tsetserleg Mandal Uul"},
+      "Bayan-Ölgiy": {"1912_1923": "Khovd Frontier", "1924_1931": "Chandmani Uul"},
+      "Bayanhongor": {"1912_1923": "Sain Noyon Khan Aimag", "1924_1931": "Tsetserleg Mandal Uul"},
+      "Bulgan": {"1912_1923": "Tusheet Khan Aimag", "1924_1931": "Bogd Khan Uul"},
+      "Darhan-Uul": {"1912_1923": "Tusheet Khan Aimag", "1924_1931": "Bogd Khan Uul"},
+      "Dornod": {"1912_1923": "Setsen Khan Aimag", "1924_1931": "Khan Khentii Uul"},
+      "Dornogovi": {"1912_1923": "Setsen Khan Aimag", "1924_1931": "Bogd Khan Uul"},
+      "Dundgovi": {"1912_1923": "Tusheet Khan Aimag", "1924_1931": "Bogd Khan Uul"},
+      "Dzavhan": {"1912_1923": "Zasagt Khan Aimag", "1924_1931": "Khan Taishir Uul"},
+      "Govi-Altay": {"1912_1923": "Zasagt Khan Aimag", "1924_1931": "Khan Taishir Uul"},
+      "Govisümber": {"1912_1923": "Setsen Khan Aimag", "1924_1931": "Bogd Khan Uul"},
+      "Hentiy": {"1912_1923": "Setsen Khan Aimag", "1924_1931": "Khan Khentii Uul"},
+      "Hovd": {"1912_1923": "Khovd Frontier", "1924_1931": "Chandmani Uul"},
+      "Hövsgöl": {"1912_1923": "Zasagt Khan Aimag / Ikh Shabi", "1924_1931": "Tsetserleg Mandal Uul"},
+      "Orhon": {"1912_1923": "Tusheet Khan Aimag", "1924_1931": "Bogd Khan Uul"},
+      "Selenge": {"1912_1923": "Tusheet Khan Aimag", "1924_1931": "Bogd Khan Uul"},
+      "Sühbaatar": {"1912_1923": "Setsen Khan Aimag", "1924_1931": "Khan Khentii Uul"},
+      "Töv": {"1912_1923": "Tusheet Khan Aimag", "1924_1931": "Bogd Khan Uul"},
+      "Ulaanbaatar": {"1912_1923": "Tusheet Khan Aimag / Ikh Khuree", "1924_1931": "Ulaanbaatar"},
+      "Uvs": {"1912_1923": "Khovd Frontier", "1924_1931": "Chandmani Uul"},
+      "Ömnögovi": {"1912_1923": "Tusheet Khan Aimag", "1924_1931": "Bogd Khan Uul"},
+      "Övörhangay": {"1912_1923": "Sain Noyon Khan Aimag", "1924_1931": "Tsetserleg Mandal Uul"}
+    },
+    "enclave_aimag_remapping_post_1994": {
+      "Darhan-Uul": "Selenge",
+      "Darkhan-Uul": "Selenge",
+      "Govisümber": "Dornogovi",
+      "Orhon": "Bulgan",
+      "Orkhon": "Bulgan"
+    },
+    "pre_1921_frontier_treatises": [
+      "库伦志略",
+      "乌里雅苏台志略",
+      "科布多政务总册",
+      "蒙古游牧记"
+    ],
+    "soum_cyrl_fallback": {
+      "Airag": "Айраг",
+      "UlanBator": "Улаанбаатар"
+    },
+    "tiered_fallback_hierarchy": [
+      "tier_1_soum_monograph (Сумын түүх / нутаг судлал)",
+      "tier_2_aimag_encyclopaedia (Аймгийн түүх / Нэвтэрхий толь)",
+      "tier_3_mas_and_qing_roc_treatises (ШУА / БНМАУ-ын түүх / 库伦志略 / 乌里雅苏台志略 / 科布多政务总册)"
+    ]
+  },
+  "overlap_thresholds": {
+    "fallback_nearest_if_unmatched": true,
+    "min_area_overlap_ratio": 0.05,
+    "retain_historical_seat_containment": true
+  },
+  "taiwan": {
+    "gadm_twn2_metadata": {
+      "Changhua": {"cho_1912_1920": "Taichu Cho", "name_en": "Changhua County", "name_zh": "彰化縣", "roc_1946_1950": "Taichung County", "shu_1921_1945": "Taichu Shu", "unit_type": "county"},
+      "ChiayiCity": {"cho_1912_1920": "Kagi Cho", "name_en": "Chiayi City", "name_zh": "嘉義市", "roc_1946_1950": "Chiayi City", "shu_1921_1945": "Tainan Shu", "unit_type": "provincial_city"},
+      "ChiayiCounty": {"cho_1912_1920": "Kagi Cho", "name_en": "Chiayi County", "name_zh": "嘉義縣", "roc_1946_1950": "Tainan County", "shu_1921_1945": "Tainan Shu", "unit_type": "county"},
+      "HsinchuCity": {"cho_1912_1920": "Shinchiku Cho", "name_en": "Hsinchu City", "name_zh": "新竹市", "roc_1946_1950": "Hsinchu City", "shu_1921_1945": "Shinchiku Shu", "unit_type": "provincial_city"},
+      "HsinchuCounty": {"cho_1912_1920": "Shinchiku Cho", "name_en": "Hsinchu County", "name_zh": "新竹縣", "roc_1946_1950": "Hsinchu County", "shu_1921_1945": "Shinchiku Shu", "unit_type": "county"},
+      "Hualien": {"cho_1912_1920": "Karenko Cho", "name_en": "Hualien County", "name_zh": "花蓮縣", "roc_1946_1950": "Hualien County", "shu_1921_1945": "Karenko Cho", "unit_type": "county"},
+      "Kaohsiung": {"cho_1912_1920": "Tainan Cho", "name_en": "Kaohsiung City", "name_zh": "高雄市", "roc_1946_1950": "Kaohsiung County", "shu_1921_1945": "Takao Shu", "unit_type": "special_municipality"},
+      "Keelung": {"cho_1912_1920": "Taihoku Cho", "name_en": "Keelung City", "name_zh": "基隆市", "roc_1946_1950": "Keelung City", "shu_1921_1945": "Taihoku Shu", "unit_type": "provincial_city"},
+      "Kinmen": {"cho_1912_1920": "Fujian (Quanzhou)", "name_en": "Kinmen County", "name_zh": "金門縣", "roc_1946_1950": "Kinmen County", "roc_fujian_offshore": true, "shu_1921_1945": "Fujian / IJN Occupied (1937-1945)", "unit_type": "roc_fujian_county"},
+      "Lienkiang": {"cho_1912_1920": "Fujian (Fuzhou)", "name_en": "Lienchiang County (Matsu)", "name_zh": "連江縣", "roc_1946_1950": "Lienchiang County", "roc_fujian_offshore": true, "shu_1921_1945": "Fujian", "unit_type": "roc_fujian_county"},
+      "Miaoli": {"cho_1912_1920": "Shinchiku Cho", "name_en": "Miaoli County", "name_zh": "苗栗縣", "roc_1946_1950": "Hsinchu County", "shu_1921_1945": "Shinchiku Shu", "unit_type": "county"},
+      "Nantou": {"cho_1912_1920": "Nanto Cho", "name_en": "Nantou County", "name_zh": "南投縣", "roc_1946_1950": "Taichung County", "shu_1921_1945": "Taichu Shu", "unit_type": "county"},
+      "NewTaipei": {"cho_1912_1920": "Taihoku Cho", "name_en": "New Taipei City", "name_zh": "新北市", "roc_1946_1950": "Taipei County", "shu_1921_1945": "Taihoku Shu", "unit_type": "special_municipality"},
+      "Penghu": {"cho_1912_1920": "Hoko Cho", "name_en": "Penghu County", "name_zh": "澎湖縣", "roc_1946_1950": "Penghu County", "shu_1921_1945": "Takao Shu / Hoko Cho", "unit_type": "county"},
+      "Pingtung": {"cho_1912_1920": "Ako Cho", "name_en": "Pingtung County", "name_zh": "屏東縣", "roc_1946_1950": "Kaohsiung County", "shu_1921_1945": "Takao Shu", "unit_type": "county"},
+      "Taichung": {"cho_1912_1920": "Taichu Cho", "name_en": "Taichung City", "name_zh": "臺中市", "roc_1946_1950": "Taichung County", "shu_1921_1945": "Taichu Shu", "unit_type": "special_municipality"},
+      "Tainan": {"cho_1912_1920": "Tainan Cho", "name_en": "Tainan City", "name_zh": "臺南市", "roc_1946_1950": "Tainan County", "shu_1921_1945": "Tainan Shu", "unit_type": "special_municipality"},
+      "Taipei": {"cho_1912_1920": "Taihoku Cho", "name_en": "Taipei City", "name_zh": "臺北市", "roc_1946_1950": "Taipei City", "shu_1921_1945": "Taihoku Shu", "unit_type": "special_municipality"},
+      "Taitung": {"cho_1912_1920": "Taito Cho", "name_en": "Taitung County", "name_zh": "臺東縣", "roc_1946_1950": "Taitung County", "shu_1921_1945": "Taito Cho", "unit_type": "county"},
+      "Taoyuan": {"cho_1912_1920": "Toen Cho", "name_en": "Taoyuan City", "name_zh": "桃園市", "roc_1946_1950": "Hsinchu County", "shu_1921_1945": "Shinchiku Shu", "unit_type": "special_municipality"},
+      "Yilan": {"cho_1912_1920": "Giran Cho", "name_en": "Yilan County", "name_zh": "宜蘭縣", "roc_1946_1950": "Taipei County", "shu_1921_1945": "Taihoku Shu", "unit_type": "county"},
+      "Yulin": {"cho_1912_1920": "Kagi Cho", "name_en": "Yunlin County", "name_zh": "雲林縣", "roc_1946_1950": "Tainan County", "shu_1921_1945": "Tainan Shu", "unit_type": "county"}
+    },
+    "indigenous_mountain_townships": [
+      "烏來區",
+      "復興區",
+      "尖石鄉",
+      "五峰鄉",
+      "泰安鄉",
+      "和平區",
+      "信義鄉",
+      "仁愛鄉",
+      "阿里山鄉",
+      "那瑪夏區",
+      "桃源區",
+      "茂林區",
+      "三地門鄉",
+      "霧臺鄉",
+      "瑪家鄉",
+      "泰武鄉",
+      "來義鄉",
+      "春日鄉",
+      "獅子鄉",
+      "牡丹鄉",
+      "大同鄉",
+      "南澳鄉",
+      "秀林鄉",
+      "萬榮鄉",
+      "卓溪鄉",
+      "延平鄉",
+      "海端鄉",
+      "達仁鄉",
+      "金峰鄉",
+      "蘭嶼鄉"
+    ],
+    "preferred_editions": {
+      "avoid": ["censored_1950s_1960s_first_editions_only", "post_1951_only_xuxiu_without_base"],
+      "colonial_surveys": ["州管內概況及事務概要", "廳管內概況", "郡要覽", "理蕃誌稿", "高砂族調查書"],
+      "prefer": ["1990_2015_chongxiu_county_city", "township_xiangzhenshiquzhi"]
+    },
+    "roc_fujian_offshore": {
+      "Kinmen": {
+        "disambiguate_from": ["同安县志", "厦门市志"],
+        "name_zh": "金門縣",
+        "search_queries": ["金門縣志", "重修金門縣志"]
+      },
+      "Lienkiang": {
+        "disambiguate_from": ["连江县志 (PRC 350122 Fuzhou)"],
+        "name_zh": "連江縣",
+        "search_queries": ["連江縣志", "馬祖列島志", "重修連江縣志"]
+      }
+    }
+  },
+  "time_domain_rules": {
+    "clip_newspapers_to": ["1912-01-01", "1953-12-31"],
+    "reject_post_1953_only_continuations": ["第二轮续志", "续志 (1986+)", "續修 (post-1953 only)"],
+    "reject_pre_1912_imperial_eras": ["明", "清", "康熙", "乾隆", "嘉庆", "道光", "同治", "光绪", "宣统"],
+    "tag_republican_or_colonial_imprints_as": "partial_contemporaneous_1912_1953"
+  },
+  "tuva": {
+    "cross_border_adjustments": {
+      "darkhad_tengis": "Todzha / Kaa-Khem border sector adjacent to Hövsgöl (Darkhad Basin)",
+      "davst_uvs_basin": "1932/1958 Tuva-Mongolia Davst / Uvs Lake northern salt-basin border adjustment (Tes-Khem, Ovyur, Erzin <-> Uvs)",
+      "tsagaan_nuur_mongun_taiga": "Mongun-Tayginsky / Bayan-Ölgii cross-border pasture sector"
+    },
+    "kozhuun_metadata": {
+      "Barun-Khemchiksky Kozhuun": {"border_flags": [], "name_en": "Barun-Khemchik Kozhuun", "name_ru": "Барун-Хемчикский кожуун", "name_tyv": "Барыын-Хемчик кожуун", "parent_1922_1953_khoshuuns": ["Barun-Khemchik"], "slug": "barun_khemchik", "unit_type": "kozhuun"},
+      "Bay-Tayginsky Kozhuun": {"border_flags": [], "name_en": "Bay-Tayga Kozhuun", "name_ru": "Бай-Тайгинский кожуун", "name_tyv": "Бай-Тайга кожуун", "parent_1922_1953_khoshuuns": ["Barun-Khemchik", "Bay-Tayga"], "slug": "bay_tayga", "unit_type": "kozhuun"},
+      "Chaa-Kholsky Kozhuun": {"border_flags": [], "name_en": "Chaa-Khol Kozhuun", "name_ru": "Чаа-Хольский кожуун", "name_tyv": "Чаа-Хөл кожуун", "parent_1922_1953_khoshuuns": ["Ulug-Khem", "Chaa-Khol"], "slug": "chaa_khol", "unit_type": "kozhuun"},
+      "Chedi-Kholsky Kozhuun": {"border_flags": ["post_1953_kozhuun_split"], "name_en": "Chedi-Khol Kozhuun", "name_ru": "Чеди-Хольский кожуун", "name_tyv": "Чеди-Хөл кожуун", "parent_1922_1953_khoshuuns": ["Tandi", "Ulug-Khem"], "slug": "chedi_khol", "unit_type": "kozhuun"},
+      "Dzun-Khemchiksky Kozhuun": {"border_flags": [], "name_en": "Dzun-Khemchik Kozhuun", "name_ru": "Дзун-Хемчикский кожуун", "name_tyv": "Чөөн-Хемчик кожуун", "parent_1922_1953_khoshuuns": ["Dzun-Khemchik"], "slug": "dzun_khemchik", "unit_type": "kozhuun"},
+      "Erzinsky Kozhuun": {"border_flags": ["davst_uvs_basin"], "name_en": "Erzin Kozhuun", "name_ru": "Эрзинский кожуун", "name_tyv": "Эрзин кожуун", "parent_1922_1953_khoshuuns": ["Tes-Khem", "Erzin"], "slug": "erzin", "unit_type": "kozhuun"},
+      "Kaa-Khemsky District": {"border_flags": [], "name_en": "Kaa-Khem Kozhuun", "name_ru": "Каа-Хемский кожуун", "name_tyv": "Каа-Хем кожуун", "parent_1922_1953_khoshuuns": ["Kaa-Khem"], "slug": "kaa_khem", "unit_type": "kozhuun"},
+      "Mongun-Tayginsky Kozhuun": {"border_flags": ["tsagaan_nuur_mongun_taiga"], "name_en": "Mongun-Tayga Kozhuun", "name_ru": "Монгун-Тайгинский кожуун", "name_tyv": "Мөңгүн-Тайга кожуун", "parent_1922_1953_khoshuuns": ["Barun-Khemchik", "Mongun-Tayga"], "slug": "mongun_tayga", "unit_type": "kozhuun"},
+      "Ovyursky Kozhuun": {"border_flags": ["davst_uvs_basin"], "name_en": "Ovyur Kozhuun", "name_ru": "Овюрский кожуун", "name_tyv": "Өвүр кожуун", "parent_1922_1953_khoshuuns": ["Dzun-Khemchik", "Ovyur"], "slug": "ovyur", "unit_type": "kozhuun"},
+      "Piy-Khemsky Kozhuun": {"border_flags": [], "name_en": "Piy-Khem Kozhuun", "name_ru": "Пий-Хемский кожуун", "name_tyv": "Бии-Хем кожуун", "parent_1922_1953_khoshuuns": ["Ulug-Khem", "Piy-Khem"], "slug": "piy_khem", "unit_type": "kozhuun"},
+      "Sut-Kholsky Kozhuun": {"border_flags": [], "name_en": "Sut-Khol Kozhuun", "name_ru": "Сут-Хольский кожуун", "name_tyv": "Сүт-Хөл кожуун", "parent_1922_1953_khoshuuns": ["Dzun-Khemchik", "Sut-Khol"], "slug": "sut_khol", "unit_type": "kozhuun"},
+      "Tandinsky Kozhuun": {"border_flags": [], "name_en": "Tandi Kozhuun", "name_ru": "Тандинский кожуун", "name_tyv": "Таңды кожуун", "parent_1922_1953_khoshuuns": ["Ulug-Khem", "Tandi"], "slug": "tandi", "unit_type": "kozhuun"},
+      "Tere-Kholsky Kozhuun": {"border_flags": ["post_1953_kozhuun_split", "darkhad_tengis"], "name_en": "Tere-Khol Kozhuun", "name_ru": "Тере-Хольский кожуун", "name_tyv": "Тере-Хөл кожуун", "parent_1922_1953_khoshuuns": ["Kaa-Khem", "Tere-Khol"], "slug": "tere_khol", "unit_type": "kozhuun"},
+      "Tes-Khemsky Kozhuun": {"border_flags": ["davst_uvs_basin"], "name_en": "Tes-Khem Kozhuun", "name_ru": "Тес-Хемский кожуун", "name_tyv": "Тес-Хем кожуун", "parent_1922_1953_khoshuuns": ["Tes-Khem"], "slug": "tes_khem", "unit_type": "kozhuun"},
+      "Todzhinsky Kozhuun": {"border_flags": ["darkhad_tengis"], "name_en": "Todzha Kozhuun", "name_ru": "Тоджинский кожуун", "name_tyv": "Тожу кожуун", "parent_1922_1953_khoshuuns": ["Todzha"], "slug": "todzha", "unit_type": "kozhuun"},
+      "Ulug-Khemsky Kozhuun": {"border_flags": [], "name_en": "Ulug-Khem Kozhuun", "name_ru": "Улуг-Хемский кожуун", "name_tyv": "Улуг-Хем кожуун", "parent_1922_1953_khoshuuns": ["Ulug-Khem"], "slug": "ulug_khem", "unit_type": "kozhuun"},
+      "Кызылский кожуун": {"border_flags": ["post_1953_kozhuun_split"], "name_en": "Kyzylsky Kozhuun", "name_ru": "Кызылский кожуун", "name_tyv": "Кызыл кожуун", "parent_1922_1953_khoshuuns": ["Kyzyl", "Ulug-Khem", "Kaa-Khem", "Piy-Khem"], "slug": "kyzylsky", "unit_type": "kozhuun"},
+      "городской округ Ак-Довурак": {"border_flags": ["post_1953_city_split"], "name_en": "Ak-Dovurak City", "name_ru": "городской округ Ак-Довурак", "name_tyv": "Ак-Довурак хоорай", "parent_1922_1953_khoshuuns": ["Barun-Khemchik"], "slug": "ak_dovurak", "unit_type": "republic_city"},
+      "городской округ Кызыл": {"border_flags": [], "name_en": "Kyzyl City", "name_ru": "городской округ Кызыл", "name_tyv": "Кызыл хоорай", "parent_1922_1953_khoshuuns": ["Kyzyl"], "slug": "kyzyl", "unit_type": "republic_city"}
+    },
+    "post_1953_kozhuun_splits": {
+      "Ak-Dovurak": ["Barun-Khemchik"],
+      "Chedi-Khol": ["Tandi", "Ulug-Khem"],
+      "Kyzylsky": ["Kyzyl", "Ulug-Khem", "Kaa-Khem", "Piy-Khem"],
+      "Tere-Khol": ["Kaa-Khem", "Kyzylsky"]
+    },
+    "tigpi_republic_compendia": [
+      "История Тувы (ТНИИЯЛИ / ТИГПИ)",
+      "Учёные записки ТНИИЯЛИ / ТИГПИ",
+      "Тувинская правда",
+      "Шын"
+    ]
+  }
+}

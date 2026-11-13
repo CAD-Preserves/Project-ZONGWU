@@ -6,5 +6,6 @@ tests
 /**/__pycache__
 # File Extensions
 *.npz
+*.pdf
 *.pyc
 *.zip

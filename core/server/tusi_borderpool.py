@@ -24,15 +24,7 @@ class BorderpoolGraphEngine:
 
   def __init__ (self, arg1_base_dir, arg2_config, arg3_elev_builder, arg4_adm3_map, arg5_waterways, arg6_roads, arg7_towns, arg8_adm3_features=None):
     """Initialise spatial indices for CHGIS, CITAS 1990, GADM-3, HydroBASINS, HydroRIVERS, contours, and settlements.
-
-    @param arg1_base_dir Root workspace directory.
-    @param arg2_config Parsed tusi_modelling_config.json5 dictionary.
-    @param arg3_elev_builder Initialised ElevationContourBuilder instance.
-    @param arg4_adm3_map Dict mapping CHGIS 1911 unit_id -> Polygon.
-    @param arg5_waterways List of (props, LineString) tuples from waterways_1912_1953.geojson.
-    @param arg6_roads List of (props, LineString) tuples from roads_1912_1953.geojson.
-    @param arg7_towns Tuple (town_pts_ndarray, town_recs_list) from v6_1911_twn_pts_utf.zip.
-    @param arg8_adm3_features Optional list of adm_3_1911 GeoJSON feature dicts for county name stems.
+    @param arg1_base_dir Root dir; arg2_config modelling cfg; arg3_elev_builder DEM builder; arg4_adm3_map CHGIS dict; arg5_waterways waterways; arg6_roads roads; arg7_towns towns; arg8_adm3_features CHGIS props.
     """
     # Convert from parameters
     adm3_features = arg8_adm3_features or []
@@ -81,14 +73,9 @@ class BorderpoolGraphEngine:
     self._load_borderpool_layers()
 
   def _assign_atoms_topographic (self, arg1_atoms, arg2_adj, arg3_seeds, arg4_seat_atoms, arg5_k_pol):
-    """Run multi-source Dijkstra + strict seat-connected component enforcement over borderpool atoms.
-
-    @param arg1_atoms List of Polygon atoms.
-    @param arg2_adj Adjacency list from _build_atom_graph.
-    @param arg3_seeds Dict class_id -> [(atom_idx, init_cost)].
-    @param arg4_seat_atoms List of seat atom indices per polity k in 0..k_pol-1.
-    @param arg5_k_pol Number of active Tusis (class >= k_pol is background).
-    @return Integer array of class labels of length len(arg1_atoms).
+    """Run multi-source Dijkstra, settlement-corridor backbone, and seat-connected contiguity over atoms.
+    @param arg1_atoms Polygon atoms; arg2_adj graph edges; arg3_seeds seeds dict; arg4_seat_atoms seat idxs; arg5_k_pol polity count.
+    @return Integer list of class labels per atom.
     """
     # Convert from parameters
     adj = arg2_adj
@@ -100,14 +87,42 @@ class BorderpoolGraphEngine:
     # Declare local instance variables.
     dist = [1e18]*len(atoms)
     labels = [-1]*len(atoms)
-    locked = {}
+    locked = {seat_atoms[k]: k for k in range(k_pol) if seat_atoms[k] >= 0}
     n = len(atoms)
     pq = []
 
+    bb_claims = {}
     for k in range(k_pol):
       sa = seat_atoms[k]
-      if sa >= 0:
-        locked[sa] = k
+      sec_targets = {a for a, c in seeds.get(k, []) if a != sa and c <= 0.05}
+      if sa < 0 or not sec_targets:
+        continue
+      dist_b, prev_b, pq_b, rem_t = {sa: 0.0}, {}, [(0.0, sa)], set(sec_targets)
+      for _ in range(n*8):
+        if not pq_b or not rem_t:
+          break
+        db, u = heapq.heappop(pq_b)
+        if db > dist_b.get(u, 1e9) + 1e-12 or db > 1.8:
+          continue
+        rem_t.discard(u)
+        for v, w in adj[u]:
+          if v in locked and locked[v] != k:
+            continue
+          nd = db + w
+          if nd < dist_b.get(v, 1e9):
+            dist_b[v], prev_b[v] = nd, u
+            heapq.heappush(pq_b, (nd, v))
+      for tg in sec_targets:
+        cur = tg
+        for _ in range(n):
+          if cur == sa or cur not in prev_b:
+            break
+          bb_claims.setdefault(cur, set()).add(k)
+          cur = prev_b[cur]
+
+    for a_bb, kset in bb_claims.items():
+      if len(kset) == 1 and a_bb not in locked:
+        seeds.setdefault(next(iter(kset)), []).append((a_bb, 0.015))
 
     for cls_id, seed_list in seeds.items():
       for ai, c0 in seed_list:
@@ -192,16 +207,15 @@ class BorderpoolGraphEngine:
     # Return statement
     return labels
 
-  def _build_atom_graph (self, arg1_atoms, arg2_barrier_names):
-    """Construct weighted planar adjacency graph over borderpool atoms using relief, river, county, and road costs.
-
-    @param arg1_atoms List of Polygon atoms.
-    @param arg2_barrier_names List of barrier river substrings.
+  def _build_atom_graph (self, arg1_atoms, arg2_barrier_names, arg3_seat_subs=None):
+    """Construct weighted planar adjacency graph over borderpool atoms (relief, river, county, road).
+    @param arg1_atoms Polygon atoms; arg2_barrier_names river names; arg3_seat_subs (seat_gbs, seat_gids).
     @return List of adjacency dicts: adj[u] = [(v, edge_cost), ...].
     """
     # Convert from parameters
     atoms = arg1_atoms
     barrier_names = [b.lower() for b in (arg2_barrier_names or [])]
+    seat_gbs, seat_gids = arg3_seat_subs if arg3_seat_subs else (set(), set())
 
     # Declare local instance variables.
     adj = [[] for _ in range(len(atoms))]
@@ -210,6 +224,7 @@ class BorderpoolGraphEngine:
     ridge_w = float(self.weights.get("ridge_relief_weight", 2.20))
     riv_w = float(self.weights.get("river_barrier_cost", 0.42))
     road_f = float(self.weights.get("road_corridor_factor", 0.76))
+    sub_seat_w = float(self.weights.get("subadmin_seat_boundary_cost", 1.30))
     sub_w = float(self.weights.get("subadmin_boundary_cost", 0.36))
 
     if n <= 1:
@@ -238,22 +253,34 @@ class BorderpoolGraphEngine:
     local_roads = [self.road_lines[int(r_idx)] for r_idx in self.road_tree.query(clip_box)] if self.road_tree is not None else []
     prep_road = shapely.prepared.prep(unary_union(local_roads).buffer(0.015)) if local_roads else None
 
-    tree = STRtree(atoms)
+    atoms_r = [gis_helpers.round_geometry(a, 5) or a for a in atoms]
+    tree = STRtree(atoms_r)
     seen_pairs = set()
     for u in range(n):
-      au = atoms[u]
+      au = atoms_r[u]
       for v_raw in tree.query(au.buffer(2e-4)):
         v = int(v_raw)
         if v <= u or (u, v) in seen_pairs:
           continue
         seen_pairs.add((u, v))
-        inter = au.boundary.intersection(atoms[v].boundary)
-        if inter.is_empty or inter.length < 1e-4:
+        inter = au.boundary.intersection(atoms_r[v].boundary)
+        if inter.is_empty:
+          continue
+        lin_parts = []
+        for g_part in (inter.geoms if hasattr(inter, "geoms") else [inter]):
+          if g_part.geom_type in ("LineString", "LinearRing") and len(g_part.coords) >= 2:
+            lin_parts.append(LineString(g_part.coords) if g_part.geom_type == "LinearRing" else g_part)
+          elif g_part.geom_type == "MultiLineString":
+            lin_parts.extend(ls for ls in g_part.geoms if len(ls.coords) >= 2)
+        if not lin_parts or sum(float(lp.length) for lp in lin_parts) < 1.5e-4:
+          continue
+        lin_geom = linemerge(lin_parts) if len(lin_parts) > 1 else lin_parts[0]
+        if lin_geom.is_empty or lin_geom.length <= 0.0:
           continue
 
         d_uv = max(0.005, math.hypot(rp_lons[u] - rp_lons[v], rp_lats[u] - rp_lats[v]))
-        mid = inter.interpolate(0.5, normalized=True) if inter.geom_type in ("LineString", "MultiLineString") else inter.centroid
-        edge_pts = [inter.interpolate(0.25, normalized=True), mid, inter.interpolate(0.75, normalized=True)] if inter.geom_type in ("LineString", "MultiLineString") else [mid]
+        mid = lin_geom.interpolate(0.5, normalized=True)
+        edge_pts = [lin_geom.interpolate(0.25, normalized=True), mid, lin_geom.interpolate(0.75, normalized=True)]
         edge_elev = float(np.max(self.elev_builder.sample_elevation([p.x for p in edge_pts], [p.y for p in edge_pts])))
         saddle_prom = max(0.0, edge_elev - min(float(atom_elevs[u]), float(atom_elevs[v])))
         elev_diff = abs(float(atom_elevs[u]) - float(atom_elevs[v]))
@@ -262,7 +289,7 @@ class BorderpoolGraphEngine:
         gb_u, gid_u = subadmins[u]
         gb_v, gid_v = subadmins[v]
         if (gb_u and gb_v and gb_u != gb_v) or (gid_u and gid_v and gid_u != gid_v):
-          cost += sub_w
+          cost += sub_w + (sub_seat_w if (gb_u in seat_gbs or gb_v in seat_gbs or gid_u in seat_gids or gid_v in seat_gids) else 0.0)
 
         if prep_riv is not None and prep_riv.intersects(mid):
           cost += riv_w
@@ -309,14 +336,8 @@ class BorderpoolGraphEngine:
     return pts
 
   def _collect_cluster_anchors (self, arg1_polities, arg2_atoms, arg3_host_domain, arg4_cluster, arg5_allow_bg, arg6_all_seats):
-    """Map Tusi seats, known_settlements, gazetteers, and vetted background seeds onto borderpool atom indices.
-
-    @param arg1_polities List of catalog dicts in this cluster.
-    @param arg2_atoms List of borderpool Polygon atoms.
-    @param arg3_host_domain Host domain polygon.
-    @param arg4_cluster Cluster configuration dict.
-    @param arg5_allow_bg True when external background class K is enabled.
-    @param arg6_all_seats Array (M, 2) of ALL 425 Tusi seat coords nationwide for hygiene check.
+    """Map Tusi seats, known_settlements, namesake counties, and vetted background seeds onto atoms.
+    @param arg1_polities polities; arg2_atoms atoms; arg3_host_domain host poly; arg4_cluster cfg; arg5_allow_bg bg flag; arg6_all_seats all seats.
     @return Tuple (seeds_dict, seat_atom_list, k_pol, n_anchors).
     """
     # Convert from parameters
@@ -359,20 +380,24 @@ class BorderpoolGraphEngine:
 
     seat_atom_set = {a for a in seat_atoms if a >= 0}
     pos_coords = [(float(t["seat_lon"]), float(t["seat_lat"])) for t in polities]
+    seat_subs = [self._lookup_atom_subadmin(Point(px, py)) for px, py in pos_coords]
+    seat_gbs = {s[0] for s in seat_subs if s[0]}
+    seat_gids = {s[1] for s in seat_subs if s[1]}
 
-    # 2. Known settlements & curated historical valley settlements (reject contested multi-owner atoms)
+    # 2. Known settlements & curated historical valley settlements (reject foreign-seated & multi-owner atoms)
     for k, t in enumerate(polities):
       sx, sy = float(t["seat_lon"]), float(t["seat_lat"])
+      sgb, sgid = seat_subs[k]
       for ks in t.get("known_settlements", []):
         kx, ky = float(ks[0]), float(ks[1])
         d_own = math.hypot(kx - sx, ky - sy)
         if d_own < 1e-4:
           continue
-        too_close_other = any(
-          math.hypot(kx - float(ot["seat_lon"]), ky - float(ot["seat_lat"])) < min(0.16, 0.45*d_own)
-          for o_k, ot in enumerate(polities) if o_k != k
-        )
-        if too_close_other:
+        kgb, kgid = self._lookup_atom_subadmin(Point(kx, ky))
+        if (kgb and kgb != sgb and kgb in seat_gbs) or (kgid and kgid != sgid and kgid in seat_gids):
+          continue
+        too_close = any(math.hypot(kx - float(ot["seat_lon"]), ky - float(ot["seat_lat"])) < min(0.16, 0.45*d_own) for ok, ot in enumerate(polities) if ok != k)
+        if too_close:
           continue
         ai = locate_atom(kx, ky)
         if ai >= 0 and ai not in seat_atom_set:
@@ -386,17 +411,33 @@ class BorderpoolGraphEngine:
         n_anchors += 1
 
     protected_bg_atoms = seat_atom_set | {ai for ai, owners in settlement_hits.items() if len(owners) == 1}
+    gadm_nm = {c["gid"]: c["name"].lower() for c in self.gadm3_counties if c["gid"]}
+    citas_nm = {c["gb"]: c["name"] for c in self.citas_counties if c["gb"]}
+    skip_stems = {"shang", "zhong", "dong", "qian", "old", "new", "north", "south", "east", "west"}
+    gid_matches = {}
+    for k, t in enumerate(polities):
+      sgb, sgid = seat_subs[k]
+      stem, zh2 = t["tusi_id"].split("_")[0].lower(), str(t.get("name_zh", ""))[:2]
+      if sgid and ((len(stem) >= 4 and stem not in skip_stems and gadm_nm.get(sgid, "").startswith(stem)) or (len(zh2) == 2 and citas_nm.get(sgb, "").startswith(zh2))):
+        gid_matches.setdefault(sgid, []).append(k)
+    nm_cost = float(self.weights.get("namesake_seed_cost", 0.28))
+    for sgid, ks_match in gid_matches.items():
+      if len(ks_match) != 1:
+        continue
+      ko = ks_match[0]
+      for u, a in enumerate(atoms):
+        if u in protected_bg_atoms or self._lookup_atom_subadmin(a.representative_point())[1] != sgid:
+          continue
+        rp = a.representative_point()
+        if all(math.hypot(rp.x - float(polities[ok]["seat_lon"]), rp.y - float(polities[ok]["seat_lat"])) >= 0.16 for ok in range(k_pol) if ok != ko):
+          seeds.setdefault(ko, []).append((u, nm_cost))
+          protected_bg_atoms.add(u)
+          n_anchors += 1
 
     # 3. External background class (k_pol) with strict CHGIS COUNT_PY & CITAS-county hygiene
     if allow_bg:
-      citas_with_tusi_seat = set()
+      citas_with_tusi_seat = set(seat_gbs)
       citas_with_explicit_bg = set()
-      for k in range(k_pol):
-        ai = seat_atoms[k]
-        if ai >= 0:
-          gb, _ = self._lookup_atom_subadmin(atoms[ai].representative_point())
-          if gb:
-            citas_with_tusi_seat.add(gb)
 
       for bgs in cluster.get("bg_seeds", []):
         bx, by = float(bgs[0]), float(bgs[1])
@@ -465,9 +506,7 @@ class BorderpoolGraphEngine:
 
   def _consolidate_sliver_atoms (self, arg1_atoms, arg2_protected_idxs):
     """Merge tiny unseeded micro-sliver atoms into their longest-shared-edge neighbour (preferring same county).
-
-    @param arg1_atoms List of Shapely Polygon atoms.
-    @param arg2_protected_idxs Set of atom indices holding seats/settlements that must not be absorbed.
+    @param arg1_atoms Polygon atoms; arg2_protected_idxs protected indices.
     @return Consolidated list of clean Shapely Polygon atoms.
     """
     # Convert from parameters
@@ -712,46 +751,26 @@ class BorderpoolGraphEngine:
     return atoms
 
   def _split_multi_seat_atom (self, arg1_atom, arg2_local_seats, arg3_host_domain):
-    """Subdivide an atom holding >= 2 seats using finer hydrology/contours and Chaikin-smoothed DEM ridge watersheds.
-
-    @param arg1_atom Clean Shapely Polygon atom holding >= 2 seats.
-    @param arg2_local_seats List of (lon, lat) coordinates of seats inside arg1_atom.
-    @param arg3_host_domain Outer host domain polygon.
-    @return List of clean Shapely sub-Polygons separating all seats.
-    """
-    # Convert from parameters
-    atom = arg1_atom
-    local_seats = list(arg2_local_seats)
-
+    """Subdivide an atom holding >= 2 seats using hydrology/contours and Chaikin DEM ridge watersheds."""
+    atom, local_seats = arg1_atom, list(arg2_local_seats)
     if len(local_seats) <= 1:
       return [atom]
 
-    # Stage 1: HydroRIVERS reaches + 100 m DEM contours within atom
     cuts = self._extract_boundaries(atom)
     if self.hydrorivers_tree is not None:
-      for r_idx in self.hydrorivers_tree.query(atom):
-        rg = self.hydrorivers[int(r_idx)][1]
-        if rg.intersects(atom):
-          cuts.append(rg.intersection(atom.buffer(0.01)))
-
-    for _, cg in self.elev_builder.extract_local_contours(atom.bounds, range(200, 5600, 100)):
-      if cg.intersects(atom):
-        cuts.append(cg.intersection(atom.buffer(0.01)))
+      cuts.extend(self.hydrorivers[int(r_idx)][1].intersection(atom.buffer(0.01)) for r_idx in self.hydrorivers_tree.query(atom) if self.hydrorivers[int(r_idx)][1].intersects(atom))
+    cuts.extend(cg.intersection(atom.buffer(0.01)) for _, cg in self.elev_builder.extract_local_contours(atom.bounds, range(200, 5600, 100)) if cg.intersects(atom))
 
     sub_atoms = self._polygonise_inside(cuts, atom)
-    if sub_atoms:
-      has_multi = any(sum(1 for sx, sy in local_seats if sa.contains(Point(sx, sy)) or sa.distance(Point(sx, sy)) < 1e-6) >= 2 for sa in sub_atoms)
-      if not has_multi:
-        return sub_atoms
+    if sub_atoms and not any(sum(1 for sx, sy in local_seats if sa.contains(Point(sx, sy)) or sa.distance(Point(sx, sy)) < 1e-6) >= 2 for sa in sub_atoms):
+      return sub_atoms
 
-    # Stage 2: Chaikin-smoothed topographic DEM watershed (gradient crest impedance, never Euclidean Voronoi)
     final_parts = []
     for pa in (sub_atoms if sub_atoms else [atom]):
       in_pa = [(sx, sy) for sx, sy in local_seats if pa.contains(Point(sx, sy)) or pa.distance(Point(sx, sy)) < 1e-5]
       if len(in_pa) <= 1:
         final_parts.append(pa)
         continue
-
       pb = pa.bounds
       step = max(0.0018, min(0.004, max(pb[2] - pb[0], pb[3] - pb[1]) / 90.0))
       lons, lats, elev = self.elev_builder.extract_local_dem_patch(pb, step)
@@ -759,37 +778,28 @@ class BorderpoolGraphEngine:
       slope = np.hypot(gx_e, gy_e)
       relief_norm = (elev - float(np.min(elev))) / max(1.0, float(np.max(elev) - np.min(elev)))
       topo_surface = 0.65*relief_norm + 0.35*(slope / max(1e-6, float(np.max(slope))))
-
       h, w = elev.shape
       markers = np.zeros((h, w), dtype=np.int32)
       gx_m, gy_m = np.meshgrid(lons, lats)
       inside_mask = shapely.contains_xy(pa.buffer(0.5*step), gx_m.ravel(), gy_m.ravel()).reshape(h, w)
       for s_i, (sx, sy) in enumerate(in_pa, start=1):
-        ix = int(np.clip(round((sx - lons[0]) / (lons[1] - lons[0])), 1, w - 2))
-        iy = int(np.clip(round((sy - lats[0]) / (lats[1] - lats[0])), 1, h - 2))
-        markers[iy, ix] = s_i
-        inside_mask[iy, ix] = True
-
+        ix, iy = int(np.clip(round((sx - lons[0]) / (lons[1] - lons[0])), 1, w - 2)), int(np.clip(round((sy - lats[0]) / (lats[1] - lats[0])), 1, h - 2))
+        markers[iy, ix], inside_mask[iy, ix] = s_i, True
       ws_labels = watershed(topo_surface, markers=markers, mask=inside_mask, compactness=0.0)
       pair_segs = {}
       for iy, ix in np.argwhere((ws_labels[:, :-1] > 0) & (ws_labels[:, 1:] > 0) & (ws_labels[:, :-1] != ws_labels[:, 1:])):
-        c0, cr = int(ws_labels[iy, ix]), int(ws_labels[iy, ix + 1])
-        xm = round(0.5*(lons[ix] + lons[ix + 1]), 7)
+        c0, cr, xm = int(ws_labels[iy, ix]), int(ws_labels[iy, ix + 1]), round(0.5*(lons[ix] + lons[ix + 1]), 7)
         pair_segs.setdefault((min(c0, cr), max(c0, cr)), []).append(LineString([(xm, round(lats[iy] - 0.5*step, 7)), (xm, round(lats[iy] + 0.5*step, 7))]))
       for iy, ix in np.argwhere((ws_labels[:-1, :] > 0) & (ws_labels[1:, :] > 0) & (ws_labels[:-1, :] != ws_labels[1:, :])):
-        c0, cu = int(ws_labels[iy, ix]), int(ws_labels[iy + 1, ix])
-        ym = round(0.5*(lats[iy] + lats[iy + 1]), 7)
+        c0, cu, ym = int(ws_labels[iy, ix]), int(ws_labels[iy + 1, ix]), round(0.5*(lats[iy] + lats[iy + 1]), 7)
         pair_segs.setdefault((min(c0, cu), max(c0, cu)), []).append(LineString([(round(lons[ix] - 0.5*step, 7), ym), (round(lons[ix] + 0.5*step, 7), ym)]))
-
       ridge_cuts = self._extract_boundaries(pa)
       for seg_list in pair_segs.values():
         merged_lns = linemerge(seg_list)
         chains = [merged_lns] if merged_lns.geom_type == "LineString" else list(merged_lns.geoms)
         for ch in chains:
           if len(ch.coords) >= 2:
-            n_pass = 2 if len(ch.coords) >= 3 else 0
-            ridge_cuts.append(LineString(self._chaikin_coords(ch.coords, n_pass, 1.4*step)))
-
+            ridge_cuts.append(LineString(self._chaikin_coords(ch.coords, 2 if len(ch.coords) >= 3 else 0, 1.4*step)))
       split_res = self._polygonise_inside(ridge_cuts, pa)
       still_bad = (not split_res) or any(sum(1 for sx, sy in in_pa if sa.contains(Point(sx, sy)) or sa.distance(Point(sx, sy)) < 1e-6) >= 2 for sa in split_res)
       if not still_bad:
@@ -816,8 +826,21 @@ class BorderpoolGraphEngine:
     # Return statement
     return [p for p in final_parts if p is not None and not p.is_empty and p.area > 1e-9]
 
+  def _is_surveyed_admin_boundary (self, arg1_line):
+    """Return True if at least 85% of arg1_line follows a surveyed CHGIS, CITAS, or GADM boundary."""
+    line = arg1_line
+    qbox = line.buffer(2e-4)
+    refs = []
+    for tree, items, getter in ((self.adm3_tree, self.adm3_geoms, lambda x: x), (self.citas_tree, self.citas_counties, lambda x: x["geom"]), (self.gadm3_tree, self.gadm3_counties, lambda x: x["geom"])):
+      if tree is not None:
+        refs.extend(getter(items[int(idx)]).boundary for idx in tree.query(qbox))
+    if not refs:
+      return False
+    covered = line.intersection(unary_union(refs).buffer(2e-4))
+    return float(covered.length) >= 0.85*float(line.length)
+
   def audit_voronoi_artefacts (self, arg1_tusi_geoms, arg2_tier_map):
-    """Audit shared modelled boundaries for single-segment straight Voronoi chords >= 0.08 deg."""
+    """Audit shared modelled boundaries for synthetic Voronoi chords (exempting surveyed borders)."""
     tier_map, tusi_geoms = arg2_tier_map, arg1_tusi_geoms
     checked, sin_sum, violations = 0, 0.0, []
     ids = sorted(tid for tid in tusi_geoms.keys() if tier_map.get(tid) in ("tier_b", "tier_c"))
@@ -849,12 +872,13 @@ class BorderpoolGraphEngine:
               continue
             coords = list(ch.coords)
             chord = math.hypot(coords[-1][0] - coords[0][0], coords[-1][1] - coords[0][1])
-            sinuosity = float(ch.length) / max(1e-6, chord)
+            sinuosity = float(ch.length) / max(1e-4, 2.0*max(math.hypot(c[0] - coords[0][0], c[1] - coords[0][1]) for c in coords) if chord < 1e-4 else chord)
             max_seg = max(math.hypot(coords[k + 1][0] - coords[k][0], coords[k + 1][1] - coords[k][1]) for k in range(len(coords) - 1))
             checked += 1
             sin_sum += sinuosity
-            if len(coords) == 2 or max_seg >= 0.08:
-              violations.append((tid_a, ids[j], round(float(ch.length), 4), round(max_seg, 4), len(coords)))
+            if len(coords) == 2 or (len(coords) <= 3 and ch.length >= 0.08) or (ch.length >= 0.18 and sinuosity < 1.015) or (max_seg >= 0.16 and sinuosity < 1.08):
+              if not self._is_surveyed_admin_boundary(ch):
+                violations.append((tid_a, ids[j], round(float(ch.length), 4), round(max_seg, 4), round(sinuosity, 4), len(coords)))
 
     # Return statement
     return {"checked_chains": checked, "mean_sinuosity": round(sin_sum / max(1, checked), 4), "voronoi_violations": violations}
@@ -925,10 +949,12 @@ class BorderpoolGraphEngine:
     atoms = self._consolidate_sliver_atoms(atoms, prot)
 
     seeds, seat_atoms, k_pol, n_anchors = self._collect_cluster_anchors(polities, atoms, host_domain, cfg, allow_bg, all_seats)
-    adj = self._build_atom_graph(atoms, barrier_names)
+    seat_subs_p = [self._lookup_atom_subadmin(Point(sx, sy)) for sx, sy in seat_pts]
+    adj = self._build_atom_graph(atoms, barrier_names, ({s[0] for s in seat_subs_p if s[0]}, {s[1] for s in seat_subs_p if s[1]}))
     n_edges = sum(len(x) for x in adj) // 2
     labels = self._assign_atoms_topographic(atoms, adj, seeds, seat_atoms, k_pol)
 
+    other_sps = [(p["tusi_id"], Point(float(p["seat_lon"]), float(p["seat_lat"]))) for p in polities]
     for k, t in enumerate(polities):
       k_atoms = [atoms[i] for i in range(len(atoms)) if labels[i] == k]
       if not k_atoms:
@@ -940,7 +966,8 @@ class BorderpoolGraphEngine:
       if merged.geom_type == "MultiPolygon":
         merged = next((sub for sub in merged.geoms if sub.contains(sp) or sub.distance(sp) < 1e-6), max(merged.geoms, key=lambda s: s.area))
       if merged.geom_type == "Polygon" and len(merged.interiors) > 0:
-        merged = Polygon(merged.exterior, [r for r in merged.interiors if Polygon(r).area >= 0.01])
+        kept_rings = [r for r in merged.interiors if any(Polygon(r).contains(osp) or Polygon(r).distance(osp) < 1e-5 for pid, osp in other_sps if pid != t["tusi_id"]) or Polygon(r).difference(host_domain).area >= 0.5*Polygon(r).area]
+        merged = Polygon(merged.exterior, kept_rings)
       if not (merged.contains(sp) or merged.distance(sp) < 1e-6):
         merged = gis_helpers.clean_polygonal_geometry(unary_union([merged, sp.buffer(0.002).intersection(host_domain)]))
       out_geoms[t["tusi_id"]] = merged

@@ -280,7 +280,7 @@ class ChroniclesDefinesExporter:
         country = str(props.get("country") or "ROC").strip()
         unit_id = str(props.get("unit_id") or "").strip()
 
-        slug = gis_helpers.slugify_snake(name_en)
+        slug = gis_helpers.slugify_snake(unit_id[5:]) if (cat == "tusi" and unit_id.startswith("tusi_")) else gis_helpers.slugify_snake(name_en)
         if not slug:
           continue
 

@@ -51,6 +51,8 @@ class TusiModeller:
     self.config_path = os.path.join(base_dir, "common", "tusi", "tusi_modelling_config.json5")
     self.ds_path = os.path.join(base_dir, "common", "gis", "data_sources.json5")
     self.elev_builder = None
+    self.gadm_ap_adm2 = {}
+    self.gadm_ap_union = None
     self.gis_dir = os.path.join(base_dir, "gis")
     self.precision = 5
     self.roads = []
@@ -76,11 +78,56 @@ class TusiModeller:
     self.elev_builder = ElevationContourBuilder(ds_cfg, self.sources_dir, self.gis_dir)
     self.bp_engine = BorderpoolGraphEngine(self.base_dir, self.config, self.elev_builder, self.adm3_map, self.waterways, self.roads, (self.town_pts, self.town_recs), self.adm3_features)
 
+  def _resolve_cluster_raw_domain (self, arg1_cluster):
+    """Build raw host domain polygon for a cluster from CHGIS units, CITAS prefixes, and GADM Arunachal."""
+    cluster = arg1_cluster
+    host_polys = []
+
+    for uid in cluster.get("host_unit_ids", []):
+      if uid in self.adm3_map:
+        host_polys.append(self.adm3_map[uid])
+      else:
+        print(f"[WARN] Unknown host_unit_id: {uid}", file=sys.stderr)
+
+    ap_adm2s = [str(n) for n in cluster.get("gadm_ind_arunachal_adm2", []) if n in self.gadm_ap_adm2]
+    if ap_adm2s:
+      host_polys.extend(self.gadm_ap_adm2[n] for n in ap_adm2s)
+    if not host_polys:
+      return None
+
+    domain = gis_helpers.clean_polygonal_geometry(unary_union(host_polys))
+    if not ap_adm2s and not cluster.get("allow_outside_china_land", False) and self.china_land is not None and domain is not None:
+      domain = gis_helpers.clean_polygonal_geometry(domain.intersection(self.china_land))
+
+    inc_gb = [str(p) for p in cluster.get("citas_gb_prefixes", [])]
+    if inc_gb and domain is not None and self.bp_engine is not None:
+      c_geoms = [c["geom"] for c in self.bp_engine.citas_counties if any(c["gb"].startswith(pref) for pref in inc_gb)]
+      keep_parts = [domain.intersection(unary_union(c_geoms))] if c_geoms else []
+      rem_bbox = cluster.get("include_citas_uncovered_in_bbox")
+      if rem_bbox and len(rem_bbox) == 4:
+        all_c = [c["geom"] for c in self.bp_engine.citas_counties if c["geom"].intersects(domain)]
+        uncov = domain.difference(unary_union(all_c)) if all_c else domain
+        keep_parts.append(uncov.intersection(box(float(rem_bbox[0]), float(rem_bbox[1]), float(rem_bbox[2]), float(rem_bbox[3]))))
+      if keep_parts:
+        domain = gis_helpers.clean_polygonal_geometry(unary_union([p for p in keep_parts if p is not None and not p.is_empty]))
+
+    exc_gb = [str(p) for p in cluster.get("exclude_citas_gb_prefixes", [])]
+    if exc_gb and domain is not None and self.bp_engine is not None:
+      e_geoms = [c["geom"] for c in self.bp_engine.citas_counties if any(c["gb"].startswith(pref) for pref in exc_gb)]
+      if e_geoms:
+        domain = gis_helpers.clean_polygonal_geometry(domain.difference(unary_union(e_geoms)))
+
+    if cluster.get("exclude_gadm_ind_arunachal", False) and self.gadm_ap_union is not None and domain is not None:
+      domain = gis_helpers.clean_polygonal_geometry(domain.difference(self.gadm_ap_union))
+
+    # Return statement
+    return domain
+
   def _build_host_domain (self, arg1_cluster, arg2_excluded_union, arg3_seat_pts):
     """Construct the clean, disjoint CHGIS frontier domain polygon for a Tier C cluster.
 
     @param arg1_cluster Cluster configuration dict.
-    @param arg2_excluded_union Union of all 126 locked Tier A + Tier B CHGIS polygons.
+    @param arg2_excluded_union Union of all locked Tier A + Tier B CHGIS polygons.
     @param arg3_seat_pts List of (lon, lat) seat coordinates belonging to this cluster.
     @return Clean Shapely host domain polygon.
     """
@@ -90,21 +137,9 @@ class TusiModeller:
     seat_pts = list(arg3_seat_pts)
 
     # Declare local instance variables.
-    domain = None
-    host_polys = []
-
-    for uid in cluster.get("host_unit_ids", []):
-      if uid in self.adm3_map:
-        host_polys.append(self.adm3_map[uid])
-      else:
-        print(f"[WARN] Unknown host_unit_id: {uid}", file=sys.stderr)
-
-    if not host_polys:
+    domain = self._resolve_cluster_raw_domain(cluster)
+    if domain is None or domain.is_empty:
       return None
-
-    domain = gis_helpers.clean_polygonal_geometry(unary_union(host_polys))
-    if self.china_land is not None and domain is not None:
-      domain = gis_helpers.clean_polygonal_geometry(domain.intersection(self.china_land))
 
     if excluded_union is not None and domain is not None:
       domain = gis_helpers.clean_polygonal_geometry(domain.difference(excluded_union))
@@ -257,6 +292,23 @@ class TusiModeller:
     if os.path.exists(twn_zip):
       self.town_pts, self.town_recs = self._read_point_zip_wgs84(twn_zip)
 
+    ind_zip = os.path.join(self.sources_dir, "gadm41_IND_3.json.zip")
+    if os.path.exists(ind_zip):
+      ap_groups = {}
+      with zipfile.ZipFile(ind_zip, "r") as zf:
+        jn = next((n for n in zf.namelist() if n.lower().endswith((".json", ".geojson"))), None)
+        feats = json.loads(zf.read(jn).decode("utf-8")).get("features", []) if jn else []
+      for feat in feats:
+        p = feat.get("properties", {})
+        if str(p.get("NAME_1") or "") == "ArunachalPradesh":
+          n2 = str(p.get("NAME_2") or "").strip()
+          g = gis_helpers.clean_polygonal_geometry(shape(feat["geometry"]))
+          if n2 and g is not None and not g.is_empty:
+            ap_groups.setdefault(n2, []).append(g)
+      self.gadm_ap_adm2 = {k: gis_helpers.clean_polygonal_geometry(unary_union(v)) for k, v in ap_groups.items()}
+      if self.gadm_ap_adm2:
+        self.gadm_ap_union = gis_helpers.clean_polygonal_geometry(unary_union(list(self.gadm_ap_adm2.values())))
+
   def _read_point_zip_wgs84 (self, arg1_zip_path):
     """Read a point shapefile inside a zip archive and reproject GK19 metres to WGS84.
 
@@ -320,12 +372,7 @@ class TusiModeller:
         if keep_holes:
           geom = Polygon(geom.exterior, [r for r in geom.interiors if Polygon(r).area > 1e-9])
         else:
-          kept_rings = []
-          for r in geom.interiors:
-            rp = Polygon(r)
-            if rp.area >= 0.002 or any(rp.contains(osp) or rp.distance(osp) < 1e-5 for tid_o, osp in all_sps if tid_o != tid_key):
-              kept_rings.append(r)
-          geom = Polygon(geom.exterior, kept_rings)
+          geom = Polygon(geom.exterior, [r for r in geom.interiors if any(Polygon(r).contains(osp) or Polygon(r).distance(osp) < 1e-5 for tid_o, osp in all_sps if tid_o != tid_key)])
       return geom
 
     for tid in ordered_ids:
@@ -456,12 +503,12 @@ class TusiModeller:
     excluded_union = gis_helpers.clean_polygonal_geometry(unary_union(excluded_parts))
     tier_c_candidates = [t for t in self.tusis if t.get("geometry_mode") != "chgis_direct" and t["tusi_id"] not in tier_b_geoms]
     clusters = self.config.get("kriging_clusters", [])
-    cluster_doms = {cl["cluster_id"]: unary_union([self.adm3_map[u] for u in cl.get("host_unit_ids", []) if u in self.adm3_map]) for cl in clusters}
+    cluster_doms = {cl["cluster_id"]: self._resolve_cluster_raw_domain(cl) for cl in clusters}
     assigned_c = {cl["cluster_id"]: [] for cl in clusters}
 
     for t in tier_c_candidates:
       sp = Point(float(t["seat_lon"]), float(t["seat_lat"]))
-      hit_cid = next((cl["cluster_id"] for cl in clusters if cluster_doms[cl["cluster_id"]] is not None and cluster_doms[cl["cluster_id"]].contains(sp)), None)
+      hit_cid = next((cl["cluster_id"] for cl in clusters if cluster_doms[cl["cluster_id"]] is not None and (cluster_doms[cl["cluster_id"]].contains(sp) or cluster_doms[cl["cluster_id"]].distance(sp) < 1e-6)), None)
       if hit_cid is None:
         print(f"[ERROR] Tier C polity {t['tusi_id']} unmapped to any cluster", file=sys.stderr)
         continue
@@ -634,14 +681,14 @@ class TusiModeller:
 
 
 def main ():
-  """Execute Step 2 425-polity Tusi spatial modelling, GeoJSON export, and 7 diagnostic maps."""
+  """Execute Step 2 Tusi spatial modelling, GeoJSON export, and diagnostic maps."""
   base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
   modeller = TusiModeller(base_dir)
   metrics = modeller.build_all_tusis()
   out_geojson, feat_count = modeller.export_geojson()
   pngs = modeller.render_diagnostic_maps()
   print(f"[STEP 2 DONE] features={feat_count} (direct={metrics['chgis_direct']}, tier_b={metrics['tier_b']}, tier_c={metrics['tier_c']}) max_ov={metrics['max_overlap_deg2']:.9f} geojson={out_geojson} pngs={len(pngs)}")
-  return 0 if feat_count == 425 and len(metrics["overlap_pairs"]) == 0 else 1
+  return 0 if feat_count == len(modeller.tusis) and len(metrics["overlap_pairs"]) == 0 else 1
 
 
 if __name__ == "__main__":

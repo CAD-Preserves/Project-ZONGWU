@@ -2,6 +2,7 @@
 
 import io
 import json
+import math
 import os
 import sys
 import zipfile
@@ -565,6 +566,10 @@ def C_build_transport_layers (arg1_paths, arg2_cfg, arg3_corridors, arg4_gis_dir
       clipped,
     ))
 
+  filter_cfg = cfg.get("transport_straight_link_filter", {})
+  rail_features = D_filter_straight_transport_links(rail_features, filter_cfg)
+  road_features = D_filter_straight_transport_links(road_features, filter_cfg)
+
   cw = gis_helpers.write_geojson(os.path.join(gis_dir, "waterways_1912_1953.geojson"), water_features, precision)
   cr = gis_helpers.write_geojson(os.path.join(gis_dir, "railways_1912_1953.geojson"), rail_features, precision)
   cd = gis_helpers.write_geojson(os.path.join(gis_dir, "roads_1912_1953.geojson"), road_features, precision)
@@ -573,9 +578,200 @@ def C_build_transport_layers (arg1_paths, arg2_cfg, arg3_corridors, arg4_gis_dir
   return {"railways": cr, "roads": cd, "waterways": cw}
 
 
+def _is_straight_line_part (arg1_line, arg2_filter_cfg):
+  """Detect coarse straight-chord LineString artefacts using vertex spacing and length thresholds.
+
+  Args:
+    arg1_line: Shapely LineString geometry to inspect.
+    arg2_filter_cfg: Dict of straight-link filter thresholds from data_sources.json5.
+
+  Returns:
+    True when the line segment pattern indicates an un-digitised straight chord.
+  """
+  # Convert from parameters
+  filter_cfg = arg2_filter_cfg if arg2_filter_cfg is not None else {}
+  line_geom = arg1_line
+
+  # Declare local instance variables.
+  coarse_len = float(filter_cfg.get("coarse_min_length_deg", 0.20))
+  coarse_mean = float(filter_cfg.get("coarse_mean_segment_deg", 0.15))
+  coords = list(line_geom.coords) if line_geom is not None else []
+  dx = 0.0
+  dy = 0.0
+  i = 0
+  is_straight = False
+  max_seg = 0.0
+  max_seg_limit = float(filter_cfg.get("max_segment_deg", 0.28))
+  mean_seg = 0.0
+  n_pts = len(coords)
+  seg_len = 0.0
+  total_len = 0.0
+  two_pt_len = float(filter_cfg.get("two_point_min_length_deg", 0.18))
+
+  if n_pts < 2:
+    return False
+
+  for i in range(n_pts - 1):
+    dx = coords[i + 1][0] - coords[i][0]
+    dy = coords[i + 1][1] - coords[i][1]
+    seg_len = math.hypot(dx, dy)
+    total_len += seg_len
+    if seg_len > max_seg:
+      max_seg = seg_len
+  mean_seg = total_len / float(n_pts - 1)
+  is_straight = (
+    (max_seg >= max_seg_limit) or
+    (mean_seg >= coarse_mean and total_len >= coarse_len) or
+    (n_pts == 2 and total_len >= two_pt_len)
+  )
+
+  # Return statement
+  return is_straight
+
+
+def _is_straight_transport_geom (arg1_geom, arg2_filter_cfg):
+  """Evaluate whether a linear feature geometry contains any straight-chord part.
+
+  Args:
+    arg1_geom: Shapely LineString or MultiLineString geometry.
+    arg2_filter_cfg: Dict of straight-link filter thresholds.
+
+  Returns:
+    True if any linear component triggers the straight-chord detector.
+  """
+  # Convert from parameters
+  filter_cfg = arg2_filter_cfg if arg2_filter_cfg is not None else {}
+  geom = arg1_geom
+
+  # Declare local instance variables.
+  has_straight = False
+  part = None
+  parts = []
+
+  if geom is None or geom.is_empty:
+    return False
+
+  parts = list(geom.geoms) if hasattr(geom, "geoms") else [geom]
+  for part in parts:
+    if isinstance(part, LineString) and _is_straight_line_part(part, filter_cfg):
+      has_straight = True
+
+  # Return statement
+  return has_straight
+
+
+def D_filter_straight_transport_links (arg1_features, arg2_filter_cfg):
+  """Remove straight-chord anomalies and schematic graph-edge sources from transport features.
+
+  Args:
+    arg1_features: List of (properties_dict, shapely_geometry) tuples.
+    arg2_filter_cfg: Dict of straight-link filter thresholds from data_sources.json5.
+
+  Returns:
+    Filtered list of (properties_dict, shapely_geometry) tuples.
+  """
+  # Convert from parameters
+  features = arg1_features
+  filter_cfg = arg2_filter_cfg if arg2_filter_cfg is not None else {}
+
+  # Declare local instance variables.
+  bad_sources = set()
+  cleaned_features = []
+  feat_flagged = []
+  flag_val = False
+  geom = None
+  props = None
+  ratio = 0.0
+  ratio_limit = float(filter_cfg.get("source_schematic_ratio", 0.65))
+  src = ""
+  src_flagged = {}
+  src_total = {}
+
+  if not features:
+    return []
+
+  for props, geom in features:
+    flag_val = _is_straight_transport_geom(geom, filter_cfg)
+    feat_flagged.append((props, geom, flag_val))
+    src = str((props or {}).get("source", ""))
+    src_total[src] = src_total.get(src, 0) + 1
+    if flag_val:
+      src_flagged[src] = src_flagged.get(src, 0) + 1
+
+  for src in src_total:
+    ratio = float(src_flagged.get(src, 0)) / float(src_total[src])
+    if ratio >= ratio_limit:
+      bad_sources.add(src)
+
+  for props, geom, flag_val in feat_flagged:
+    src = str((props or {}).get("source", ""))
+    if not flag_val and src not in bad_sources:
+      cleaned_features.append((props, geom))
+
+  # Return statement
+  return cleaned_features
+
+
+def E_clean_existing_transport_geojsons (arg1_cfg, arg2_gis_dir):
+  """Clean existing railways and roads GeoJSON exports of straight-chord anomalies in place.
+
+  Args:
+    arg1_cfg: Parsed data_sources.json5 configuration dict.
+    arg2_gis_dir: Path to the output gis directory.
+
+  Returns:
+    Dict mapping layer names to before/after feature counts.
+  """
+  # Convert from parameters
+  cfg = arg1_cfg if arg1_cfg is not None else {}
+  gis_dir = arg2_gis_dir
+
+  # Declare local instance variables.
+  after_count = 0
+  before_count = 0
+  cleaned = []
+  data = None
+  feat = None
+  features = []
+  file_name = ""
+  file_path = ""
+  filter_cfg = cfg.get("transport_straight_link_filter", {})
+  geom = None
+  layer_names = ("railways", "roads")
+  precision = int(cfg.get("coordinate_precision", 5))
+  props = None
+  summary = {}
+
+  for file_name in layer_names:
+    file_path = os.path.join(gis_dir, "{0}_1912_1953.geojson".format(file_name))
+    if not os.path.exists(file_path):
+      continue
+    with open(file_path, "r", encoding="utf-8") as handle:
+      data = json.load(handle)
+    features = []
+    for feat in data.get("features", []):
+      geom = shape(feat.get("geometry")) if feat.get("geometry") else None
+      props = feat.get("properties") or {}
+      if geom is not None and not geom.is_empty:
+        features.append((props, geom))
+    before_count = len(features)
+    cleaned = D_filter_straight_transport_links(features, filter_cfg)
+    after_count = gis_helpers.write_geojson(file_path, cleaned, precision)
+    summary[file_name] = {
+      "after": after_count,
+      "before": before_count,
+      "removed": before_count - after_count,
+    }
+
+  # Return statement
+  return summary
+
+
 def main ():
   """Execute Step 1 download, reprojection, cleaning, baseline, transport, and elevation export."""
+  # Declare local instance variables.
   base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+  clean_only = "--clean-transport-only" in sys.argv[1:]
   common_gis = os.path.join(base_dir, "common", "gis")
   elev_only = "--elevation-only" in sys.argv[1:]
   gis_dir = os.path.join(base_dir, "gis")
@@ -585,6 +781,11 @@ def main ():
   corridors = gis_helpers.load_json5(os.path.join(common_gis, "transport_corridors.json5"))
   if cfg is None or corridors is None:
     return 1
+
+  if clean_only:
+    clean_summary = E_clean_existing_transport_geojsons(cfg, gis_dir)
+    print("[STEP 1E] Transport straight-link clean:", clean_summary)
+    return 0
 
   paths = A_download_all_sources(cfg, sources_dir)
   print("[STEP 1A] Sources ready:", len(paths))
