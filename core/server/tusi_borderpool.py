@@ -834,7 +834,15 @@ class BorderpoolGraphEngine:
           inter = ga.boundary.intersection(geoms[j].boundary)
           if inter.is_empty or inter.length < 0.08:
             continue
-          merged = linemerge(inter)
+          line_parts = []
+          for g_part in (inter.geoms if hasattr(inter, "geoms") else [inter]):
+            if g_part.geom_type in ("LineString", "LinearRing") and len(g_part.coords) >= 2:
+              line_parts.append(LineString(g_part.coords) if g_part.geom_type == "LinearRing" else g_part)
+            elif g_part.geom_type == "MultiLineString":
+              line_parts.extend(ls for ls in g_part.geoms if len(ls.coords) >= 2)
+          if not line_parts:
+            continue
+          merged = linemerge(line_parts)
           chains = [merged] if merged.geom_type == "LineString" else (list(merged.geoms) if merged.geom_type == "MultiLineString" else [])
           for ch in chains:
             if ch.length < 0.08 or len(ch.coords) < 2:

@@ -14,6 +14,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 import numpy as np
 import shapefile
+from shapely import STRtree
 from shapely.geometry import Point, Polygon, box, shape
 from shapely.ops import split, unary_union
 
@@ -303,23 +304,32 @@ class TusiModeller:
     tusi_geoms = arg1_tusi_geoms
 
     # Declare local instance variables.
+    all_sps = [(tid_o, Point(float(t_o["seat_lon"]), float(t_o["seat_lat"]))) for tid_o, t_o in tusi_by_id.items()]
     buf_eps = 1.2*(10.0**(-self.precision))
     cleaned = {}
     tier_prio = {"tier_a": 0, "tier_b": 1, "tier_c": 2}
     ordered_ids = sorted(tusi_geoms.keys(), key=lambda tid: (tier_prio.get(self.tier_map.get(tid, "tier_c"), 2), tid))
 
-    def sanitize_part (geom, tid_key):
+    def sanitize_part (geom, tid_key, keep_holes=False):
       if geom is None or geom.is_empty or self.tier_map.get(tid_key) == "tier_a":
         return geom
       if geom.geom_type == "MultiPolygon":
         sp = Point(float(tusi_by_id[tid_key]["seat_lon"]), float(tusi_by_id[tid_key]["seat_lat"]))
         geom = next((sub for sub in geom.geoms if sub.contains(sp) or sub.distance(sp) < 1e-9), max(geom.geoms, key=lambda s: s.area))
       if geom.geom_type == "Polygon" and len(geom.interiors) > 0:
-        geom = Polygon(geom.exterior, [r for r in geom.interiors if Polygon(r).area >= 0.002])
+        if keep_holes:
+          geom = Polygon(geom.exterior, [r for r in geom.interiors if Polygon(r).area > 1e-9])
+        else:
+          kept_rings = []
+          for r in geom.interiors:
+            rp = Polygon(r)
+            if rp.area >= 0.002 or any(rp.contains(osp) or rp.distance(osp) < 1e-5 for tid_o, osp in all_sps if tid_o != tid_key):
+              kept_rings.append(r)
+          geom = Polygon(geom.exterior, kept_rings)
       return geom
 
     for tid in ordered_ids:
-      g = sanitize_part(gis_helpers.round_geometry(tusi_geoms[tid], self.precision), tid)
+      g = sanitize_part(gis_helpers.round_geometry(tusi_geoms[tid], self.precision), tid, False)
       if g is not None and not g.is_empty:
         cleaned[tid] = g
 
@@ -344,7 +354,7 @@ class TusiModeller:
             trim_b = (pb > pa) or (pb == pa and gb.area >= ga.area)
             keep_g, trim_id = (ga, tid_b) if trim_b else (gb, tid_a)
             cut_g = keep_g if pass_i == 0 else keep_g.buffer(buf_eps, join_style="mitre")
-            rem = sanitize_part(gis_helpers.round_geometry(cleaned[trim_id].difference(cut_g), self.precision), trim_id)
+            rem = sanitize_part(gis_helpers.round_geometry(cleaned[trim_id].difference(cut_g), self.precision), trim_id, True)
             if rem is not None and not rem.is_empty:
               cleaned[trim_id] = rem
               if not trim_b:
@@ -386,6 +396,9 @@ class TusiModeller:
     tusi_geoms = arg1_tusi_geoms
 
     # Declare local instance variables.
+    all_id_list = list(tusi_geoms.keys())
+    all_g_list = [tusi_geoms[k] for k in all_id_list]
+    all_g_tree = STRtree(all_g_list)
     hole_issues = []
     missing = [t["tusi_id"] for t in self.tusis if t["tusi_id"] not in tusi_geoms]
     multipart_issues = []
@@ -406,7 +419,14 @@ class TusiModeller:
         if g.geom_type != "Polygon":
           multipart_issues.append((tid, g.geom_type))
         elif len(g.interiors) > 0:
-          hole_issues.append((tid, len(g.interiors)))
+          unclaimed = 0
+          for r in g.interiors:
+            hp = Polygon(r)
+            cov_area = sum(hp.intersection(all_g_list[int(m)]).area for m in all_g_tree.query(hp) if all_id_list[int(m)] != tid)
+            if cov_area < 0.8*hp.area:
+              unclaimed += 1
+          if unclaimed > 0:
+            hole_issues.append((tid, unclaimed))
 
     voronoi = self.bp_engine.audit_voronoi_artefacts(tusi_geoms, self.tier_map)
     print(f"[STEP 2 VALIDATE] total={len(tusi_geoms)}/{len(self.tusis)} seats={seat_inside_cnt}/{len(self.tusis)} multi={len(multipart_issues)} holes={len(hole_issues)} ov={len(ov_pairs)} max_ov={max_ov:.9f} v_chains={voronoi['checked_chains']} sin={voronoi['mean_sinuosity']} v_viol={len(voronoi['voronoi_violations'])}")
