@@ -1,9 +1,10 @@
+# Folders
 chronicles
 gis/sources/terrarium_tiles/
 tests
-
+# Generic folders; file extensions
 /**/__pycache__
-/**/*.zip
-
+# File Extensions
 *.npz
 *.pyc
+*.zip
