@@ -4,6 +4,7 @@ import io
 import json
 import os
 import sys
+import time
 import zipfile
 import shapefile
 from shapely import STRtree
@@ -796,8 +797,15 @@ class AnnualAdminBuilder:
     path = arg1_path
 
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as fh:
-      json.dump({"type": "FeatureCollection", "features": features}, fh, ensure_ascii=False, separators=(",", ":"))
+    for attempt in range(3):
+      try:
+        with open(path, "w", encoding="utf-8") as fh:
+          json.dump({"type": "FeatureCollection", "features": features}, fh, ensure_ascii=False, separators=(",", ":"))
+        break
+      except OSError:
+        if attempt == 2:
+          raise
+        time.sleep(0.3)
 
     # Return statement
     return len(features)
