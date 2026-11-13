@@ -32,6 +32,7 @@ class AnnualAdminBuilder:
     self.diff_cache = {}
     self.gis_dir = os.path.join(base_dir, "gis")
     self.mng_soums = []
+    self.mng_union = None
     self.precision = int(self.cfg.get("coordinate_precision", 5))
     self.reforms = gis_helpers.load_json5(os.path.join(base_dir, "common", "gis", "admin_reforms_1912_1953.json5"))
     self.sources_dir = os.path.join(self.gis_dir, "sources")
@@ -39,6 +40,7 @@ class AnnualAdminBuilder:
     self.tusi_catalog = []
     self.tusi_chgis_unit_ids = set()
     self.tusi_geoms = {}
+    self.tusi_geoms_post1931 = {}
     self.tuva_kozhuuns = []
     self.twn_counties = []
     self.union_cache = {}
@@ -234,6 +236,35 @@ class AnnualAdminBuilder:
         if tid and cg is not None:
           self.tusi_geoms[tid] = {"dict": cd, "geom": cg, "props": feat["properties"]}
 
+    # 3. Clip GADM Mongolia soums & post-1931 overlapping Tusis cleanly against permanent China atoms
+    perm_china = [a["geom"] for a in self.china_atoms if a["l1_1911"] != "Wuliyasutai" or a["gb"].startswith("65")]
+    china_perm_union = gis_helpers.clean_polygonal_geometry(unary_union(perm_china)) if perm_china else None
+    if china_perm_union is not None:
+      clipped_soums = []
+      for item in self.mng_soums:
+        if item["geom"].intersects(china_perm_union):
+          rem = gis_helpers.clean_polygonal_geometry(item["geom"].difference(china_perm_union))
+          if rem is None or rem.area <= 1e-5:
+            continue
+          rg, rd = self._cache_geom(rem)
+          if rg is None:
+            continue
+          item["geom"], item["dict"] = rg, rd
+        clipped_soums.append(item)
+      self.mng_soums = clipped_soums
+    self.mng_union = gis_helpers.clean_polygonal_geometry(unary_union([m["geom"] for m in self.mng_soums])) if self.mng_soums else None
+    self.tusi_geoms_post1931 = dict(self.tusi_geoms)
+    if self.mng_union is not None:
+      for tid, tg in self.tusi_geoms.items():
+        if tg["geom"].intersects(self.mng_union) and tg["geom"].intersection(self.mng_union).area > 0.01:
+          rem = gis_helpers.clean_polygonal_geometry(tg["geom"].difference(self.mng_union))
+          if rem is not None and rem.geom_type == "MultiPolygon":
+            parts = [sub for sub in rem.geoms if sub.area >= 0.002]
+            rem = gis_helpers.clean_polygonal_geometry(unary_union(parts)) if parts else None
+          rg, rd = self._cache_geom(rem) if rem is not None else (None, None)
+          if rg is not None and rg.area > 0.002:
+            self.tusi_geoms_post1931[tid] = {"dict": rd, "geom": rg, "props": tg["props"]}
+
   def _cached_union (self, arg1_keys, arg2_geom_map):
     """Return cached unary_union (geom, mapping_dict) for a tuple/frozenset of keys."""
     # Convert from parameters
@@ -286,6 +317,14 @@ class AnnualAdminBuilder:
     l2 = atom["l2_1911"]
     name_en = atom["name_en"]
     occ = ""
+
+    # 0. Chinese Altay / Hoboksar (1911 Wuliyasutai -> Altai Special Region 1912-1919 -> Xinjiang 1920+)
+    if l1 == "Wuliyasutai" and gb.startswith("65"):
+      country = "People's Republic of China" if year >= 1950 else ("Republic of China (Beiyang)" if year <= 1928 else "Republic of China")
+      adm1 = "Xinjiang" if year >= 1920 else "Altai Special Region"
+      cat_a = "province" if year >= 1920 else "special_region"
+      adm2_a = "Ashan District" if year >= 1933 else ("Ashan Dao" if year >= 1920 else "Altai")
+      return (adm1, self.reforms["adm1_zh_names"].get(adm1, adm1), adm2_a, adm3, country, "", cat_a)
 
     # 1. Outer Mongolia 1912-1931 (CHGIS Khalkha + Khovd banners; 1932+ handled by GADM MNG_2)
     if l1 == "Wuliyasutai":
@@ -639,22 +678,9 @@ class AnnualAdminBuilder:
       if year == 1945 and l1 == "Jiangsu" and l2 in oc["1945_huaihai_prefs"]:
         return ("Huaihai (Japanese / Wang)", "淮海省", l2, adm3, "Reorganized National Govt (Japan)", "Japan/Wang", "puppet_province")
 
-      prov_1938_keys = {
-        "Henan": "1938_prefs_henan",
-        "Jiangsu": "1938_prefs_jiangsu",
-        "Shandong": "1938_prefs_shandong",
-        "Shanxi": "1938_prefs_shanxi",
-        "Zhejiang": "1938_prefs_zhejiang",
-        "Zhili": "1938_prefs_zhili",
-      }
+      prov_1938_keys = {"Henan": "1938_prefs_henan", "Jiangsu": "1938_prefs_jiangsu", "Shandong": "1938_prefs_shandong", "Shanxi": "1938_prefs_shanxi", "Zhejiang": "1938_prefs_zhejiang", "Zhili": "1938_prefs_zhili"}
       is_occ = l1 in prov_1938_keys and l2 in oc[prov_1938_keys[l1]]
-      occ_gates = [
-        (year >= 1939, "1939_extra_prefs"),
-        (year >= 1940, "1940_extra_prefs"),
-        (year == 1940, "1940_nanning_only"),
-        (year >= 1942, "1942_extra_prefs"),
-        (year == 1945, "1945_ichigo_prefs"),
-      ]
+      occ_gates = [(year >= 1939, "1939_extra_prefs"), (year >= 1940, "1940_extra_prefs"), (year == 1940, "1940_nanning_only"), (year >= 1942, "1942_extra_prefs"), (year == 1945, "1945_ichigo_prefs")]
       if (l1, l2) not in (("Sichuan", "Xuzhou Fu"), ("Anhui", "Huizhou Fu")):
         for gate_active, oc_key in occ_gates:
           if gate_active and l2 in oc[oc_key]:
@@ -769,9 +795,10 @@ class AnnualAdminBuilder:
     year = int(arg1_year)
 
     # Declare local instance variables.
+    tg_map = self.tusi_geoms_post1931 if year >= 1932 else self.tusi_geoms
     active_tusis = [
       t for t in self.tusi_catalog
-      if t["tusi_id"] in self.tusi_geoms
+      if t["tusi_id"] in tg_map
       and int(t.get("de_facto_start_year", t.get("start_year", 1911))) <= year <= int(t.get("de_facto_end_year", t.get("end_year", 1953)))
     ]
     active_chgis_tusi_uids = set()
@@ -786,7 +813,7 @@ class AnnualAdminBuilder:
         for cuid in t.get("chgis_unit_ids", []):
           active_chgis_tusi_uids.add(cuid)
       else:
-        active_kriged_geoms.append(self.tusi_geoms[t["tusi_id"]]["geom"])
+        active_kriged_geoms.append(tg_map[t["tusi_id"]]["geom"])
 
     kriged_union = None
     kriged_tree = None
@@ -810,7 +837,7 @@ class AnnualAdminBuilder:
 
       # Subtract active kriged Tusis only if bounding boxes intersect
       if kriged_tree is not None and kriged_tree.query(g).size > 0:
-        diff_key = (atom["atom_id"], frozenset(t["tusi_id"] for t in active_tusis if t.get("geometry_mode") != "chgis_direct"))
+        diff_key = (atom["atom_id"], year >= 1932, frozenset(t["tusi_id"] for t in active_tusis if t.get("geometry_mode") != "chgis_direct"))
         if diff_key in self.diff_cache:
           g, g_dict = self.diff_cache[diff_key]
         else:
@@ -873,17 +900,7 @@ class AnnualAdminBuilder:
       b1 = (adm1, country, occ, cat)
       adm1_features.append({
         "type": "Feature",
-        "properties": {
-          "adm_level": 1,
-          "category": cat,
-          "country": country,
-          "name_ch": adm1_ch_map.get(b1, adm1),
-          "name_en": adm1,
-          "occupied_by": occ,
-          "parent_adm1": "",
-          "unit_id": f"adm1_{gis_helpers.slugify_snake(adm1)}_{gis_helpers.slugify_snake(country)}",
-          "year": year,
-        },
+        "properties": {"adm_level": 1, "category": cat, "country": country, "name_ch": adm1_ch_map.get(b1, adm1), "name_en": adm1, "occupied_by": occ, "parent_adm1": "", "unit_id": f"adm1_{gis_helpers.slugify_snake(adm1)}_{gis_helpers.slugify_snake(country)}", "year": year},
         "geometry": u_dict,
       })
 
@@ -894,17 +911,7 @@ class AnnualAdminBuilder:
         continue
       adm2_features.append({
         "type": "Feature",
-        "properties": {
-          "adm_level": 2,
-          "category": cat,
-          "country": country,
-          "name_ch": adm2,
-          "name_en": adm2,
-          "occupied_by": occ,
-          "parent_adm1": adm1,
-          "unit_id": f"adm2_{gis_helpers.slugify_snake(adm1)}_{gis_helpers.slugify_snake(adm2)}",
-          "year": year,
-        },
+        "properties": {"adm_level": 2, "category": cat, "country": country, "name_ch": adm2, "name_en": adm2, "occupied_by": occ, "parent_adm1": adm1, "unit_id": f"adm2_{gis_helpers.slugify_snake(adm1)}_{gis_helpers.slugify_snake(adm2)}", "year": year},
         "geometry": u_dict,
       })
 
@@ -912,7 +919,7 @@ class AnnualAdminBuilder:
     dehong_occ_tokens = self.reforms.get("dehong_west_salween_1943_1944_tokens", [])
     for t in active_tusis:
       tid = t["tusi_id"]
-      tg = self.tusi_geoms[tid]
+      tg = tg_map[tid]
       t_country = "People's Republic of China" if year >= 1950 else ("Republic of China (Beiyang)" if year <= 1928 else "Republic of China")
       t_occ = ""
       if year in (1943, 1944) and any(tok in tid.lower() or tok in str(t.get("name_en", "")).lower() for tok in dehong_occ_tokens):

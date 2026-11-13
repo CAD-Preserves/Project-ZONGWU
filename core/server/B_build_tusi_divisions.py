@@ -47,7 +47,6 @@ class TusiModeller:
     self.china_land = None
     self.config_path = os.path.join(base_dir, "common", "tusi", "tusi_modelling_config.json5")
     self.gis_dir = os.path.join(base_dir, "gis")
-    self.gns_cache = {}
     self.precision = 5
     self.roads = []
     self.road_tree_pts = None
@@ -110,12 +109,6 @@ class TusiModeller:
         kept = [sub for sub in parts.geoms if any(sub.contains(sp) or sub.distance(sp) < 1e-6 for sp in seat_objs)]
         if kept:
           domain = gis_helpers.clean_polygonal_geometry(unary_union(kept))
-
-    max_r = float(cluster.get("max_radius_deg") or 0.0)
-    if max_r > 0.0 and domain is not None and seat_pts:
-      pad_r = max_r + 0.55
-      xs_s, ys_s = [sx for sx, _ in seat_pts], [sy for _, sy in seat_pts]
-      domain = gis_helpers.clean_polygonal_geometry(domain.intersection(box(min(xs_s) - pad_r, min(ys_s) - pad_r, max(xs_s) + pad_r, max(ys_s) + pad_r)))
 
     if domain is not None and domain.geom_type == "MultiPolygon":
       kept = [sub for sub in domain.geoms if any(sub.contains(sp) or sub.distance(sp) < 1e-6 for sp in seat_objs)]
@@ -245,11 +238,17 @@ class TusiModeller:
         kx, ky = float(ks[0]), float(ks[1])
         if np.hypot(kx - sx, ky - sy) < 1e-4:
           continue
-        # Only admit known_settlements strictly nearest to this polity seat inside domain+0.15
-        if host_domain.distance(Point(kx, ky)) > 0.15:
-          continue
+        # Only reject outlier settlements that fall inside another polity's immediate core
         d_own = np.hypot(kx - sx, ky - sy)
-        if any(np.hypot(kx - float(ot["seat_lon"]), ky - float(ot["seat_lat"])) < 0.85*d_own for o_i, ot in enumerate(polities) if o_i != idx):
+        too_close_other = False
+        for o_i, ot in enumerate(polities):
+          if o_i == idx:
+            continue
+          d_ot = np.hypot(kx - float(ot["seat_lon"]), ky - float(ot["seat_lat"]))
+          if d_ot < 0.20 and d_ot < 0.35*d_own:
+            too_close_other = True
+            break
+        if too_close_other:
           continue
         pos_pts.append((kx, ky))
         pos_z.append(idx)
@@ -262,35 +261,14 @@ class TusiModeller:
       z_rows.append(row)
 
     if allow_bg:
-      bg_candidates = []
-      for bgs in cluster.get("bg_seeds", []):
-        bg_candidates.append((float(bgs[0]), float(bgs[1])))
-
-      minx, miny, maxx, maxy = host_domain.bounds
-      pad = 0.15
-      town_pool = [self.town_pts] if self.town_pts is not None else []
-      gns_arr = self._load_gns_points(cluster.get("gns_files", []))
-      if gns_arr is not None and gns_arr.shape[0] > 0:
-        town_pool.append(gns_arr)
-
-      for pool_arr in town_pool:
-        mask = (pool_arr[:, 0] >= minx - pad) & (pool_arr[:, 0] <= maxx + pad) & (pool_arr[:, 1] >= miny - pad) & (pool_arr[:, 1] <= maxy + pad)
-        sub = pool_arr[mask]
-        if sub.shape[0] == 0:
-          continue
-        d_pos = np.min(np.hypot(sub[:, 0:1] - pos_arr[None, :, 0], sub[:, 1:2] - pos_arr[None, :, 1]), axis=1)
-        far_sub = sub[d_pos >= bg_exclude_r]
-        if far_sub.shape[0] > 0:
-          in_h = shapely.contains_xy(host_domain, far_sub[:, 0], far_sub[:, 1])
-          for pt in far_sub[in_h]:
-            bg_candidates.append((float(pt[0]), float(pt[1])))
-
       kept_bg = []
       budget = max(12, max_samples - len(samples_xy))
-      step_stride = max(1, len(bg_candidates) // max(1, budget*2))
-      for bx, by in bg_candidates[::step_stride]:
-        if any(np.hypot(bx - kx, by - ky) < 0.06 for kx, ky in kept_bg):
-          continue
+      minx, miny, maxx, maxy = host_domain.bounds
+      pad = 0.15
+
+      # Priority 1: Always admit explicit county-seat / dzong / oasis bg_seeds first
+      for bgs in cluster.get("bg_seeds", []):
+        bx, by = float(bgs[0]), float(bgs[1])
         if any(np.hypot(bx - sx, by - sy) < 0.04 for sx, sy in samples_xy):
           continue
         kept_bg.append((bx, by))
@@ -298,8 +276,29 @@ class TusiModeller:
         row[k_pol] = 1.0
         samples_xy.append((bx, by))
         z_rows.append(row)
-        if len(kept_bg) >= budget:
-          break
+
+      # Priority 2: CHGIS 1911 historical towns (v6_1911_twn_pts_utf.zip) only — never unfiltered GNS passes/hamlets
+      if self.town_pts is not None and not bool(cluster.get("skip_town_bg", False)) and len(kept_bg) < budget:
+        p_mask = (self.town_pts[:, 0] >= minx - pad) & (self.town_pts[:, 0] <= maxx + pad) & (self.town_pts[:, 1] >= miny - pad) & (self.town_pts[:, 1] <= maxy + pad)
+        p_sub = self.town_pts[p_mask]
+        if p_sub.shape[0] > 0:
+          d_pos = np.min(np.hypot(p_sub[:, 0:1] - pos_arr[None, :, 0], p_sub[:, 1:2] - pos_arr[None, :, 1]), axis=1)
+          p_far = p_sub[d_pos >= bg_exclude_r]
+          if p_far.shape[0] > 0:
+            cands = p_far[shapely.contains_xy(host_domain, p_far[:, 0], p_far[:, 1])]
+            sp_r = 0.14 if host_domain.area > 5.0 else 0.08
+            stride = max(1, int(len(cands)) // max(1, max(1, budget - len(kept_bg))*2))
+            for pt in cands[::stride]:
+              bx, by = float(pt[0]), float(pt[1])
+              if any(np.hypot(bx - kx, by - ky) < sp_r for kx, ky in kept_bg) or any(np.hypot(bx - sx, by - sy) < 0.04 for sx, sy in samples_xy):
+                continue
+              kept_bg.append((bx, by))
+              row = np.zeros(k_pol + 1, dtype=np.float64)
+              row[k_pol] = 1.0
+              samples_xy.append((bx, by))
+              z_rows.append(row)
+              if len(kept_bg) >= budget:
+                break
 
     # Return statement
     return np.asarray(samples_xy, dtype=np.float64), np.asarray(z_rows, dtype=np.float64), k_pol
@@ -391,32 +390,6 @@ class TusiModeller:
     if os.path.exists(twn_zip):
       self.town_pts, self.town_recs = self._read_point_zip_wgs84(twn_zip)
 
-  def _load_gns_points (self, arg1_filenames):
-    """Load and cache historical GNS settlement coordinates from source zip archives.
-
-    @param arg1_filenames List of zip filenames inside ./gis/sources/.
-    @return Float64 array of shape (M, 2) [lon, lat].
-    """
-    # Convert from parameters
-    filenames = list(arg1_filenames or [])
-
-    # Declare local instance variables.
-    arrays = []
-
-    for fn in filenames:
-      if fn not in self.gns_cache:
-        zp = os.path.join(self.sources_dir, fn)
-        if os.path.exists(zp):
-          arr, _ = self._read_point_zip_wgs84(zp)
-          self.gns_cache[fn] = arr
-        else:
-          self.gns_cache[fn] = np.zeros((0, 2), dtype=np.float64)
-      if self.gns_cache[fn].shape[0] > 0:
-        arrays.append(self.gns_cache[fn])
-
-    # Return statement
-    return np.vstack(arrays) if arrays else np.zeros((0, 2), dtype=np.float64)
-
   def _partition_domain_kriging (self, arg1_polities, arg2_host_domain, arg3_cfg, arg4_allow_bg):
     """Run Kriging + 3x3 majority smoothing + seat-locked 4-connectivity + chain polygonisation.
 
@@ -437,7 +410,6 @@ class TusiModeller:
     in_dom = None
     k_pol = len(polities)
     labels = None
-    max_r = float(cfg.get("max_radius_deg") or 0.0)
     minx, miny, maxx, maxy = host_domain.bounds
     seat_pts = [(float(t["seat_lon"]), float(t["seat_lat"])) for t in polities]
     seat_rc = []
@@ -465,17 +437,6 @@ class TusiModeller:
     rsegs = self._compute_river_segments(cfg.get("barrier_rivers", []), host_domain.bounds)
 
     scores = self._solve_ordinary_kriging(samples_xy, z_mat, grid_xy, rsegs, cfg)
-    if allow_bg and max_r > 0.0:
-      for i, t in enumerate(polities):
-        t_pts = [(float(t["seat_lon"]), float(t["seat_lat"]))]
-        for ks in t.get("known_settlements", []):
-          kx, ky = float(ks[0]), float(ks[1])
-          if host_domain.distance(Point(kx, ky)) <= 0.15:
-            t_pts.append((kx, ky))
-        t_arr = np.asarray(t_pts, dtype=np.float64)
-        d_min = np.min(np.hypot(grid_xy[:, 0:1] - t_arr[None, :, 0], grid_xy[:, 1:2] - t_arr[None, :, 1]), axis=1)
-        scores[i, d_min > max_r] = -1e9
-
     pred_flat = np.argmax(scores, axis=0).astype(np.int32)
     labels = np.full((h, w), -1, dtype=np.int32)
     labels[in_dom] = pred_flat
@@ -675,6 +636,7 @@ class TusiModeller:
     # Declare local instance variables.
     c0 = float(self.config.get("variogram_nugget") or 0.04)
     c1 = float(self.config.get("variogram_sill") or 1.0) - c0
+    cls_rows = [np.where(z_mat[:, idx] > 0.5)[0] for idx in range(z_mat.shape[1])]
     n_pts = samples_xy.shape[0]
     n_grid = grid_xy.shape[0]
     k_eff = z_mat.shape[1]
@@ -682,47 +644,54 @@ class TusiModeller:
     rng = float(cfg.get("variogram_range_deg") or 0.50)
     road_boost = float(self.config.get("road_boost_factor") or 0.85)
     road_corridor = float(self.config.get("road_corridor_deg") or 0.14)
+    riv_att = float(np.exp(-1.5*(r_pen / rng)))
 
+    # Strict Euclidean Bochner-PSD Simple Indicator Kriging (zero drift: NO Lagrange background count bias)
     d_ss = np.hypot(samples_xy[:, 0:1] - samples_xy[None, :, 0], samples_xy[:, 1:2] - samples_xy[None, :, 1])
-    if rsegs.shape[0] > 0:
-      d_ss = d_ss + r_pen*self._segments_cross_rivers(samples_xy, samples_xy, rsegs).astype(np.float64)
-
     c_ss = c1*np.exp(-1.5*(d_ss / rng))
     np.fill_diagonal(c_ss, c0 + c1 + 1e-6)
-
-    k_mat = np.ones((n_pts + 1, n_pts + 1), dtype=np.float64)
-    k_mat[:n_pts, :n_pts] = c_ss
-    k_mat[n_pts, n_pts] = 0.0
-
-    # Solve augmented system once for all indicators + unbiasedness constraint
-    aug_z = np.vstack([z_mat, np.zeros((1, k_eff), dtype=np.float64)])
-    dual_w = linalg.solve(k_mat, aug_z, assume_a="sym")[:n_pts, :]
+    sol = linalg.solve(c_ss, z_mat, assume_a="sym")
 
     road_mask = np.zeros(n_grid, dtype=bool)
+    samp_road = np.zeros(n_pts, dtype=bool)
     if self.road_tree_pts is not None and self.road_tree_pts.shape[0] > 0 and n_grid > 0:
       minx, miny = float(np.min(grid_xy[:, 0])) - 0.3, float(np.min(grid_xy[:, 1])) - 0.3
       maxx, maxy = float(np.max(grid_xy[:, 0])) + 0.3, float(np.max(grid_xy[:, 1])) + 0.3
-      rmask = (
+      sub_r = self.road_tree_pts[
         (self.road_tree_pts[:, 0] >= minx) & (self.road_tree_pts[:, 0] <= maxx)
         & (self.road_tree_pts[:, 1] >= miny) & (self.road_tree_pts[:, 1] <= maxy)
-      )
-      sub_r = self.road_tree_pts[rmask]
+      ]
       if sub_r.shape[0] > 0:
+        samp_road = (np.min(np.hypot(samples_xy[:, 0:1] - sub_r[None, :, 0], samples_xy[:, 1:2] - sub_r[None, :, 1]), axis=1) <= road_corridor)
         for i in range(0, n_grid, 4000):
           sub_g = grid_xy[i:i + 4000]
-          d_rd = np.min(np.hypot(sub_g[:, 0:1] - sub_r[None, :, 0], sub_g[:, 1:2] - sub_r[None, :, 1]), axis=1)
-          road_mask[i:i + 4000] = (d_rd <= road_corridor)
+          road_mask[i:i + 4000] = (np.min(np.hypot(sub_g[:, 0:1] - sub_r[None, :, 0], sub_g[:, 1:2] - sub_r[None, :, 1]), axis=1) <= road_corridor)
 
     scores = np.zeros((k_eff, n_grid), dtype=np.float64)
-    z_mean = np.mean(z_mat, axis=0)[:, None]
     for i in range(0, n_grid, 2000):
       sub_g = grid_xy[i:i + 2000]
       d_sg = np.hypot(samples_xy[:, 0:1] - sub_g[None, :, 0], samples_xy[:, 1:2] - sub_g[None, :, 1])
-      if rsegs.shape[0] > 0:
-        d_sg = d_sg + r_pen*self._segments_cross_rivers(samples_xy, sub_g, rsegs).astype(np.float64)
-      d_sg[:, road_mask[i:i + 2000]] *= road_boost
-      c_sg = c1*np.exp(-1.5*(d_sg / rng))
-      scores[:, i:i + 2000] = (dual_w.T @ c_sg) + z_mean*(1.0 - np.sum(c_sg, axis=0, keepdims=True) / (c0 + c1))
+      sub_sc = np.clip(sol.T @ (c1*np.exp(-1.5*(d_sg / rng))), 0.0, None)
+      cr = self._segments_cross_rivers(samples_xy, sub_g, rsegs) if rsegs.shape[0] > 0 else None
+      d_eff = d_sg + r_pen*cr.astype(np.float64) if cr is not None else d_sg
+      sub_rd = road_mask[i:i + 2000]
+      col_idx = np.arange(sub_g.shape[0])
+      for cls_i, rows_i in enumerate(cls_rows):
+        if rows_i.shape[0] == 0:
+          continue
+        near_r = rows_i[np.argmin(d_eff[rows_i], axis=0)]
+        crossed = cr[near_r, col_idx] if cr is not None else np.zeros(sub_g.shape[0], dtype=bool)
+        if np.any(crossed):
+          sub_sc[cls_i, crossed] *= riv_att
+        on_cor = sub_rd & samp_road[near_r] & (~crossed)
+        if np.any(on_cor):
+          sub_sc[cls_i, on_cor] /= road_boost
+      # Tie-break guard only if all classes underflowed to 0.0 far from every sample
+      zero_mask = (np.max(sub_sc, axis=0) <= 1e-12)
+      if np.any(zero_mask):
+        near_cls = np.argmax(z_mat[np.argmin(d_eff[:, zero_mask], axis=0)], axis=1)
+        sub_sc[near_cls, np.where(zero_mask)[0]] = 1e-6
+      scores[:, i:i + 2000] = sub_sc
 
     # Return statement
     return scores
@@ -857,9 +826,7 @@ class TusiModeller:
         "start_year": int(t["start_year"]), "tusi_id": tid, "tusi_status": t.get("tusi_status", "de_jure_and_de_facto"),
       }
       out_features.append((props, geom))
-
     written = gis_helpers.write_geojson(out_path, out_features, self.precision)
-
     # Return statement
     return out_path, written
 
@@ -868,23 +835,22 @@ class TusiModeller:
 
     @return List of generated PNG filepaths.
     """
-    os.makedirs(self.tests_dir, exist_ok=True)
-    generated = []
-
-    def iter_polys (g):
-      return [g] if g.geom_type == "Polygon" else (list(g.geoms) if g.geom_type == "MultiPolygon" else [])
-
-    def iter_lines (g):
-      return [g] if g.geom_type == "LineString" else (list(g.geoms) if g.geom_type == "MultiLineString" else [])
-
+    os.makedirs(self.tests_dir, exist_ok=True); generated = []
+    leg_handles = [
+      Patch(facecolor="#88c999", edgecolor="#1a3b2a", linewidth=0.9, label="chgis_direct (CHGIS 1911 Surveyed)"),
+      Patch(facecolor="#e8a47c", edgecolor="#6b1b1b", linewidth=1.1, label="kriging_modelled (Tier B/C Partition)"),
+      Line2D([0], [0], color="#1f68a8", linewidth=1.5, label="Major Rivers"),
+      Line2D([0], [0], color="#9e7b56", linewidth=0.8, linestyle="--", label="Historical Roads"),
+      Line2D([0], [0], marker="*", color="w", markerfacecolor="#f5d142", markeredgecolor="#111111", markersize=9, label="Tusi Seat (*)"),
+    ]
+    iter_polys = lambda g: [g] if g.geom_type == "Polygon" else (list(g.geoms) if g.geom_type == "MultiPolygon" else [])
+    iter_lines = lambda g: [g] if g.geom_type == "LineString" else (list(g.geoms) if g.geom_type == "MultiLineString" else [])
     for mcfg in self.config.get("diagnostic_maps", []):
       minx, maxx, miny, maxy = [float(v) for v in mcfg["extent"]]
-      vp_box = box(minx, miny, maxx, maxy)
-      year_flt = mcfg.get("active_year_filter")
-      is_overview = (year_flt is not None or (maxx - minx) > 25.0)
-      fig, ax = plt.subplots(figsize=(14.5, 10.5), dpi=210)
-      ax.set_facecolor("#e9f0f5")
-
+      vp_box = box(minx, miny, maxx, maxy); year_flt = mcfg.get("active_year_filter")
+      is_overview = (year_flt is not None or (maxx - minx) > 35.0)
+      min_lbl_area = 0.65 if is_overview else (0.18 if (maxx - minx) > 22.0 else 0.005)
+      fig, ax = plt.subplots(figsize=(14.5, 10.5), dpi=210); ax.set_facecolor("#e9f0f5")
       for feat in self.adm1_features:
         g = shape(feat["geometry"])
         if g.intersects(vp_box):
@@ -929,45 +895,38 @@ class TusiModeller:
         if not is_overview and minx <= sx <= maxx and miny <= sy <= maxy:
           ax.scatter([sx], [sy], marker="*", s=38, color="#f5d142" if not is_direct else "#ffffff", edgecolor="#111111", linewidth=0.45, zorder=8)
         rp = geom.representative_point()
-        if geom.area >= (0.75 if is_overview else 0.012) and minx <= rp.x <= maxx and miny <= rp.y <= maxy:
+        if geom.area >= min_lbl_area and minx <= rp.x <= maxx and miny <= rp.y <= maxy:
           short_name = t["name_en"].split("(")[0].strip()
           short_name = short_name[:16] + ".." if len(short_name) > 18 else short_name
           raw_labels.append([rp.x, rp.y, rp.x, rp.y, short_name if is_overview else f"{short_name}\n[{tid}]"])
 
-      min_dx, min_dy = 0.065*(maxx - minx), 0.028*(maxy - miny)
-      for _ in range(20):
+      min_dx, min_dy = 0.042*(maxx - minx), 0.020*(maxy - miny)
+      max_sx, max_sy = 0.032*(maxx - minx), 0.026*(maxy - miny)
+      for _ in range(16):
         for i in range(len(raw_labels)):
           for x in range(i + 1, len(raw_labels)):
             dx, dy = raw_labels[i][0] - raw_labels[x][0], raw_labels[i][1] - raw_labels[x][1]
             if abs(dx) < min_dx and abs(dy) < min_dy:
-              px_off, py_off = (0.14*min_dx if dx >= 0.0 else -0.14*min_dx), (0.24*min_dy if dy >= 0.0 else -0.24*min_dy)
+              px_off, py_off = (0.10*min_dx if dx >= 0.0 else -0.10*min_dx), (0.18*min_dy if dy >= 0.0 else -0.18*min_dy)
               for sgn, idx in ((1.0, i), (-1.0, x)):
-                raw_labels[idx][0] = min(maxx - 0.3, max(minx + 0.3, raw_labels[idx][0] + sgn*px_off))
-                raw_labels[idx][1] = min(maxy - 0.15, max(miny + 0.15, raw_labels[idx][1] + sgn*py_off))
+                nx = raw_labels[idx][0] + sgn*px_off
+                ny = raw_labels[idx][1] + sgn*py_off
+                raw_labels[idx][0] = min(maxx - 0.25, max(minx + 0.25, min(raw_labels[idx][2] + max_sx, max(raw_labels[idx][2] - max_sx, nx))))
+                raw_labels[idx][1] = min(maxy - 0.15, max(miny + 0.15, min(raw_labels[idx][3] + max_sy, max(raw_labels[idx][3] - max_sy, ny))))
       for lx, ly, ox, oy, txt in raw_labels:
-        if np.hypot(lx - ox, ly - oy) > (0.45 if is_overview else 0.14):
+        if np.hypot(lx - ox, ly - oy) > (0.40 if is_overview else 0.12):
           ax.plot([ox, lx], [oy, ly], color="#333333", linewidth=0.4, alpha=0.6, zorder=9)
-        ax.text(lx, ly, txt, fontsize=4.5 if is_overview else 3.8, ha="center", va="center", color="#141414", fontweight="semibold", zorder=10, path_effects=[patheffects.withStroke(linewidth=1.5, foreground="#ffffff", alpha=0.9)])
+        ax.text(lx, ly, txt, fontsize=4.5 if is_overview else 3.7, ha="center", va="center", color="#141414", fontweight="semibold", zorder=10, path_effects=[patheffects.withStroke(linewidth=1.5, foreground="#ffffff", alpha=0.9)])
 
-      ax.set_xlim(minx, maxx)
-      ax.set_ylim(miny, maxy)
+      ax.set_xlim(minx, maxx); ax.set_ylim(miny, maxy)
       ax.set_aspect(1.0 / np.cos(np.deg2rad(0.5*(miny + maxy))))
       ax.grid(True, linestyle=":", linewidth=0.45, color="#999999", alpha=0.6)
-      ax.set_xlabel("Longitude (WGS84)", fontsize=9)
-      ax.set_ylabel("Latitude (WGS84)", fontsize=9)
+      ax.set_xlabel("Longitude (WGS84)", fontsize=9); ax.set_ylabel("Latitude (WGS84)", fontsize=9)
       ax.set_title(mcfg["title"], fontsize=11.0, fontweight="bold", pad=10)
-      ax.legend(handles=[
-        Patch(facecolor="#88c999", edgecolor="#1a3b2a", linewidth=0.9, label="chgis_direct (CHGIS 1911 Surveyed)"),
-        Patch(facecolor="#e8a47c", edgecolor="#6b1b1b", linewidth=1.1, label="kriging_modelled (Tier B/C Partition)"),
-        Line2D([0], [0], color="#1f68a8", linewidth=1.5, label="Major Rivers"),
-        Line2D([0], [0], color="#9e7b56", linewidth=0.8, linestyle="--", label="Historical Roads"),
-        Line2D([0], [0], marker="*", color="w", markerfacecolor="#f5d142", markeredgecolor="#111111", markersize=9, label="Tusi Seat (*)"),
-      ], loc=mcfg.get("legend_loc", "lower left"), fontsize=7.5, framealpha=0.92)
-
+      leg_loc = mcfg.get("legend_loc", "lower left")
+      ax.legend(handles=leg_handles, loc="upper center" if leg_loc == "outside_bottom" else leg_loc, bbox_to_anchor=(0.5, -0.075) if leg_loc == "outside_bottom" else None, ncol=5 if leg_loc == "outside_bottom" else 1, fontsize=7.5, framealpha=0.95)
       out_png = os.path.join(self.tests_dir, mcfg["filename"])
-      fig.tight_layout()
-      fig.savefig(out_png, dpi=210)
-      plt.close(fig)
+      fig.tight_layout(); fig.savefig(out_png, dpi=210); plt.close(fig)
       generated.append(out_png)
       print(f"[STEP 2] Rendered diagnostic PNG: {out_png}")
 
