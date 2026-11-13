@@ -1,4 +1,9 @@
 chronicles
+gis/sources/terrarium_tiles/
 tests
+
 /**/__pycache__
+/**/*.zip
+
+*.npz
 *.pyc

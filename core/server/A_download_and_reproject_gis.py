@@ -11,6 +11,7 @@ from shapely.ops import unary_union
 from shapely.prepared import prep
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import elevation_helpers
 import gis_helpers
 
 
@@ -125,6 +126,12 @@ def A_download_all_sources (arg1_cfg, arg2_sources_dir):
       local_paths[key] = dest
 
   for key, meta in cfg["natural_earth"]["files"].items():
+    dest = os.path.join(sources_dir, meta["filename"])
+    ok = gis_helpers.download_with_cache(meta["url"], dest)
+    if ok:
+      local_paths[key] = dest
+
+  for key, meta in cfg.get("hydrosheds", {}).get("files", {}).items():
     dest = os.path.join(sources_dir, meta["filename"])
     ok = gis_helpers.download_with_cache(meta["url"], dest)
     if ok:
@@ -567,9 +574,10 @@ def C_build_transport_layers (arg1_paths, arg2_cfg, arg3_corridors, arg4_gis_dir
 
 
 def main ():
-  """Execute Step 1 download, reprojection, cleaning, and baseline export."""
+  """Execute Step 1 download, reprojection, cleaning, baseline, transport, and elevation export."""
   base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
   common_gis = os.path.join(base_dir, "common", "gis")
+  elev_only = "--elevation-only" in sys.argv[1:]
   gis_dir = os.path.join(base_dir, "gis")
   sources_dir = os.path.join(gis_dir, "sources")
 
@@ -580,10 +588,14 @@ def main ():
 
   paths = A_download_all_sources(cfg, sources_dir)
   print("[STEP 1A] Sources ready:", len(paths))
-  adm_summary = B_build_1911_baseline(paths, cfg, gis_dir)
-  print("[STEP 1B] 1911 baseline:", adm_summary)
-  tr_summary = C_build_transport_layers(paths, cfg, corridors, gis_dir)
-  print("[STEP 1C] Transport layers:", tr_summary)
+  if not elev_only:
+    adm_summary = B_build_1911_baseline(paths, cfg, gis_dir)
+    print("[STEP 1B] 1911 baseline:", adm_summary)
+    tr_summary = C_build_transport_layers(paths, cfg, corridors, gis_dir)
+    print("[STEP 1C] Transport layers:", tr_summary)
+  elev_builder = elevation_helpers.ElevationContourBuilder(cfg, sources_dir, gis_dir)
+  elev_summary = elev_builder.build_elevation_contours(paths)
+  print("[STEP 1D] Elevation contours & relief:", elev_summary)
   return 0
 
 

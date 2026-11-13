@@ -45,6 +45,12 @@
         "filename": "v6_1911_twn_pts_utf.zip",
         "role": "settlements_1911"
       },
+      "chgis_1926_atlas": {
+        "encoding": "binary",
+        "file_id": 2448788,
+        "filename": "1926_China_Atlas.zip",
+        "role": "reference_atlas_1926"
+      },
       "chgis_1926_prov": {
         "encoding": "utf-8",
         "file_id": 2691130,
@@ -56,6 +62,36 @@
         "file_id": 2691164,
         "filename": "v5_1990_citas_cnty_pgn_utf.zip",
         "role": "frontier_county_subdivision_reference"
+      },
+      "chgis_ming_garrisons": {
+        "encoding": "utf-8",
+        "file_id": 3007341,
+        "filename": "Ming_Garrisons.zip",
+        "role": "ming_qing_garrisons"
+      },
+      "chgis_tibet_monasteries": {
+        "encoding": "utf-8",
+        "file_id": 3007328,
+        "filename": "Tibet_Monasteries_TBRC_V2_2014.zip",
+        "role": "tibetan_monasteries"
+      },
+      "chgis_tibet_monasteries_map": {
+        "encoding": "binary",
+        "file_id": 3007329,
+        "filename": "Tibet_Monasteries_2014.png",
+        "role": "reference_map"
+      },
+      "chgis_tibet_towns_csv": {
+        "encoding": "utf-8",
+        "file_id": 3007317,
+        "filename": "Tibet_twns_CSV_2009.zip",
+        "role": "tibetan_townships_csv"
+      },
+      "chgis_tibet_towns_shp": {
+        "encoding": "utf-8",
+        "file_id": 3007318,
+        "filename": "Tibet_twns_SHP_2009.zip",
+        "role": "tibetan_townships"
       },
       "gns_gansu": {
         "encoding": "gb18030",
@@ -120,8 +156,33 @@
     }
   },
   "coordinate_precision": 5,
+  "elevation": {
+    "cache_npz": "terrarium_dem_z7_z8.npz",
+    "contour_intervals_m": [200, 500, 1000, 2000, 3000, 4000],
+    "dem_zoom_frontier": 8,
+    "dem_zoom_overview": 7,
+    "frontier_bbox": {
+      "max_lat": 49.5,
+      "max_lon": 112.5,
+      "min_lat": 20.5,
+      "min_lon": 78.0
+    },
+    "frontier_grid_step_deg": 0.006,
+    "grid_step_deg": 0.015,
+    "min_contour_length_deg": 0.12,
+    "simplify_tolerance_deg": 0.003,
+    "terrarium_tile_url": "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
+  },
   "gadm": {
     "files": {
+      "gadm_chn_3": {
+        "filename": "gadm41_CHN_3.json.zip",
+        "url": "https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_CHN_3.json.zip"
+      },
+      "gadm_ind_3": {
+        "filename": "gadm41_IND_3.json.zip",
+        "url": "https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_IND_3.json.zip"
+      },
       "gadm_mng_1": {
         "filename": "gadm41_MNG_1.json",
         "url": "https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_MNG_1.json"
@@ -140,8 +201,32 @@
       }
     }
   },
+  "hydrosheds": {
+    "files": {
+      "hybas_as_lev08": {
+        "filename": "hybas_as_lev08_v1c.zip",
+        "url": "https://data.hydrosheds.org/file/hydrobasins/standard/hybas_as_lev08_v1c.zip"
+      },
+      "hybas_as_lev09": {
+        "filename": "hybas_as_lev09_v1c.zip",
+        "url": "https://data.hydrosheds.org/file/hydrobasins/standard/hybas_as_lev09_v1c.zip"
+      },
+      "hybas_as_lev10": {
+        "filename": "hybas_as_lev10_v1c.zip",
+        "url": "https://data.hydrosheds.org/file/hydrobasins/standard/hybas_as_lev10_v1c.zip"
+      },
+      "hydrorivers_as": {
+        "filename": "HydroRIVERS_v10_as_shp.zip",
+        "url": "https://data.hydrosheds.org/file/HydroRIVERS/HydroRIVERS_v10_as_shp.zip"
+      }
+    }
+  },
   "natural_earth": {
     "files": {
+      "ne_elevation_points": {
+        "filename": "ne_10m_geography_regions_elevation_points.geojson",
+        "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_geography_regions_elevation_points.geojson"
+      },
       "ne_railroads": {
         "filename": "ne_10m_railroads.geojson",
         "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_railroads.geojson"

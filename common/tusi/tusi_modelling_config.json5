@@ -1,9 +1,14 @@
 {
-  // Hydrology- & corridor-modulated Kriging configuration for Project-ZONGWU 425-polity Tusi partitions
-  "variogram_nugget": 0.04,
-  "variogram_sill": 1.0,
-  "road_corridor_deg": 0.14,
-  "road_boost_factor": 0.84,
+  // Topographic & subadministrative Borderpool Graph configuration for 425-polity Tusi partitions
+  "borderpool_weights": {
+    "elev_diff_weight": 0.80,
+    "min_sliver_area_deg2": 0.00025,
+    "ridge_relief_weight": 2.20,
+    "river_barrier_cost": 0.42,
+    "road_corridor_factor": 0.76,
+    "secondary_seed_cost": 0.035,
+    "subadmin_boundary_cost": 0.36
+  },
   "max_samples_per_cluster": 180,
   "tier_b_clusters": [
     {
@@ -618,7 +623,7 @@
     },
     {
       "filename": "tusi_verify_kham_sichuan.png",
-      "title": "Project-ZONGWU Tusi Verification: Xikang (Kham), Gyalrong, Aba & Liangshan (1912-1953)",
+      "title": "Project-ZONGWU Tusi Borderpool: Xikang (Kham), Gyalrong, Aba & Liangshan (1912-1953)",
       "extent": [97.5, 109.5, 26.0, 34.5],
       "legend_loc": "outside_bottom",
       "river_labels": [
@@ -626,6 +631,17 @@
         [100.75, 29.85, "Yalong"],
         [102.25, 30.25, "Dadu"],
         [103.65, 31.60, "Min"]
+      ]
+    },
+    {
+      "filename": "tusi_verify_kham_zoom.png",
+      "title": "Project-ZONGWU Tusi Borderpool Detail: Kham, Hor, Zhandui & Gyalrong",
+      "extent": [98.4, 104.2, 27.6, 33.2],
+      "legend_loc": "outside_bottom",
+      "river_labels": [
+        [98.95, 29.20, "Jinsha (Yangtze)"],
+        [100.85, 29.80, "Yalong"],
+        [102.05, 31.20, "Dadu"]
       ]
     },
     {
