@@ -8,6 +8,7 @@
   },
   "chgis_dataverse": {
     "base_url": "https://dataverse.harvard.edu/api/access/datafile/",
+    "target_dir": "input/gis/chgis",
     "files": {
       "chgis_1820_lakes": {
         "encoding": "utf-8",
@@ -45,53 +46,11 @@
         "filename": "v6_1911_twn_pts_utf.zip",
         "role": "settlements_1911"
       },
-      "chgis_1926_atlas": {
-        "encoding": "binary",
-        "file_id": 2448788,
-        "filename": "1926_China_Atlas.zip",
-        "role": "reference_atlas_1926"
-      },
-      "chgis_1926_prov": {
-        "encoding": "utf-8",
-        "file_id": 2691130,
-        "filename": "v5_1926_prov_pgn_utf.zip",
-        "role": "adm_1_1926_reference"
-      },
       "chgis_1990_citas_cnty": {
         "encoding": "utf-8",
         "file_id": 2691164,
         "filename": "v5_1990_citas_cnty_pgn_utf.zip",
         "role": "frontier_county_subdivision_reference"
-      },
-      "chgis_ming_garrisons": {
-        "encoding": "utf-8",
-        "file_id": 3007341,
-        "filename": "Ming_Garrisons.zip",
-        "role": "ming_qing_garrisons"
-      },
-      "chgis_tibet_monasteries": {
-        "encoding": "utf-8",
-        "file_id": 3007328,
-        "filename": "Tibet_Monasteries_TBRC_V2_2014.zip",
-        "role": "tibetan_monasteries"
-      },
-      "chgis_tibet_monasteries_map": {
-        "encoding": "binary",
-        "file_id": 3007329,
-        "filename": "Tibet_Monasteries_2014.png",
-        "role": "reference_map"
-      },
-      "chgis_tibet_towns_csv": {
-        "encoding": "utf-8",
-        "file_id": 3007317,
-        "filename": "Tibet_twns_CSV_2009.zip",
-        "role": "tibetan_townships_csv"
-      },
-      "chgis_tibet_towns_shp": {
-        "encoding": "utf-8",
-        "file_id": 3007318,
-        "filename": "Tibet_twns_SHP_2009.zip",
-        "role": "tibetan_townships"
       },
       "gns_gansu": {
         "encoding": "gb18030",
@@ -170,10 +129,12 @@
     "frontier_grid_step_deg": 0.006,
     "grid_step_deg": 0.015,
     "min_contour_length_deg": 0.12,
+    "priors_dir": "input/gis/priors",
     "simplify_tolerance_deg": 0.003,
     "terrarium_tile_url": "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
   },
   "gadm": {
+    "target_dir": "input/gis/gadm",
     "files": {
       "gadm_chn_3": {
         "filename": "gadm41_CHN_3.json.zip",
@@ -202,6 +163,7 @@
     }
   },
   "hydrosheds": {
+    "target_dir": "input/gis/hydrosheds",
     "files": {
       "hybas_as_lev08": {
         "filename": "hybas_as_lev08_v1c.zip",
@@ -222,6 +184,7 @@
     }
   },
   "modern_reference": {
+    "target_dir": "input/gis/modern_reference",
     "files": {
       "gb2260_areas": {
         "filename": "gb2260_areas.json",
@@ -258,6 +221,7 @@
     }
   },
   "natural_earth": {
+    "target_dir": "input/gis/natural_earth",
     "files": {
       "ne_elevation_points": {
         "filename": "ne_10m_geography_regions_elevation_points.geojson",
@@ -288,7 +252,103 @@
   "rasteriser": {
     "aspect_cos_lat": 35.0,
     "canvas_height": 1200,
-    "canvas_width": 1600
+    "canvas_width": 1600,
+    "palette": {
+      "ocean_rgb": [224, 235, 245],
+      "mongolia_base_rgb": [118, 176, 214],
+      "tuva_base_rgb": [168, 146, 204],
+      "occupied_base_rgb": [216, 116, 108],
+      "feudatory_base_rgb": [224, 188, 86],
+      "foreign_stone_rgb": [204, 198, 188],
+      "county_border_rgb": [96, 88, 78],
+      "admin_border_rgb": [52, 48, 44],
+      "province_border_rgb": [36, 33, 30],
+      "feudatory_border_rgb": [150, 32, 24],
+      "fallback_china_rgbs": [
+        [226, 204, 156],
+        [200, 212, 156],
+        [228, 192, 148],
+        [214, 208, 156],
+        [218, 198, 166],
+        [194, 206, 162],
+        [232, 210, 158],
+        [210, 190, 152]
+      ],
+      "china_provincial_rgbs": {
+        "Altai Special Region": [214, 194, 152],
+        "Andong": [204, 190, 154],
+        "Anhui": [206, 214, 160],
+        "Beijing": [234, 212, 166],
+        "Beiping": [234, 212, 166],
+        "Chahar": [212, 204, 158],
+        "Chamdo": [212, 192, 158],
+        "Chongqing": [214, 198, 152],
+        "Chuanbei": [204, 214, 164],
+        "Chuanbian": [204, 184, 152],
+        "Chuandong": [188, 204, 154],
+        "Chuannan": [198, 210, 160],
+        "Chuanxi": [192, 208, 158],
+        "Fengtian": [214, 198, 160],
+        "Fujian": [222, 190, 152],
+        "Gansu": [220, 198, 160],
+        "Guangdong": [202, 212, 158],
+        "Guangxi": [226, 202, 156],
+        "Guangzhou": [216, 222, 168],
+        "Guizhou": [196, 200, 158],
+        "Hainan": [196, 208, 152],
+        "Hankou": [228, 216, 162],
+        "Hebei": [226, 204, 156],
+        "Hejiang": [192, 204, 160],
+        "Heilongjiang": [222, 210, 170],
+        "Henan": [232, 190, 144],
+        "Hong Kong": [220, 216, 174],
+        "Hubei": [218, 210, 154],
+        "Hunan": [198, 212, 168],
+        "Inner Mongolia Autonomous Region": [218, 206, 164],
+        "Jiangsu": [230, 212, 168],
+        "Jiangxi": [226, 198, 156],
+        "Jilin": [196, 208, 164],
+        "Jingzhao": [234, 212, 166],
+        "Liaobei": [222, 206, 170],
+        "Liaodong": [216, 202, 166],
+        "Liaoning": [214, 198, 160],
+        "Liaoxi": [206, 192, 156],
+        "Macau": [220, 216, 174],
+        "Nanjing": [234, 214, 170],
+        "NeiMongol": [218, 206, 164],
+        "Neimenggu": [218, 206, 164],
+        "Nenjiang": [214, 202, 164],
+        "Ningxia": [206, 184, 148],
+        "NingxiaHui": [206, 184, 148],
+        "Pingyuan": [222, 206, 154],
+        "Qingdao": [214, 220, 164],
+        "Qinghai": [228, 214, 164],
+        "Rehe": [226, 194, 152],
+        "Shaanxi": [204, 196, 148],
+        "Shandong": [196, 212, 152],
+        "Shanghai": [236, 218, 174],
+        "Shanxi": [216, 182, 146],
+        "Sichuan": [192, 208, 158],
+        "Songjiang": [206, 214, 170],
+        "Subei": [230, 212, 168],
+        "Suiyuan": [226, 208, 168],
+        "Sunan": [222, 204, 160],
+        "Taiwan": [214, 196, 158],
+        "Tianjin": [218, 194, 148],
+        "Wanbei": [208, 214, 162],
+        "Wannan": [198, 206, 154],
+        "Wuhan": [226, 216, 162],
+        "Xi'an": [214, 204, 156],
+        "Xikang": [204, 184, 152],
+        "Xing'an": [204, 206, 166],
+        "Xinjiang": [232, 206, 168],
+        "XinjiangUygur": [232, 206, 168],
+        "Xizang": [224, 208, 176],
+        "Yunnan": [214, 192, 156],
+        "Zhejiang": [188, 206, 160],
+        "Zhili": [226, 204, 156]
+      }
+    }
   },
   "transport_straight_link_filter": {
     "coarse_mean_segment_deg": 0.15,

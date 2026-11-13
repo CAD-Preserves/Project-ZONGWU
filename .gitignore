@@ -1,15 +1,22 @@
-# Folders
-chronicles
-gis/sources/terrarium_tiles/
-tests
-# Generic folders; file extensions
-/**/__pycache__
-# File Extensions
-*.npz
-*.pdf
-*.pyc
-*.zip
+# Generated output exports and local caches
+input/gis/priors/hydrorivers_china_ord3.pkl
+input/gis/priors/terrarium_tiles/
+input/scrape_cache/*
+!input/scrape_cache/.gitkeep
+input/tusi/*.mkv
 input/tusi/*.mp4
 input/tusi/*.webm
-input/tusi/*.mkv
 input/tusi/frames/
+output/chronicles/
+output/newspapers/*
+!output/newspapers/.gitkeep
+tests/outputs/*
+!tests/outputs/.gitkeep
+
+# Generic folders and binary extensions
+/**/__pycache__/
+*.npz
+*.pdf
+*.pkl
+*.pyc
+*.zip

@@ -1,6 +1,27 @@
 // Project-ZONGWU Spatial Modelling Configuration: Borderpool Weights, Clusters & Diagnostic Maps
 {
-  "reference_geojson": "gis/sources/tibet_yushu_reference_polygons.geojson",
+  "reference_geojson": "input/gis/priors/tibet_yushu_reference_polygons.geojson",
+  "mcmahon_southern_ids": [
+    "adi_abor_siang",
+    "apatani_ziro_valley",
+    "bangni_east_kameng_tribes",
+    "digaru_taraon_mishmi",
+    "dirang_kalaktang_monpa",
+    "hill_miri_subansiri",
+    "idu_mishmi_dibang",
+    "memba_mechuka_polity",
+    "merak_brokpa_estate",
+    "miji_sajolang_polity",
+    "miju_kaman_mishmi",
+    "monyul_tawang",
+    "na_taksing_border_tribe",
+    "nishi_nishang_hills",
+    "sakteng_brokpa_estate",
+    "sherdukpen_rupa_polity",
+    "sulung_puroik_tribes",
+    "talung_dzong_estate",
+    "zakhring_meyor_walong"
+  ],
   "borderpool_weights": {
     "elev_diff_weight": 0.8,
     "min_sliver_area_deg2": 0.00025,

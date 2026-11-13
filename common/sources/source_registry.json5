@@ -1,0 +1,5 @@
+// Global deduplication registry for downloaded and OCR-processed primary sources.
+{
+  "schema_version": 1,
+  "sources": {}
+}

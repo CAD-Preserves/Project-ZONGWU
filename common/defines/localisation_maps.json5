@@ -1,0 +1,139 @@
+// Category localisation, French/German exonyms and chronicle output directory branches.
+{
+  "category_loc": {
+    "aimag": {
+      "de": "Aimag",
+      "en_gb": "Aimag",
+      "fr": "Aïmag"
+    },
+    "frontier_territory": {
+      "de": "Grenzgebiet",
+      "en_gb": "Frontier territory",
+      "fr": "Territoire frontalier"
+    },
+    "japan_puppet_puppet": {
+      "de": "Besetztes / Marionettengebiet",
+      "en_gb": "Occupied or puppet administration",
+      "fr": "Administration occupée ou fantoche"
+    },
+    "japanese_colony": {
+      "de": "Japanisches Generalgouvernement",
+      "en_gb": "Japanese governorate-general",
+      "fr": "Gouvernorat général japonais"
+    },
+    "kozhuun": {
+      "de": "Choschuun",
+      "en_gb": "Khoshuun",
+      "fr": "Khochoun"
+    },
+    "league_special_banner": {
+      "de": "Bund / Sonderbanner",
+      "en_gb": "League or special banner",
+      "fr": "Ligue ou bannière spéciale"
+    },
+    "manchukuo_province": {
+      "de": "Provinz (Mandschukuo)",
+      "en_gb": "Manchukuo province",
+      "fr": "Province du Mandchoukouo"
+    },
+    "municipality": {
+      "de": "Regierungsunmittelbare Stadt",
+      "en_gb": "Direct-controlled municipality",
+      "fr": "Municipalité relevant du gouvernement central"
+    },
+    "occupied_puppet": {
+      "de": "Besetzte Verwaltung",
+      "en_gb": "Occupied administration",
+      "fr": "Administration occupée"
+    },
+    "prc_adm_area": {
+      "de": "Verwaltungsgebiet",
+      "en_gb": "Administrative area",
+      "fr": "Zone administrative"
+    },
+    "prc_autonomous_region": {
+      "de": "Autonomes Gebiet",
+      "en_gb": "Autonomous region",
+      "fr": "Région autonome"
+    },
+    "prc_province": {
+      "de": "Provinz",
+      "en_gb": "Province",
+      "fr": "Province"
+    },
+    "province": {
+      "de": "Provinz",
+      "en_gb": "Province",
+      "fr": "Province"
+    },
+    "roc_province": {
+      "de": "Provinz",
+      "en_gb": "Province",
+      "fr": "Province"
+    },
+    "special_region": {
+      "de": "Sonderverwaltungsgebiet",
+      "en_gb": "Special administrative region",
+      "fr": "Région administrative spéciale"
+    },
+    "tusi": {
+      "de": "Tusi-Häuptlingstum",
+      "en_gb": "Tusi polity",
+      "fr": "Chefferie Tusi"
+    },
+    "unknown": {
+      "de": "Unbekannt",
+      "en_gb": "Unknown",
+      "fr": "Inconnu"
+    }
+  },
+  "chronicle_category_branches": {
+    "aimag": "frontier_and_outer",
+    "autonomous_oblast": "autonomous_and_special",
+    "autonomous_region": "autonomous_and_special",
+    "colony": "occupied_and_leased",
+    "frontier_polity": "frontier_and_outer",
+    "leased_territory": "occupied_and_leased",
+    "municipality": "municipalities",
+    "occupied_city": "occupied_and_leased",
+    "occupied_province": "occupied_and_leased",
+    "province": "provinces",
+    "puppet_province": "occupied_and_leased",
+    "republic": "frontier_and_outer",
+    "special_region": "autonomous_and_special",
+    "tusi": "tusi"
+  },
+  "exonyms_fr_de": {
+    "beijing": ["Pékin", "Peking"],
+    "east_hebei": ["Hebei oriental", "Ost-Hebei"],
+    "guangzhou": ["Canton", "Kanton"],
+    "hebei": ["Hebei", "Hebei"],
+    "heilongjiang": ["Heilongjiang", "Heilongjiang"],
+    "hubei": ["Hubei", "Hubei"],
+    "inner_mongolia": ["Mongolie-Intérieure", "Innere Mongolei"],
+    "jiangsu": ["Jiangsu", "Jiangsu"],
+    "jilin": ["Jilin", "Jilin"],
+    "kovd": ["Khovd", "Chowd"],
+    "liaoning": ["Liaoning", "Liaoning"],
+    "manchuria": ["Mandchourie", "Mandschurei"],
+    "mongolia": ["Mongolie", "Mongolei"],
+    "nanjing": ["Nankin", "Nanking"],
+    "outer_mongolia": ["Mongolie-Extérieure", "Äußere Mongolei"],
+    "pingyuan": ["Pingyuan", "Pingyuan"],
+    "qinghai": ["Qinghai", "Qinghai"],
+    "rehe": ["Jéhol", "Jehol"],
+    "shaanxi": ["Shaanxi", "Shaanxi"],
+    "shandong": ["Shandong", "Schandong"],
+    "shanghai": ["Shanghai", "Schanghai"],
+    "shanxi": ["Shanxi", "Shanxi"],
+    "sichuan": ["Sichuan", "Sichuan"],
+    "suiyuan": ["Suiyuan", "Suiyuan"],
+    "taiwan": ["Taïwan", "Taiwan"],
+    "tibet": ["Tibet", "Tibet"],
+    "tuva": ["Touva", "Tuwa"],
+    "uliastai": ["Uliastai", "Uliastai"],
+    "xikang": ["Xikang", "Xikang"],
+    "xinjiang": ["Xinjiang", "Xinjiang"],
+    "yunnan": ["Yunnan", "Yunnan"]
+  }
+}

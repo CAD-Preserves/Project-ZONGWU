@@ -1,0 +1,70 @@
+// Canonical workspace path registry for Project-ZONGWU (7-folder root architecture).
+{
+  "common": {
+    "actor_glossary": "common/chronology/actor_glossary.json5",
+    "admin_mappings": "common/gis/admin_mappings.json5",
+    "admin_reforms": "common/gis/admin_reforms_1912_1953.json5",
+    "data_sources": "common/gis/data_sources.json5",
+    "local_history_edge_cases": "common/defines/local_history_edge_cases.json5",
+    "localisation_maps": "common/defines/localisation_maps.json5",
+    "modern_gazetteer_crosswalk": "common/defines/modern_gazetteer_crosswalk.json5",
+    "ocr_translation_config": "common/ocr/ocr_translation_config.json5",
+    "province_defines": "common/defines/province_defines.json5",
+    "source_registry": "common/sources/source_registry.json5",
+    "tibet_reference_config": "common/gis/tibet_reference_config.json5",
+    "transport_corridors": "common/gis/transport_corridors.json5",
+    "tusi_catalog": "common/tusi/tusi_catalog.json5",
+    "tusi_modelling_config": "common/tusi/tusi_modelling_config.json5"
+  },
+  "input": {
+    "gis": {
+      "chgis_1911_adm1_base": "input/gis/priors/chgis_1911_adm1_base.geojson",
+      "chgis_1911_adm2_base": "input/gis/priors/chgis_1911_adm2_base.geojson",
+      "chgis_1911_adm3_base": "input/gis/priors/chgis_1911_adm3_base.geojson",
+      "chgis_dir": "input/gis/chgis",
+      "gadm_arunachal": "input/gis/priors/gadm_arunachal.geojson",
+      "gadm_dir": "input/gis/gadm",
+      "hydrorivers_cache_pkl": "input/gis/priors/hydrorivers_china_ord3.pkl",
+      "hydrosheds_dir": "input/gis/hydrosheds",
+      "modern_dir": "input/gis/modern",
+      "modern_reference_dir": "input/gis/modern_reference",
+      "natural_earth_dir": "input/gis/natural_earth",
+      "priors_dir": "input/gis/priors",
+      "terrarium_cache_npz": "input/gis/priors/terrarium_dem_z7_z8.npz",
+      "terrarium_tiles_dir": "input/gis/priors/terrarium_tiles",
+      "tibet_reference_polygons": "input/gis/priors/tibet_yushu_reference_polygons.geojson"
+    },
+    "reference_maps_dir": "input/reference_maps",
+    "scrape_cache_dir": "input/scrape_cache",
+    "tusi": {
+      "dir": "input/tusi",
+      "frames_dir": "input/tusi/frames",
+      "plates_config": "input/tusi/plates.json5",
+      "tibet_reference_image": "input/tusi/tibet_reference.png"
+    }
+  },
+  "localisation": {
+    "de": "localisation/de.json5",
+    "dir": "localisation",
+    "en_gb": "localisation/en_gb.json5",
+    "fr": "localisation/fr.json5"
+  },
+  "output": {
+    "chronicles_dir": "output/chronicles",
+    "gis": {
+      "adm_annual_dir": "output/gis/adm_annual",
+      "elevation_contours": "output/gis/layers/elevation_contours.geojson",
+      "layers_dir": "output/gis/layers",
+      "railways": "output/gis/layers/railways_1912_1953.geojson",
+      "roads": "output/gis/layers/roads_1912_1953.geojson",
+      "tusi": "output/gis/layers/tusi_1912_1953.geojson",
+      "waterways": "output/gis/layers/waterways_1912_1953.geojson"
+    },
+    "newspapers_dir": "output/newspapers"
+  },
+  "schema_version": 1,
+  "tests": {
+    "dir": "tests",
+    "outputs_dir": "tests/outputs"
+  }
+}

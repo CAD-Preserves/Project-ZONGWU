@@ -1,0 +1,41 @@
+// Video reference plate definitions for Tibet/Yushu TPS scanline verification.
+{
+  "crop_box": [603, 3840, 380, 2140],
+  "plates": [
+    {
+      "image_path": "input/tusi/tibet_reference.png",
+      "name": "ref_1916",
+      "rgb_key": "rgb_1916",
+      "tolerance": 24.0,
+      "year": 1916
+    },
+    {
+      "image_path": "input/tusi/frames/frame_0072_03000ms.png",
+      "name": "vid_1916",
+      "rgb_key": "rgb_1916",
+      "tolerance": 34.0,
+      "year": 1916
+    },
+    {
+      "image_path": "input/tusi/frames/frame_0186_07750ms.png",
+      "name": "vid_1917",
+      "rgb_key": "rgb_1917",
+      "tolerance": 36.0,
+      "year": 1917
+    },
+    {
+      "image_path": "input/tusi/frames/frame_1092_45500ms.png",
+      "name": "vid_1922",
+      "rgb_key": "rgb_1919",
+      "tolerance": 36.0,
+      "year": 1922
+    },
+    {
+      "image_path": "input/tusi/frames/frame_1254_52250ms.png",
+      "name": "vid_1929",
+      "rgb_key": "rgb_1929",
+      "tolerance": 36.0,
+      "year": 1929
+    }
+  ]
+}
