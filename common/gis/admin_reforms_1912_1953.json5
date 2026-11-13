@@ -42,6 +42,18 @@
     "cnty_zhili_kailu_xian_",
     "cnty_zhili_linxi_xian_"
   ],
+  "coastal_enclave_citas": {
+    "guangzhouwan_gbs": ["440804", "440851"],
+    "hong_kong_bbox": [113.80, 22.14, 114.46, 22.562],
+    "hong_kong_gbs": ["810000"],
+    "kinmen_dedupe_bbox": [118.205, 24.37, 118.49, 24.54],
+    "macau_bbox": [113.548, 22.105, 113.605, 22.150],
+    "macau_gbs": ["820000"],
+    "macau_peninsula_bbox": [113.520, 22.162, 113.575, 22.240],
+    "qingdao_bbox": [120.12, 35.95, 120.75, 36.28],
+    "weihaiwei_gbs": ["371001"],
+    "xiamen_island_bbox": [118.06, 24.42, 118.20, 24.56]
+  },
   "east_hebei_1936_1937_counties": [
     "Baodi Xian",
     "Changli Xian",
@@ -171,30 +183,33 @@
     },
     "1938_prefs": {
       "Anhui": ["Taiping Fu", "He Zhou", "Guangde Zhou"],
-      "Henan": ["Zhangde Fu", "Weihui Fu", "Huaiqing Fu"],
       "Jiangsu": ["Songjiang Fu", "Taicang Zhou", "Suzhou Fu", "Changzhou Fu", "Zhenjiang Fu", "Jiangning Fu"],
       "Shandong": ["Wuding Fu", "Jinan Fu", "Dongchang Fu", "Linqing Zhou", "Tai'an Fu"],
       "Shanxi": ["Taiyuan Fu", "Pingding Zhou", "Xin Zhou", "Dai Zhou", "Ningwu  Fu"],
       "Zhejiang": ["Jiaxing Fu", "Hangzhou Fu", "Huzhou Fu"],
-      "Zhili": ["Shuntian Fu", "Tianjin Fu", "Yongping Fu", "Zunhua Zhou", "Hejian Fu", "Baoding Fu", "Yi Zhou", "Ding Zhou", "Zhengding Fu", "Zhao Zhou", "Shen Zhou", "Ji Zhou", "Shunde Fu", "Guangping Fu", "Daming Fu"]
+      "Zhili": ["Shuntian Fu", "Tianjin Fu", "Yongping Fu", "Zunhua Zhou", "Hejian Fu", "Baoding Fu", "Yi Zhou", "Ding Zhou", "Zhengding Fu", "Zhao Zhou", "Shen Zhou", "Ji Zhou", "Shunde Fu", "Guangping Fu"]
     },
     "1938_counties": {
-      "Fujian": ["Kinmen Xian"]
+      "Fujian": ["Kinmen Xian"],
+      "Henan": ["Anyang Xian", "Linzhang Xian", "She Xian", "Wuan Xian"],
+      "Zhejiang": ["Shengxi Xian"],
+      "Zhili": ["Daming Xian", "Nanle Xian", "Yuancheng Xian"]
     },
     "1939_prefs": {
       "Anhui": ["Si Zhou", "Chu Zhou", "Fengyang Fu", "Luzhou Fu", "Chizhou Fu", "Anqing Fu"],
       "Guangdong": ["Nan'ao Ting"],
-      "Henan": ["Guide Fu", "Kaifeng Fu"],
+      "Henan": ["Guide Fu", "Huaiqing Fu", "Weihui Fu", "Zhangde Fu"],
       "Hubei": ["Huangzhou Fu", "Wuchang Fu", "Hanyang Fu"],
       "Hunan": ["Yuezhou Fu"],
       "Jiangsu": ["Hai Zhou", "Xuzhou Fu", "Huai'an Fu", "Yangzhou Fu", "Tong Zhou", "Haimen Ting"],
-      "Shandong": ["Dengzhou Fu", "Laizhou Fu", "Qingzhou Fu", "Jiao Zhou", "Yizhou Fu", "Yanzhou Fu", "Jining Zhou", "Caozhou Fu"]
+      "Shandong": ["Dengzhou Fu", "Laizhou Fu", "Qingzhou Fu", "Jiao Zhou", "Yizhou Fu", "Yanzhou Fu", "Jining Zhou", "Caozhou Fu"],
+      "Zhili": ["Daming Fu"]
     },
     "1939_counties": {
       "Anhui": ["Xuancheng Xian", "Nanling Xian"],
-      "Fujian": ["Tong'an Xian"],
+      "Fujian": ["Xiamen"],
       "Guangdong": ["Fanyu Xian", "Nanhai Xian", "Shunde Xian", "Dongwan Xian", "Xin'an Xian", "Zengcheng Xian", "Sanshui Xian", "Huaxian Xian", "Boluo Xian", "Guishan Xian"],
-      "Henan": ["Luoshan Xian", "Xinyang Zhou"],
+      "Henan": ["Chenliu Xian", "Lanfeng Xian", "Luoshan Xian", "Pi Xian", "Tongxu Xian", "Xiangfu Xian", "Xinyang Zhou", "Zhongmou Xian"],
       "Shanxi": ["Linfen Xian", "Hongdong Xian", "Zhaocheng Xian", "Huo Zhou", "Lingshi Xian", "Jiexiu Xian", "Pingyao Xian", "Fenyang Xian", "Xiaoyi Xian", "Taiping Xian", "Quwo Xian", "Yicheng Xian", "Hejin Xian", "Jishan Xian", "Jiang Zhou", "Wenxi Xian", "Xia Xian", "Anyi Xian", "Jie Zhou", "Yongji Xian", "Linjin Xian", "Ronghe Xian", "Wanquan Xian", "Yishi Xian", "Changzhi Xian", "Changzi Xian", "Tunliu Xian", "Xiangyuan Xian", "Lucheng Xian", "Gaoping Xian", "Fengtai Xian"]
     },
     "1940_prefs": {
@@ -204,7 +219,7 @@
       "Zhejiang": ["Dinghai Ting"]
     },
     "1940_counties": {
-      "Guangdong": ["Chenghai", "Haiyang Xian", "Chaoyang Xian", "Jieyang Xian", "Raoping Xian", "Huilai Xian", "Xiangshan Xian"],
+      "Guangdong": ["Chenghai", "Haiyang Xian", "Chaoyang Xian", "Jieyang Xian", "Raoping Xian", "Huilai Xian", "Xiangshan Xian", "Xinhui Xian"],
       "Jiangxi": ["Nanchang Xian", "Xinjian Xian", "Jinxian Xian", "Fengcheng Xian", "Anyi Xian", "Jianchang Xian", "Gao'an Xian", "Shanggao Xian"]
     },
     "1940_only_prefs": {
@@ -212,21 +227,20 @@
       "Guangxi": ["Shangsi Zhiliting"]
     },
     "1940_only_counties": {
+      "Guangdong": ["Hepu Xian"],
       "Guangxi": ["Xuanhua Xian", "Xinning Zhou", "Yongchun Xian", "Heng Zhou"]
     },
     "1941_prefs": {
       "Hubei": ["Anlu Fu", "Jingmen Zhou"]
     },
     "1941_counties": {
-      "Guangdong": ["Xinhui Xian"],
       "Hubei": ["Jiangling Xian", "Jianli Xian", "Shishou Xian", "Gong'an Xian", "Songzi Xian", "Zhijiang Xian", "Donghu Xian"]
     },
     "1942_prefs": {
       "Zhejiang": ["Shaoxing Fu", "Ningbo Fu"]
     },
     "1942_counties": {
-      "Guangdong": ["Haifeng Xian", "Lufeng Xian"],
-      "Zhejiang": ["Shengxi Xian"]
+      "Guangdong": ["Haifeng Xian", "Lufeng Xian"]
     },
     "1943_1944_counties": {
       "Yunnan": ["Tengyue Ting", "Longling Ting"]
@@ -235,23 +249,21 @@
       "Zhejiang": ["Jinhua Xian", "Lanxi Xian", "Yiwu Xian", "Tangxi Xian", "Pujiang Xian", "Wuyi Xian"]
     },
     "1944_plus_counties": {
-      "Guangdong": ["Suixi Xian", "Haikang Xian"]
+      "Guangdong": ["Haikang Xian", "Suixi Xian", "Xuwen Xian"]
     },
     "1945_huaihai_prefs": {
       "Jiangsu": ["Xuzhou Fu", "Hai Zhou"]
     },
     "1945_ichigo_prefs": {
-      "Guangdong": ["Shaozhou Fu", "Fogang Ting"],
-      "Guangxi": ["Guilin Fu", "Pingle Fu", "Liuzhou Fu", "Xunzhou Fu", "Wuzhou Fu", "Nanning Fu", "Shangsi Zhiliting", "Taiping Fu"],
-      "Henan": ["Zheng Zhou", "Xu Zhou", "Runing Fu", "Henan Fu"],
-      "Hunan": ["Changsha Fu", "Hengzhou Fu", "Yongzhou Fu", "Chen Zhou", "Guiyang Zhou"]
+      "Henan": ["Henan Fu", "Kaifeng Fu", "Ru Zhou", "Runing Fu", "Xu Zhou", "Zheng Zhou"]
     },
     "1945_ichigo_counties": {
-      "Fujian": ["Min Xian", "Houguan Xian", "Changle Xian", "Lianjiang Xian", "Fuqing Xian"],
-      "Guangdong": ["Qingyuan Xian", "Conghua Xian", "Longmen Xian", "Gaoyao Xian", "Sihui Xian", "Deqing Zhou", "Fengchuan Xian", "Guangning Xian", "Gaoming Xian"],
-      "Guangxi": ["Yishan Xian", "Hechi Zhou"],
-      "Hunan": ["Shaoyang Xian", "Xinhua Xian"],
-      "Zhejiang": ["Yongjia Xian", "Rui'an Xian", "Leqing Xian", "Yuhuan Ting"]
+      "Fujian": ["Changle Xian", "Fuqing Xian", "Houguan Xian", "Lianjiang Xian", "Lienkiang Xian", "Min Xian"],
+      "Guangdong": ["Chixi Ting Direct", "Conghua Xian", "Deqing Zhou", "Fangcheng Xian", "Fengchuan Xian", "Gaoming Xian", "Gaoyao Xian", "Hepu Xian", "Heshan Xian", "Kaijian Xian", "Kaiping Xian", "Qin Zhou", "Qingyuan Xian", "Sihui Xian", "Xinning Xian"],
+      "Guangxi": ["Bin Zhou", "Cangwu Xian", "Chongshan Xian", "Gui Xian", "Guiping Xian", "Heng Zhou", "Jiang Zhou", "Laibin Xian", "Lingchuan Xian", "Lingui Xian", "Lipu Xian", "Liucheng Xian", "Longzhou Ting", "Luorong Xian", "Maping Xian", "Mingjiang Ting", "Ningming Zhou", "Pingnan Xian", "Pingle Xian", "Pingxiang Ting", "Qianjiang Xian", "Quan Zhou", "Shangsi Zhiliting Benting", "Sizhou Tuzhou", "Teng Xian", "Wuxuan Xian", "Xiang Zhou", "Xing'an Xian", "Xinning Zhou", "Xiuren Xian", "Xuanhua Xian", "Yangshuo Xian", "Yishan Xian", "Yongchun Xian", "Yongfu Xian", "Zuo Zhou"],
+      "Henan": ["Lingbao Xian", "Shan Zhou", "Wuyang Xian", "Ye Xian"],
+      "Hunan": ["Changning Xian", "Changsha Xian", "Dong'an Xian", "Hengshan Xian", "Hengyang Xian", "Leiyang Xian", "Liling Xian", "Lingling Xian", "Liuyang Xian", "Ningxiang", "Qingquan Xian", "Qiyang Xian", "Shanhua Xian", "Shaoyang Xian", "Xiangtan Xian", "Xiangxiang Xian", "Xiangyin Xian", "Yiyang Xian"],
+      "Zhejiang": ["Leqing Xian", "Rui'an Xian", "Yongjia Xian", "Yuhuan Ting"]
     }
   },
   "taiwan_reforms": {

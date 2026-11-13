@@ -10985,6 +10985,22 @@
           "unit_type": "urban_qu"
         }
       ],
+      "hunyuan_zhou": [
+        {
+          "area_overlap_ratio": 0.9886,
+          "contains_historical_seat": true,
+          "edge_cases": [
+            "dimingzhi_check"
+          ],
+          "modern_unit_id": "prc_140225_hunyuan",
+          "search_queries": [
+            "浑源县志",
+            "浑源县地名志",
+            "渾源縣志"
+          ],
+          "unit_type": "xian"
+        }
+      ],
       "huolinguole_shi": [
         {
           "area_overlap_ratio": 0.9464,
@@ -11200,38 +11216,6 @@
             "卓资县志",
             "卓资县地名志",
             "卓資縣志"
-          ],
-          "unit_type": "xian"
-        }
-      ],
-      "pinglu_xian_jiezhou": [
-        {
-          "area_overlap_ratio": 0.9476,
-          "contains_historical_seat": true,
-          "edge_cases": [
-            "dimingzhi_check",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "prc_140829_pinglu_1870",
-          "search_queries": [
-            "平陆县志",
-            "平陆县地名志",
-            "平陸縣志"
-          ],
-          "unit_type": "xian"
-        },
-        {
-          "area_overlap_ratio": 0.0512,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "dimingzhi_check",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "prc_140828_xia",
-          "search_queries": [
-            "夏县志",
-            "夏县地名志",
-            "夏縣志"
           ],
           "unit_type": "xian"
         }
@@ -39066,7 +39050,7 @@
       ],
       "tongan_xian": [
         {
-          "area_overlap_ratio": 0.5729,
+          "area_overlap_ratio": 0.6853,
           "contains_historical_seat": true,
           "edge_cases": [
             "che_xian_she_qu",
@@ -39090,7 +39074,7 @@
           "unit_type": "urban_qu"
         },
         {
-          "area_overlap_ratio": 0.2991,
+          "area_overlap_ratio": 0.2743,
           "contains_historical_seat": false,
           "edge_cases": [
             "che_xian_she_qu",
@@ -39113,125 +39097,6 @@
             "廈門市區志"
           ],
           "unit_type": "urban_qu"
-        },
-        {
-          "area_overlap_ratio": 0.0888,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "prefer_1990_2015_chongxiu",
-            "pair_japanese_colonial_surveys",
-            "roc_fujian_kinmen_disambig",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "twn_adm2_kinmen",
-          "search_queries": [
-            "金門縣志",
-            "重修金門縣志",
-            "Fujian / IJN Occupied (1937-1945)管內概況及事務概要"
-          ],
-          "unit_type": "roc_fujian_county"
-        },
-        {
-          "area_overlap_ratio": 0.073,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "che_xian_she_shi",
-            "dimingzhi_check",
-            "citas_frontier_hole_filled",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "prc_350583_nanan",
-          "search_queries": [
-            "南安县志",
-            "南安市志",
-            "南安市地名志"
-          ],
-          "unit_type": "county_level_shi"
-        },
-        {
-          "area_overlap_ratio": 0.025,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "prefer_1990_2015_chongxiu",
-            "pair_japanese_colonial_surveys",
-            "roc_fujian_offshore_disambig",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "twn_adm3_kinmen_金沙鎮",
-          "search_queries": [
-            "金沙鎮志",
-            "金門縣金沙鎮志",
-            "重修金門縣志"
-          ],
-          "unit_type": "urban_township"
-        },
-        {
-          "area_overlap_ratio": 0.0242,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "prefer_1990_2015_chongxiu",
-            "pair_japanese_colonial_surveys",
-            "roc_fujian_offshore_disambig",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "twn_adm3_kinmen_金湖鎮",
-          "search_queries": [
-            "金湖鎮志",
-            "金門縣金湖鎮志",
-            "重修金門縣志"
-          ],
-          "unit_type": "urban_township"
-        },
-        {
-          "area_overlap_ratio": 0.0191,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "prefer_1990_2015_chongxiu",
-            "pair_japanese_colonial_surveys",
-            "roc_fujian_offshore_disambig",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "twn_adm3_kinmen_jinning_township",
-          "search_queries": [
-            "金寧鄉志",
-            "金門縣金寧鄉志",
-            "重修金門縣志"
-          ],
-          "unit_type": "rural_township"
-        },
-        {
-          "area_overlap_ratio": 0.0118,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "prefer_1990_2015_chongxiu",
-            "pair_japanese_colonial_surveys",
-            "roc_fujian_offshore_disambig",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "twn_adm3_kinmen_jincheng_township",
-          "search_queries": [
-            "金城鎮志",
-            "金門縣金城鎮志",
-            "重修金門縣志"
-          ],
-          "unit_type": "urban_township"
-        },
-        {
-          "area_overlap_ratio": 0.0086,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "prefer_1990_2015_chongxiu",
-            "pair_japanese_colonial_surveys",
-            "roc_fujian_offshore_disambig",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "twn_adm3_kinmen_烈嶼鄉",
-          "search_queries": [
-            "烈嶼鄉志",
-            "金門縣烈嶼鄉志",
-            "重修金門縣志"
-          ],
-          "unit_type": "rural_township"
         }
       ],
       "wuping_xian": [
@@ -39248,6 +39113,32 @@
             "武平縣志"
           ],
           "unit_type": "xian"
+        }
+      ],
+      "xiamen": [
+        {
+          "area_overlap_ratio": 0.9788,
+          "contains_historical_seat": false,
+          "edge_cases": [
+            "che_xian_she_qu",
+            "metropolitan_core_district",
+            "big_city_fenzhi",
+            "dimingzhi_check"
+          ],
+          "modern_unit_id": "prc_350201_xiamen",
+          "search_queries": [
+            "厦门市区志",
+            "厦门市县志",
+            "思明县志",
+            "同安县志",
+            "厦门市志",
+            "厦门市志·大事记",
+            "厦门市志·军事志",
+            "厦门市志·地名志",
+            "厦门市区地名志",
+            "廈門市區志"
+          ],
+          "unit_type": "urban_qu"
         }
       ],
       "xianyou_xian": [
@@ -44450,6 +44341,46 @@
           "unit_type": "county_level_shi"
         }
       ],
+      "guangzhouwan": [
+        {
+          "area_overlap_ratio": 0.8303,
+          "contains_historical_seat": false,
+          "edge_cases": [
+            "che_xian_she_qu",
+            "big_city_fenzhi",
+            "dimingzhi_check",
+            "frontier_subdivision"
+          ],
+          "modern_unit_id": "prc_440204_zhenjiang",
+          "search_queries": [
+            "浈江区志",
+            "浈江县志",
+            "韶关市志",
+            "韶关市志·大事记",
+            "韶关市志·军事志",
+            "韶关市志·地名志",
+            "湛江市志",
+            "浈江区地名志",
+            "湞江區志"
+          ],
+          "unit_type": "urban_qu"
+        },
+        {
+          "area_overlap_ratio": 0.1032,
+          "contains_historical_seat": false,
+          "edge_cases": [
+            "dimingzhi_check",
+            "frontier_subdivision"
+          ],
+          "modern_unit_id": "prc_440823_suixi",
+          "search_queries": [
+            "遂溪县志",
+            "遂溪县地名志",
+            "遂溪縣志"
+          ],
+          "unit_type": "xian"
+        }
+      ],
       "guishan_xian": [
         {
           "area_overlap_ratio": 0.5456,
@@ -44794,6 +44725,50 @@
             "博羅縣志"
           ],
           "unit_type": "xian"
+        }
+      ],
+      "hong_kong": [
+        {
+          "area_overlap_ratio": 0.9431,
+          "contains_historical_seat": false,
+          "edge_cases": [
+            "hong_kong_sar",
+            "frontier_subdivision"
+          ],
+          "modern_unit_id": "prc_810000_hong_kong",
+          "search_queries": [
+            "香港志",
+            "香港年鉴",
+            "Hong Kong Annual Report",
+            "香港史",
+            "新界地方志"
+          ],
+          "unit_type": "sar_district"
+        },
+        {
+          "area_overlap_ratio": 0.0195,
+          "contains_historical_seat": false,
+          "edge_cases": [
+            "che_xian_she_qu",
+            "post_1953_renaming",
+            "big_city_fenzhi",
+            "dimingzhi_check",
+            "frontier_subdivision"
+          ],
+          "modern_unit_id": "prc_440301_shenzhen",
+          "search_queries": [
+            "深圳志",
+            "深圳区志",
+            "深圳县志",
+            "宝安县志",
+            "新安县志",
+            "深圳市志",
+            "深圳市志·大事记",
+            "深圳市志·军事志",
+            "深圳市志·地名志",
+            "深圳地名志"
+          ],
+          "unit_type": "urban_qu"
         }
       ],
       "hua_zhou": [
@@ -45429,6 +45404,142 @@
             "羅定市志"
           ],
           "unit_type": "county_level_shi"
+        }
+      ],
+      "macau": [
+        {
+          "area_overlap_ratio": 0.3324,
+          "contains_historical_seat": false,
+          "edge_cases": [
+            "che_xian_she_qu",
+            "big_city_fenzhi",
+            "dimingzhi_check",
+            "frontier_subdivision"
+          ],
+          "modern_unit_id": "prc_440401_zhuhai",
+          "search_queries": [
+            "珠海市区志",
+            "珠海市县志",
+            "珠海市志",
+            "珠海市志·大事记",
+            "珠海市志·军事志",
+            "珠海市志·地名志",
+            "珠海市区地名志",
+            "珠海市區志"
+          ],
+          "unit_type": "urban_qu"
+        },
+        {
+          "area_overlap_ratio": 0.2318,
+          "contains_historical_seat": false,
+          "edge_cases": [
+            "macau_sar",
+            "frontier_subdivision"
+          ],
+          "modern_unit_id": "prc_820202_sãofranciscoxavier",
+          "search_queries": [
+            "澳门志",
+            "澳门编年史",
+            "澳門史料",
+            "Anuário de Macau"
+          ],
+          "unit_type": "sar_district"
+        },
+        {
+          "area_overlap_ratio": 0.093,
+          "contains_historical_seat": false,
+          "edge_cases": [
+            "macau_sar",
+            "frontier_subdivision"
+          ],
+          "modern_unit_id": "prc_820103_se",
+          "search_queries": [
+            "澳门志",
+            "澳门编年史",
+            "澳門史料",
+            "Anuário de Macau"
+          ],
+          "unit_type": "sar_district"
+        },
+        {
+          "area_overlap_ratio": 0.0727,
+          "contains_historical_seat": false,
+          "edge_cases": [
+            "macau_sar",
+            "frontier_subdivision"
+          ],
+          "modern_unit_id": "prc_820101_nossasenhoradefatima",
+          "search_queries": [
+            "澳门志",
+            "澳门编年史",
+            "澳門史料",
+            "Anuário de Macau"
+          ],
+          "unit_type": "sar_district"
+        },
+        {
+          "area_overlap_ratio": 0.0636,
+          "contains_historical_seat": false,
+          "edge_cases": [
+            "macau_sar",
+            "frontier_subdivision"
+          ],
+          "modern_unit_id": "prc_820203_cotai",
+          "search_queries": [
+            "澳门志",
+            "澳门编年史",
+            "澳門史料",
+            "Anuário de Macau"
+          ],
+          "unit_type": "sar_district"
+        },
+        {
+          "area_overlap_ratio": 0.0293,
+          "contains_historical_seat": false,
+          "edge_cases": [
+            "macau_sar",
+            "frontier_subdivision"
+          ],
+          "modern_unit_id": "prc_820104_sãolazaro",
+          "search_queries": [
+            "澳门志",
+            "澳门编年史",
+            "澳門史料",
+            "Anuário de Macau"
+          ],
+          "unit_type": "sar_district"
+        },
+        {
+          "area_overlap_ratio": 0.029,
+          "contains_historical_seat": false,
+          "edge_cases": [
+            "macau_sar",
+            "frontier_subdivision"
+          ],
+          "modern_unit_id": "prc_820102_santoantonio",
+          "search_queries": [
+            "澳门志",
+            "澳门编年史",
+            "澳門史料",
+            "Anuário de Macau"
+          ],
+          "unit_type": "sar_district"
+        },
+        {
+          "area_overlap_ratio": 0.02,
+          "contains_historical_seat": false,
+          "edge_cases": [
+            "macau_sar",
+            "frontier_subdivision"
+          ],
+          "modern_unit_id": "prc_820105_sãolourenço",
+          "search_queries": [
+            "澳门志",
+            "澳门编年史",
+            "澳門史料",
+            "Anuário de Macau"
+          ],
+          "unit_type": "sar_district"
         }
       ],
       "maoming_xian": [
@@ -46164,7 +46275,7 @@
       ],
       "suixi_xian": [
         {
-          "area_overlap_ratio": 0.6058,
+          "area_overlap_ratio": 0.7631,
           "contains_historical_seat": true,
           "edge_cases": [
             "dimingzhi_check",
@@ -46179,30 +46290,7 @@
           "unit_type": "xian"
         },
         {
-          "area_overlap_ratio": 0.2089,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "che_xian_she_qu",
-            "big_city_fenzhi",
-            "dimingzhi_check",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "prc_440204_zhenjiang",
-          "search_queries": [
-            "浈江区志",
-            "浈江县志",
-            "韶关市志",
-            "韶关市志·大事记",
-            "韶关市志·军事志",
-            "韶关市志·地名志",
-            "湛江市志",
-            "浈江区地名志",
-            "湞江區志"
-          ],
-          "unit_type": "urban_qu"
-        },
-        {
-          "area_overlap_ratio": 0.1691,
+          "area_overlap_ratio": 0.2255,
           "contains_historical_seat": false,
           "edge_cases": [
             "che_xian_she_shi",
@@ -46273,12 +46361,11 @@
       ],
       "wuchuan_xian": [
         {
-          "area_overlap_ratio": 0.4846,
+          "area_overlap_ratio": 0.9786,
           "contains_historical_seat": true,
           "edge_cases": [
             "che_xian_she_shi",
-            "dimingzhi_check",
-            "frontier_subdivision"
+            "dimingzhi_check"
           ],
           "modern_unit_id": "prc_440883_wuchuan",
           "search_queries": [
@@ -46288,34 +46375,11 @@
             "吳川市志"
           ],
           "unit_type": "county_level_shi"
-        },
-        {
-          "area_overlap_ratio": 0.4746,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "che_xian_she_qu",
-            "big_city_fenzhi",
-            "dimingzhi_check",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "prc_440204_zhenjiang",
-          "search_queries": [
-            "浈江区志",
-            "浈江县志",
-            "韶关市志",
-            "韶关市志·大事记",
-            "韶关市志·军事志",
-            "韶关市志·地名志",
-            "湛江市志",
-            "浈江区地名志",
-            "湞江區志"
-          ],
-          "unit_type": "urban_qu"
         }
       ],
       "xiangshan_xian": [
         {
-          "area_overlap_ratio": 0.5272,
+          "area_overlap_ratio": 0.5323,
           "contains_historical_seat": true,
           "edge_cases": [
             "che_xian_she_shi",
@@ -46333,7 +46397,7 @@
           "unit_type": "county_level_shi"
         },
         {
-          "area_overlap_ratio": 0.2527,
+          "area_overlap_ratio": 0.2552,
           "contains_historical_seat": false,
           "edge_cases": [
             "che_xian_she_qu",
@@ -46355,7 +46419,7 @@
           "unit_type": "urban_qu"
         },
         {
-          "area_overlap_ratio": 0.1038,
+          "area_overlap_ratio": 0.1016,
           "contains_historical_seat": false,
           "edge_cases": [
             "che_xian_she_qu",
@@ -46377,7 +46441,7 @@
           "unit_type": "urban_qu"
         },
         {
-          "area_overlap_ratio": 0.057,
+          "area_overlap_ratio": 0.0575,
           "contains_historical_seat": false,
           "edge_cases": [
             "che_xian_she_qu",
@@ -46402,7 +46466,7 @@
           "unit_type": "urban_qu"
         },
         {
-          "area_overlap_ratio": 0.0293,
+          "area_overlap_ratio": 0.0296,
           "contains_historical_seat": false,
           "edge_cases": [
             "che_xian_she_qu",
@@ -46426,123 +46490,11 @@
             "南沙區志"
           ],
           "unit_type": "urban_qu"
-        },
-        {
-          "area_overlap_ratio": 0.0022,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "macau_sar",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "prc_820202_sãofranciscoxavier",
-          "search_queries": [
-            "澳门志",
-            "澳门编年史",
-            "澳門史料",
-            "Anuário de Macau"
-          ],
-          "unit_type": "sar_district"
-        },
-        {
-          "area_overlap_ratio": 0.0009,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "macau_sar",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "prc_820103_se",
-          "search_queries": [
-            "澳门志",
-            "澳门编年史",
-            "澳門史料",
-            "Anuário de Macau"
-          ],
-          "unit_type": "sar_district"
-        },
-        {
-          "area_overlap_ratio": 0.0007,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "macau_sar",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "prc_820101_nossasenhoradefatima",
-          "search_queries": [
-            "澳门志",
-            "澳门编年史",
-            "澳門史料",
-            "Anuário de Macau"
-          ],
-          "unit_type": "sar_district"
-        },
-        {
-          "area_overlap_ratio": 0.0006,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "macau_sar",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "prc_820203_cotai",
-          "search_queries": [
-            "澳门志",
-            "澳门编年史",
-            "澳門史料",
-            "Anuário de Macau"
-          ],
-          "unit_type": "sar_district"
-        },
-        {
-          "area_overlap_ratio": 0.0003,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "macau_sar",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "prc_820102_santoantonio",
-          "search_queries": [
-            "澳门志",
-            "澳门编年史",
-            "澳門史料",
-            "Anuário de Macau"
-          ],
-          "unit_type": "sar_district"
-        },
-        {
-          "area_overlap_ratio": 0.0003,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "macau_sar",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "prc_820104_sãolazaro",
-          "search_queries": [
-            "澳门志",
-            "澳门编年史",
-            "澳門史料",
-            "Anuário de Macau"
-          ],
-          "unit_type": "sar_district"
-        },
-        {
-          "area_overlap_ratio": 0.0002,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "macau_sar",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "prc_820105_sãolourenço",
-          "search_queries": [
-            "澳门志",
-            "澳门编年史",
-            "澳門史料",
-            "Anuário de Macau"
-          ],
-          "unit_type": "sar_district"
         }
       ],
       "xinan_xian": [
         {
-          "area_overlap_ratio": 0.4455,
+          "area_overlap_ratio": 0.7982,
           "contains_historical_seat": false,
           "edge_cases": [
             "che_xian_she_qu",
@@ -46566,24 +46518,7 @@
           "unit_type": "urban_qu"
         },
         {
-          "area_overlap_ratio": 0.4212,
-          "contains_historical_seat": true,
-          "edge_cases": [
-            "hong_kong_sar",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "prc_810000_hong_kong",
-          "search_queries": [
-            "香港志",
-            "香港年鉴",
-            "Hong Kong Annual Report",
-            "香港史",
-            "新界地方志"
-          ],
-          "unit_type": "sar_district"
-        },
-        {
-          "area_overlap_ratio": 0.1071,
+          "area_overlap_ratio": 0.1766,
           "contains_historical_seat": false,
           "edge_cases": [
             "che_xian_she_qu",
@@ -46606,6 +46541,23 @@
             "深圳地名志"
           ],
           "unit_type": "urban_qu"
+        },
+        {
+          "area_overlap_ratio": 0.0,
+          "contains_historical_seat": true,
+          "edge_cases": [
+            "hong_kong_sar",
+            "frontier_subdivision"
+          ],
+          "modern_unit_id": "prc_810000_hong_kong",
+          "search_queries": [
+            "香港志",
+            "香港年鉴",
+            "Hong Kong Annual Report",
+            "香港史",
+            "新界地方志"
+          ],
+          "unit_type": "sar_district"
         }
       ],
       "xingning_xian": [
@@ -47051,6 +47003,46 @@
           "unit_type": "urban_qu"
         }
       ],
+      "zhanjiang_shi": [
+        {
+          "area_overlap_ratio": 0.8303,
+          "contains_historical_seat": false,
+          "edge_cases": [
+            "che_xian_she_qu",
+            "big_city_fenzhi",
+            "dimingzhi_check",
+            "frontier_subdivision"
+          ],
+          "modern_unit_id": "prc_440204_zhenjiang",
+          "search_queries": [
+            "浈江区志",
+            "浈江县志",
+            "韶关市志",
+            "韶关市志·大事记",
+            "韶关市志·军事志",
+            "韶关市志·地名志",
+            "湛江市志",
+            "浈江区地名志",
+            "湞江區志"
+          ],
+          "unit_type": "urban_qu"
+        },
+        {
+          "area_overlap_ratio": 0.1032,
+          "contains_historical_seat": false,
+          "edge_cases": [
+            "dimingzhi_check",
+            "frontier_subdivision"
+          ],
+          "modern_unit_id": "prc_440823_suixi",
+          "search_queries": [
+            "遂溪县志",
+            "遂溪县地名志",
+            "遂溪縣志"
+          ],
+          "unit_type": "xian"
+        }
+      ],
       "zhenping_xian": [
         {
           "area_overlap_ratio": 0.9985,
@@ -47101,24 +47093,6 @@
             "都安瑶族自治县志",
             "都安瑶族自治县地名志",
             "都安瑤族自治縣志"
-          ],
-          "unit_type": "autonomous_xian"
-        }
-      ],
-      "anhua_ting": [
-        {
-          "area_overlap_ratio": 1.0,
-          "contains_historical_seat": true,
-          "edge_cases": [
-            "autonomous_suffix_strip",
-            "dimingzhi_check"
-          ],
-          "modern_unit_id": "prc_451226_huanjiangmaonan",
-          "search_queries": [
-            "环江县志",
-            "环江毛南族自治县志",
-            "环江毛南族自治县地名志",
-            "環江毛南族自治縣志"
           ],
           "unit_type": "autonomous_xian"
         }
@@ -87937,6 +87911,22 @@
           "unit_type": "xian"
         }
       ],
+      "hunyuan_zhou": [
+        {
+          "area_overlap_ratio": 0.9886,
+          "contains_historical_seat": true,
+          "edge_cases": [
+            "dimingzhi_check"
+          ],
+          "modern_unit_id": "prc_140225_hunyuan",
+          "search_queries": [
+            "浑源县志",
+            "浑源县地名志",
+            "渾源縣志"
+          ],
+          "unit_type": "xian"
+        }
+      ],
       "lingqiu_xian": [
         {
           "area_overlap_ratio": 0.9992,
@@ -87949,38 +87939,6 @@
             "灵丘县志",
             "灵丘县地名志",
             "靈丘縣志"
-          ],
-          "unit_type": "xian"
-        }
-      ],
-      "pinglu_xian_jiezhou": [
-        {
-          "area_overlap_ratio": 0.9476,
-          "contains_historical_seat": true,
-          "edge_cases": [
-            "dimingzhi_check",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "prc_140829_pinglu_1870",
-          "search_queries": [
-            "平陆县志",
-            "平陆县地名志",
-            "平陸縣志"
-          ],
-          "unit_type": "xian"
-        },
-        {
-          "area_overlap_ratio": 0.0512,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "dimingzhi_check",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "prc_140828_xia",
-          "search_queries": [
-            "夏县志",
-            "夏县地名志",
-            "夏縣志"
           ],
           "unit_type": "xian"
         }
@@ -135539,9 +135497,56 @@
           "unit_type": "county_level_shi"
         }
       ],
+      "weihaiwei": [
+        {
+          "area_overlap_ratio": 0.893,
+          "contains_historical_seat": false,
+          "edge_cases": [
+            "che_xian_she_qu",
+            "big_city_fenzhi",
+            "dimingzhi_check",
+            "frontier_subdivision"
+          ],
+          "modern_unit_id": "prc_371001_weihai",
+          "search_queries": [
+            "威海市区志",
+            "威海市县志",
+            "威海市志",
+            "威海市志·大事记",
+            "威海市志·军事志",
+            "威海市志·地名志",
+            "威海市区地名志",
+            "威海市區志"
+          ],
+          "unit_type": "urban_qu"
+        },
+        {
+          "area_overlap_ratio": 0.057,
+          "contains_historical_seat": false,
+          "edge_cases": [
+            "che_xian_she_qu",
+            "big_city_fenzhi",
+            "dimingzhi_check",
+            "frontier_subdivision"
+          ],
+          "modern_unit_id": "prc_371003_wendeng",
+          "search_queries": [
+            "文登区志",
+            "文登县志",
+            "威海市志",
+            "威海市志·大事记",
+            "威海市志·军事志",
+            "威海市志·地名志",
+            "文登市志",
+            "文登区地名志",
+            "文登區志"
+          ],
+          "unit_type": "urban_qu"
+        }
+      ],
       "wendeng_xian": [
         {
-          "area_overlap_ratio": 0.6998,
+          "area_overlap_ratio": 0.8208,
           "contains_historical_seat": true,
           "edge_cases": [
             "che_xian_she_qu",
@@ -135564,7 +135569,7 @@
           "unit_type": "urban_qu"
         },
         {
-          "area_overlap_ratio": 0.1479,
+          "area_overlap_ratio": 0.1697,
           "contains_historical_seat": false,
           "edge_cases": [
             "che_xian_she_qu",
@@ -135583,28 +135588,6 @@
             "荣成市志",
             "任城区地名志",
             "任城區志"
-          ],
-          "unit_type": "urban_qu"
-        },
-        {
-          "area_overlap_ratio": 0.1422,
-          "contains_historical_seat": false,
-          "edge_cases": [
-            "che_xian_she_qu",
-            "big_city_fenzhi",
-            "dimingzhi_check",
-            "frontier_subdivision"
-          ],
-          "modern_unit_id": "prc_371001_weihai",
-          "search_queries": [
-            "威海市区志",
-            "威海市县志",
-            "威海市志",
-            "威海市志·大事记",
-            "威海市志·军事志",
-            "威海市志·地名志",
-            "威海市区地名志",
-            "威海市區志"
           ],
           "unit_type": "urban_qu"
         }
@@ -228607,6 +228590,8 @@
         "hunyuan_zhou"
       ],
       "covered_provinces": [
+        "chahar",
+        "jinbei_mengjiang",
         "shanxi"
       ],
       "covered_tusis": [],
@@ -229688,8 +229673,6 @@
         "xia_xian"
       ],
       "covered_provinces": [
-        "chahar",
-        "jinbei_mengjiang",
         "shanxi"
       ],
       "covered_tusis": [],
@@ -229738,8 +229721,6 @@
         "pinglu_xian_jiezhou"
       ],
       "covered_provinces": [
-        "chahar",
-        "jinbei_mengjiang",
         "shanxi"
       ],
       "covered_tusis": [],
@@ -245898,7 +245879,8 @@
     "prc_350201_xiamen": {
       "covered_historical_adm3": [
         "haicheng_xian",
-        "tongan_xian"
+        "tongan_xian",
+        "xiamen"
       ],
       "covered_provinces": [
         "fujian"
@@ -246489,8 +246471,7 @@
     "prc_350583_nanan": {
       "covered_historical_adm3": [
         "kinmen_xian",
-        "nanan_xian",
-        "tongan_xian"
+        "nanan_xian"
       ],
       "covered_provinces": [
         "fujian"
@@ -251141,7 +251122,7 @@
     "prc_371001_weihai": {
       "covered_historical_adm3": [
         "rongcheng_xian",
-        "wendeng_xian"
+        "weihaiwei"
       ],
       "covered_provinces": [
         "shandong"
@@ -251170,6 +251151,7 @@
     },
     "prc_371003_wendeng": {
       "covered_historical_adm3": [
+        "weihaiwei",
         "wendeng_xian"
       ],
       "covered_provinces": [
@@ -260348,8 +260330,8 @@
     },
     "prc_440204_zhenjiang": {
       "covered_historical_adm3": [
-        "suixi_xian",
-        "wuchuan_xian"
+        "guangzhouwan",
+        "zhanjiang_shi"
       ],
       "covered_provinces": [
         "guangdong"
@@ -260572,6 +260554,7 @@
     },
     "prc_440301_shenzhen": {
       "covered_historical_adm3": [
+        "hong_kong",
         "xinan_xian"
       ],
       "covered_provinces": [
@@ -260666,6 +260649,7 @@
     },
     "prc_440401_zhuhai": {
       "covered_historical_adm3": [
+        "macau",
         "xiangshan_xian"
       ],
       "covered_provinces": [
@@ -261118,7 +261102,9 @@
     },
     "prc_440823_suixi": {
       "covered_historical_adm3": [
-        "suixi_xian"
+        "guangzhouwan",
+        "suixi_xian",
+        "zhanjiang_shi"
       ],
       "covered_provinces": [
         "guangdong"
@@ -264480,7 +264466,6 @@
     },
     "prc_451226_huanjiangmaonan": {
       "covered_historical_adm3": [
-        "anhua_ting",
         "sien_xian"
       ],
       "covered_provinces": [
@@ -288005,6 +287990,7 @@
     },
     "prc_810000_hong_kong": {
       "covered_historical_adm3": [
+        "hong_kong",
         "xinan_xian"
       ],
       "covered_provinces": [
@@ -288029,7 +288015,7 @@
     },
     "prc_820101_nossasenhoradefatima": {
       "covered_historical_adm3": [
-        "xiangshan_xian"
+        "macau"
       ],
       "covered_provinces": [
         "guangdong"
@@ -288052,7 +288038,7 @@
     },
     "prc_820102_santoantonio": {
       "covered_historical_adm3": [
-        "xiangshan_xian"
+        "macau"
       ],
       "covered_provinces": [
         "guangdong"
@@ -288075,7 +288061,7 @@
     },
     "prc_820103_se": {
       "covered_historical_adm3": [
-        "xiangshan_xian"
+        "macau"
       ],
       "covered_provinces": [
         "guangdong"
@@ -288098,7 +288084,7 @@
     },
     "prc_820104_sãolazaro": {
       "covered_historical_adm3": [
-        "xiangshan_xian"
+        "macau"
       ],
       "covered_provinces": [
         "guangdong"
@@ -288121,7 +288107,7 @@
     },
     "prc_820105_sãolourenço": {
       "covered_historical_adm3": [
-        "xiangshan_xian"
+        "macau"
       ],
       "covered_provinces": [
         "guangdong"
@@ -288163,7 +288149,7 @@
     },
     "prc_820202_sãofranciscoxavier": {
       "covered_historical_adm3": [
-        "xiangshan_xian"
+        "macau"
       ],
       "covered_provinces": [
         "guangdong"
@@ -288186,7 +288172,7 @@
     },
     "prc_820203_cotai": {
       "covered_historical_adm3": [
-        "xiangshan_xian"
+        "macau"
       ],
       "covered_provinces": [
         "guangdong"
@@ -288909,8 +288895,7 @@
     },
     "twn_adm2_kinmen": {
       "covered_historical_adm3": [
-        "kinmen_xian",
-        "tongan_xian"
+        "kinmen_xian"
       ],
       "covered_provinces": [
         "fujian"
@@ -292050,8 +292035,7 @@
     },
     "twn_adm3_kinmen_jincheng_township": {
       "covered_historical_adm3": [
-        "kinmen_xian",
-        "tongan_xian"
+        "kinmen_xian"
       ],
       "covered_provinces": [
         "fujian"
@@ -292075,8 +292059,7 @@
     },
     "twn_adm3_kinmen_jinning_township": {
       "covered_historical_adm3": [
-        "kinmen_xian",
-        "tongan_xian"
+        "kinmen_xian"
       ],
       "covered_provinces": [
         "fujian"
@@ -292120,8 +292103,7 @@
     },
     "twn_adm3_kinmen_烈嶼鄉": {
       "covered_historical_adm3": [
-        "kinmen_xian",
-        "tongan_xian"
+        "kinmen_xian"
       ],
       "covered_provinces": [
         "fujian"
@@ -292145,8 +292127,7 @@
     },
     "twn_adm3_kinmen_金沙鎮": {
       "covered_historical_adm3": [
-        "kinmen_xian",
-        "tongan_xian"
+        "kinmen_xian"
       ],
       "covered_provinces": [
         "fujian"
@@ -292170,8 +292151,7 @@
     },
     "twn_adm3_kinmen_金湖鎮": {
       "covered_historical_adm3": [
-        "kinmen_xian",
-        "tongan_xian"
+        "kinmen_xian"
       ],
       "covered_provinces": [
         "fujian"
@@ -314192,7 +314172,7 @@
   },
   "schema_version": 1,
   "summary": {
-    "historical_county_pairs": 6180,
+    "historical_county_pairs": 6185,
     "historical_provinces_and_tusis": 750,
     "modern_units_indexed": 3177,
     "tusis_mapped": 623,

@@ -223,8 +223,55 @@ def _collect_failures (arg1_root_dir):
   return failures
 
 
+def _check_year_name_rules (arg1_yr, arg2_occ_by_key, arg3_failures):
+  """Verify key historical occupation and neutrality assertions on 1 January arg1_yr."""
+  # Convert from parameters
+  failures = arg3_failures
+  occ_by_key = arg2_occ_by_key
+  yr = int(arg1_yr)
+
+  # Declare local instance variables.
+  expected_occ = []
+  expected_unocc = []
+
+  if yr == 1938:
+    expected_occ = [("Henan", "Anyang Xian"), ("Zhejiang", "Shengxi Xian"), ("Fujian", "Kinmen Xian")]
+    expected_unocc = [("Henan", "Xinxiang Xian"), ("Henan", "Ji Xian"), ("Henan", "Henei Xian"), ("Hebei", "Changyuan Xian"), ("Hebei", "Kai Zhou"), ("Qingdao", "Qingdao")]
+  elif yr == 1939:
+    expected_occ = [("Henan", "Xinxiang Xian"), ("Qingdao (Japanese Occupied)", "Qingdao"), ("Shandong", "Weihaiwei"), ("Fujian", "Xiamen")]
+    expected_unocc = [("Fujian", "Tong'an Xian"), ("Guangdong", "Hong Kong"), ("Guangdong", "Macau")]
+  elif yr == 1942:
+    expected_occ = [("Guangdong", "Hong Kong")]
+    expected_unocc = [("Guangdong", "Macau"), ("Guangdong", "Guangzhouwan")]
+  elif yr == 1944:
+    expected_occ = [("Guangdong", "Guangzhouwan"), ("Guangdong", "Xuwen Xian")]
+    expected_unocc = [("Guangdong", "Macau")]
+  elif yr == 1945:
+    expected_occ = [
+      ("Hunan", "Changsha Xian"), ("Hunan", "Hengyang Xian"), ("Hunan", "Lingling Xian"),
+      ("Guangxi", "Lingui Xian"), ("Guangxi", "Longzhou Ting"), ("Guangdong", "Qin Zhou"),
+      ("Guangdong", "Hepu Xian"), ("Guangdong", "Xinning Xian"),
+    ]
+    expected_unocc = [
+      ("Hunan", "Chen Zhou"), ("Hunan", "Guiyang Zhou"), ("Hunan", "Dao Zhou"),
+      ("Hunan", "Ningyuan Xian"), ("Hunan", "Xintian Xian"), ("Hunan", "Jianghua Xian"),
+      ("Hunan", "Xinhua Xian"), ("Guangdong", "Qujiang Xian"), ("Guangxi", "Hechi Zhou"),
+      ("Guangxi", "Dayao Shan Yao Autonomous Region (Shipai Polity)"), ("Guangxi", "He Xian"),
+      ("Guangdong", "Macau"),
+    ]
+
+  for k in expected_occ:
+    if not occ_by_key.get(k):
+      failures.append(f"Expected Japanese occupation at {yr} for {k}, got {occ_by_key.get(k)!r}")
+  for k in expected_unocc:
+    if k not in occ_by_key:
+      failures.append(f"Missing expected unit at {yr}: {k}")
+    elif occ_by_key[k]:
+      failures.append(f"Unexpected Japanese occupation at {yr} for {k}: {occ_by_key[k]!r}")
+
+
 def _check_historical_invariants (arg1_root_dir, arg2_failures):
-  """Verify 1911 seat metadata, 1911 Feudatory continuity, and enclave-free 1942/1945 occupation."""
+  """Verify 1911 seat metadata, 1911 Feudatory continuity, enclave-free occupation, and historical frontline assertions."""
   # Convert from parameters
   failures = arg2_failures
   root_dir = arg1_root_dir
@@ -248,35 +295,41 @@ def _check_historical_invariants (arg1_root_dir, arg2_failures):
     if tusi_1911 < 620:
       failures.append(f"Expected >= 620 Feudatories in adm_3_1911.geojson, found {tusi_1911}")
 
-  for yr in (1942, 1945):
+  for yr in (1938, 1939, 1940, 1942, 1944, 1945):
     ypath = os.path.join(adm_annual_dir, f"adm_3_{yr}.geojson")
     if not os.path.exists(ypath):
       continue
     with open(ypath, "r", encoding="utf-8") as fh:
       yfeats = json.load(fh).get("features", [])
     all_geoms = []
+    occ_by_key = {}
     occ_items = []
     for ft in yfeats:
       p = ft.get("properties", {})
       g = shape(ft["geometry"])
-      if p.get("country") not in ("Taiwan",):
-        all_geoms.append(g)
-      if not p.get("occupied_by") or p.get("parent_adm1") == "Taiwan":
-        continue
       a1 = str(p.get("parent_adm1") or "")
       a2 = str(p.get("parent_adm2") or "")
+      n_en = str(p.get("name_en") or "")
+      occ_val = str(p.get("occupied_by") or "")
+      occ_by_key[(a1, n_en)] = occ_val
+      if p.get("country") not in ("Taiwan",):
+        all_geoms.append(g)
+      if not occ_val or a1 == "Taiwan":
+        continue
       if a1 == "Sichuan":
-        failures.append(f"Unexpected Japanese occupation in Sichuan at {yr}: {p.get('name_en')}")
+        failures.append(f"Unexpected Japanese occupation in Sichuan at {yr}: {n_en}")
       if a1 == "Anhui" and "Huizhou" in a2:
-        failures.append(f"Unexpected Japanese occupation in Anhui Huizhou at {yr}: {p.get('name_en')}")
+        failures.append(f"Unexpected Japanese occupation in Anhui Huizhou at {yr}: {n_en}")
       rp = g.representative_point()
       occ_items.append((g, float(rp.x), float(rp.y)))
 
-    if occ_items and all_geoms:
+    _check_year_name_rules(yr, occ_by_key, failures)
+
+    if occ_items and all_geoms and yr in (1938, 1940, 1942, 1944, 1945):
       u = unary_union(all_geoms)
       segs = []
       for poly in ([u] if u.geom_type == "Polygon" else list(u.geoms)):
-        if poly.area <= 0.001:
+        if poly.area <= 1e-6:
           continue
         coords = list(poly.exterior.coords)
         for k in range(0, max(1, len(coords) - 1), 64):
@@ -302,7 +355,12 @@ def _check_historical_invariants (arg1_root_dir, arg2_failures):
           cur = q.pop()
           comp.append(cur)
           _, lon, lat = occ_items[cur]
-          if cur in ohits and ((lon >= 107.8 and lat <= 41.8) or (lon >= 123.8 and lat >= 39.7) or (yr == 1945 and 105.5 <= lon <= 108.8 and lat <= 23.2)):
+          if cur in ohits and (
+            (lon >= 107.3 and lat <= 41.8)
+            or (lon >= 123.8 and lat >= 39.7)
+            or (yr in (1943, 1944) and lon <= 99.2 and lat <= 26.2)
+            or (yr == 1945 and 105.5 <= lon <= 108.8 and lat <= 23.2)
+          ):
             ok = True
           for nb in adj[cur]:
             if not seen[nb]:

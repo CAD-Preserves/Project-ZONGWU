@@ -8,7 +8,7 @@ import time
 import zipfile
 import shapefile
 from shapely import STRtree
-from shapely.geometry import box, mapping, shape
+from shapely.geometry import mapping, shape
 from shapely.ops import unary_union
 
 SERVER_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -160,7 +160,7 @@ class AnnualAdminBuilder:
         self.tuva_kozhuuns.append(item)
 
     tuva_union = unary_union([t["geom"] for t in self.tuva_kozhuuns]) if self.tuva_kozhuuns else None
-    qingdao_box = box(120.12, 35.95, 120.75, 36.28)
+    enclave_clips = annual_occupation_helpers.build_coastal_enclave_clips(self.reforms, citas_list)
 
     for feat in a3:
       p = feat["properties"]
@@ -182,16 +182,10 @@ class AnnualAdminBuilder:
             continue
           geom = rem
 
-      # Split Qingdao urban enclave out of Jimo Xian for crisp 1915-1922 & municipality rendering
-      if l1 == "Shandong" and p["name_en"] == "Jimo Xian":
-        qd_part = gis_helpers.clean_polygonal_geometry(geom.intersection(qingdao_box))
-        jimo_part = gis_helpers.clean_polygonal_geometry(geom.difference(qingdao_box))
-        if qd_part is not None and qd_part.area > 0.002:
-          qg, qd = self._cache_geom(qd_part)
-          if qg is not None:
-            self._append_china_atom("shandong_qingdao_enclave", qd, qg, "Shandong", "Jiao Zhou", "青岛", "Qingdao", uid, "370201", "青岛", "Qingdao", {"is_qingdao": True})
-        if jimo_part is not None and jimo_part.area > 0.002:
-          geom = jimo_part
+      # Split treaty port, colonial, and island enclaves out of host 1911 county units
+      geom = annual_occupation_helpers.carve_coastal_enclave_atom(self, l1, l2, uid, p["name_en"], geom, enclave_clips)
+      if geom is None or geom.area <= 0.0005:
+        continue
 
       if uid == "cnty_xizang_xizanggedifang_9999_2":
         annual_tusi_helpers.append_xizang_watershed_atoms(self, feat, geom)
@@ -230,6 +224,8 @@ class AnnualAdminBuilder:
         s_lon = p.get("seat_lon", round(float(rp_fallback.x), self.precision))
         s_lat = p.get("seat_lat", round(float(rp_fallback.y), self.precision))
         self._append_china_atom(uid, adict, ag, l1, l2, p["name_ch"], p["name_en"], uid, "", "", "", {"seat_lat": s_lat, "seat_lon": s_lon})
+
+    annual_occupation_helpers.emit_deferred_guangzhouwan(self, enclave_clips)
 
     # 2. Load Tusi catalog and geometries
     tusi_cat_path = path_helpers.resolve_path("common.tusi_catalog", self.base_dir)
@@ -403,15 +399,10 @@ class AnnualAdminBuilder:
     if is_kwantung and year <= 1945:
       return ("Guandongzhou (Kwantung)", "关东州", "Guandongzhou", adm3, "Empire of Japan", "Japan", "leased_territory")
 
-    # 4. Qingdao enclave (1915-1922 Japanese, 1929-1937 ROC Special City, 1938-1945 Japanese, 1946+ City)
-    if atom.get("is_qingdao"):
-      if 1915 <= year <= 1922:
-        return ("Qingdao (Japanese Occupied)", "青岛", "Qingdao", "Qingdao", "Empire of Japan", "Japan", "occupied_city")
-      if 1938 <= year <= 1945:
-        return ("Qingdao (Japanese Occupied)", "青岛", "Qingdao", "Qingdao", "Empire of Japan / North China", "Japan", "occupied_city")
-      if 1929 <= year <= 1949:
-        return ("Qingdao", "青岛市", "Qingdao", "Qingdao", country, "", "municipality")
-      return ("Shandong", "山东", "Qingdao", "Qingdao", country, "", "province")
+    # 4. Coastal enclaves, treaty ports & colonies (Hong Kong, Macau, Guangzhouwan, Weihaiwei, Qingdao)
+    enclave_res = annual_occupation_helpers.classify_coastal_enclave(atom, year, country)
+    if enclave_res is not None:
+      return enclave_res
 
     # 5. Manchuria + Rehe + Zhelimu (1912-1953)
     in_manchuria = l1 in ("Fengtian", "Jilin", "Heilongjiang") or l2 == "Zhelimu Meng"
@@ -629,7 +620,7 @@ class AnnualAdminBuilder:
       return (adm1, adm1, l2, adm3, country, "", "province")
 
     # 7. Jinbei 13 counties (Mengjiang 1938-1945, Chahar 1950-1952, Shanxi 1912-1937 & 1946-1949 & 1953)
-    if l1 == "Shanxi" and name_en in self.reforms["jinbei_13_counties"]:
+    if l1 == "Shanxi" and l2 in ("Datong  Fu", "Shuoping Fu") and name_en in self.reforms["jinbei_13_counties"]:
       if 1938 <= year <= 1945:
         return ("Jinbei (Mengjiang)", "晋北", l2, adm3, "Mengjiang (Japan)", "Mengjiang", "puppet_province")
       if 1950 <= year <= 1952:

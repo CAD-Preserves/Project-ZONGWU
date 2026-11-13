@@ -80,7 +80,16 @@ class ScanlineRasteriser:
     elif "Tuva" in country or "Uriankhai" in country or "USSR" in country or "Tyva" in prov_key:
       base_rgb = tuple(self.palette.get("tuva_base_rgb", [168, 146, 204]))
       delta = (digest[1] % 19) - 9
-    elif country in ("Bhutan", "British India", "India"):
+    elif country in (
+      "Bhutan",
+      "British India",
+      "France (Guangzhouwan)",
+      "German Empire (Kiautschou)",
+      "India",
+      "Portugal (Macau)",
+      "United Kingdom (Hong Kong)",
+      "United Kingdom (Weihaiwei)",
+    ):
       base_rgb = tuple(self.palette.get("foreign_stone_rgb", [204, 198, 188]))
       delta = (digest[1] % 13) - 6
     else:
