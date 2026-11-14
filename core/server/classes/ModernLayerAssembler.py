@@ -11,7 +11,7 @@ from shapely.ops import unary_union
 SERVER_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if SERVER_DIR not in sys.path:
   sys.path.insert(0, SERVER_DIR)
-from helpers import gis_helpers, modern_gis_helpers, path_helpers
+from helpers import gis_helpers, modern_gis_helpers, path_helpers, prc_lineage_helpers
 
 
 class ModernLayerAssembler:
@@ -29,8 +29,12 @@ class ModernLayerAssembler:
     self.base_dir = base_dir
     self.cfg = gis_helpers.load_json5(path_helpers.resolve_path("common.data_sources", base_dir))
     self.edge_cases = gis_helpers.load_json5(path_helpers.resolve_path("common.local_history_edge_cases", base_dir))
+    self.fz_cfg = gis_helpers.load_json5(path_helpers.resolve_path("common.prc_functional_zones", base_dir)) or {}
+    self.last_lineage_doc = {}
+    self.last_prc_units = []
     self.modern_dir = path_helpers.resolve_path("input.gis.modern_dir", base_dir)
     self.precision = int(self.cfg.get("coordinate_precision", 5))
+    self.reforms_1954_2026 = gis_helpers.load_json5(path_helpers.resolve_path("common.prc_admin_reforms", base_dir)) or {}
     self.st_map = {}
     self.ts_map = {}
 
@@ -268,9 +272,9 @@ class ModernLayerAssembler:
         uid = f"{uid_base}_{len(seen_ids)}"
       seen_ids.add(uid)
 
-      edges, queries = self._generate_prc_queries(gb_code, n1, n3, name_zh, name_zh_hant, prov_zh, city_zh, unit_type, citas_zh, prc_cfg)
       units.append({
-        "edge_cases": edges,
+        "citas_zh": citas_zh,
+        "edge_cases": [],
         "gb_code": gb_code,
         "gb_1990": gb_1990,
         "geom": geom,
@@ -285,29 +289,49 @@ class ModernLayerAssembler:
         "parent_adm2_gb": gb_code[:4] + "00",
         "parent_adm2_zh": city_zh,
         "region": "mainland_prc",
-        "search_queries": queries,
+        "search_queries": [],
         "unit_id": uid,
         "unit_type": unit_type,
       })
 
     units = self._assign_frontier_citas_pieces(citas_list, units)
+    units = prc_lineage_helpers.carve_2026_prc_additions(units, self.reforms_1954_2026, self.fz_cfg, gb_lookup, self.precision)
     units = modern_gis_helpers.harmonise_prc_units(units, gb_lookup)
     units = modern_gis_helpers.patch_unclaimed_holes_in_units(units, 0.05)
 
+    self.last_lineage_doc = prc_lineage_helpers.build_prc_lineage_graph(units, citas_list, self.reforms_1954_2026, self.fz_cfg, self.edge_cases)
+    lineage_by_id = self.last_lineage_doc.get("units_by_id", {})
+    for u in units:
+      u["name_zh_hant"] = self._to_hant(u["name_zh"])
+      lin_entry = lineage_by_id.get(u["unit_id"], {})
+      edges, s_plan, flat_qs = prc_lineage_helpers.build_chronicle_search_plan(u, lin_entry, self.edge_cases, self.reforms_1954_2026)
+      u["edge_cases"] = edges
+      u["search_queries"] = flat_qs
+      u["chronicle_search_plan"] = s_plan
+      if lin_entry:
+        u["unit_1990s_snapshot"] = lin_entry.get("unit_1990s_snapshot", {})
+        u["unit_2026_snapshot"] = lin_entry.get("unit_2026_snapshot", {})
+        u["parent_1990s_unit_ids"] = lin_entry.get("parent_1990s_unit_ids", [])
+
+    self.last_prc_units = units
+    adm2_meta = {}
     adm3_feats = []
     for u in units:
-      props_out = {k: v for k, v in u.items() if k not in ("geom", "gb_1990", "unit_id")}
+      props_out = {k: v for k, v in u.items() if k not in ("citas_zh", "geom", "gb_1990", "unit_id")}
       props_out["modern_unit_id"] = u["unit_id"]
       adm3_feats.append((props_out, u["geom"]))
 
       p1_key = (u["parent_adm1_gb"], u["parent_adm1"], u["parent_adm1_zh"])
       adm1_buckets.setdefault(p1_key, []).append(u["geom"])
-      p2_key = (u["parent_adm1_gb"], u["parent_adm1"], u["parent_adm1_zh"], u["parent_adm2_gb"], u["parent_adm2"], u["parent_adm2_zh"])
+      p2_key = (u["parent_adm1"], u["parent_adm2"])
       adm2_buckets.setdefault(p2_key, []).append(u["geom"])
+      if p2_key not in adm2_meta or (str(adm2_meta[p2_key][3]).endswith("0000") and not str(u["parent_adm2_gb"]).endswith("0000")):
+        adm2_meta[p2_key] = (u["parent_adm1_gb"], u["parent_adm1"], u["parent_adm1_zh"], u["parent_adm2_gb"], u["parent_adm2"], u["parent_adm2_zh"])
 
     adm2_feats = []
     seen_p2 = set()
-    for (p1_gb, p1_en, p1_zh, p2_gb, p2_en, p2_zh), geoms in sorted(adm2_buckets.items()):
+    for p2_key, geoms in sorted(adm2_buckets.items()):
+      p1_gb, p1_en, p1_zh, p2_gb, p2_en, p2_zh = adm2_meta[p2_key]
       merged = gis_helpers.clean_polygonal_geometry(unary_union(geoms))
       if merged is None:
         continue
@@ -476,7 +500,7 @@ class ModernLayerAssembler:
       is_offshore = bool(meta.get("roc_fujian_offshore", False))
       slug = gis_helpers.slugify_snake(canon_en.replace(" County", "").replace(" City", "").replace(" (Matsu)", ""))
       uid2 = f"twn_adm2_{slug}"
-      edges = ["prefer_1990_2015_chongxiu", "pair_japanese_colonial_surveys"]
+      edges = ["prefer_1985_2005_chongxiu", "pair_japanese_colonial_surveys"]
       if n2 == "Kinmen":
         edges.append("roc_fujian_kinmen_disambig")
       elif n2 == "Lienkiang":
@@ -591,7 +615,7 @@ class ModernLayerAssembler:
         uid3 = f"{uid3}_{len(seen_t3)}"
       seen_t3.add(uid3)
 
-      edges = ["prefer_1990_2015_chongxiu", "pair_japanese_colonial_surveys"]
+      edges = ["prefer_1985_2005_chongxiu", "pair_japanese_colonial_surveys"]
       if is_indig:
         edges.append("indigenous_mountain_township")
       if p2_rec["roc_fujian_offshore"]:
@@ -696,111 +720,17 @@ class ModernLayerAssembler:
         print(f"[WARN] Failed to cache modern_reference source {key}: {meta['url']}", file=sys.stderr)
 
   def _generate_prc_queries (self, arg1_gb, arg2_n1, arg3_n3, arg4_name_zh, arg5_hant, arg6_prov_zh, arg7_city_zh, arg8_utype, arg9_citas_zh, arg10_cfg):
-    """Build edge_cases flags and candidate gazetteer/dimingzhi search queries for a PRC adm_3 unit."""
-    # Convert from parameters
-    cfg = arg10_cfg
-    citas_zh = arg9_citas_zh
-    city_zh = arg7_city_zh
-    gb = arg1_gb
-    n1 = arg2_n1
-    n3 = arg3_n3
-    name_zh = arg4_name_zh
-    name_hant = arg5_hant
-    prov_zh = arg6_prov_zh
-    utype = arg8_utype
-
-    # Declare local instance variables.
-    base_name = name_zh
-    edges = []
-    queries = []
-    renamings = cfg["post_1953_renamings"]
-
-    def _add_q (arg1_q):
-      q_str = str(arg1_q or "").strip()
-      if q_str and q_str not in queries:
-        queries.append(q_str)
-
-    if gb == "810000":
-      edges.append("hong_kong_sar")
-      for q in cfg["hong_kong_and_macau"]["810000"]["search_queries"]:
-        _add_q(q)
-      return edges, queries
-
-    if gb.startswith("82"):
-      edges.append("macau_sar")
-      for q in cfg["hong_kong_and_macau"]["820000"]["search_queries"]:
-        _add_q(q)
-      return edges, queries
-
-    if gb == "350122":
-      edges.append("mainland_fuzhou_lianjiang_disambig")
-
-    if utype in ("autonomous_xian", "autonomous_qi"):
-      edges.append("autonomous_suffix_strip")
-      stem = name_zh
-      for sfx in ("自治县", "自治旗"):
-        if stem.endswith(sfx):
-          stem = stem[:-len(sfx)]
-      for tok in cfg["autonomous_ethnicity_tokens"]:
-        if stem.endswith(tok) and len(stem) > len(tok):
-          stem = stem[:-len(tok)]
-          break
-      base_name = stem
-      tail = "旗志" if utype == "autonomous_qi" else "县志"
-      _add_q(f"{base_name}{tail}")
-      _add_q(f"{name_zh}志")
-    else:
-      for sfx in ("自治县", "自治旗", "林区", "特区", "市", "区", "县", "旗"):
-        if base_name.endswith(sfx) and len(base_name) > len(sfx):
-          base_name = base_name[:-len(sfx)]
-          break
-      if utype == "county_level_shi":
-        edges.append("che_xian_she_shi")
-        _add_q(f"{base_name}县志")
-        _add_q(f"{name_zh}志")
-      elif utype == "urban_qu":
-        edges.append("che_xian_she_qu")
-        _add_q(f"{name_zh}志")
-        _add_q(f"{base_name}区志")
-        _add_q(f"{base_name}县志")
-      else:
-        _add_q(f"{name_zh}志")
-
-    if base_name in renamings:
-      edges.append("post_1953_renaming")
-      for old_name in renamings[base_name]:
-        _add_q(f"{old_name}志" if not old_name.endswith("志") else old_name)
-
-    for metro_key, m_info in cfg["metropolitan_core_districts"].items():
-      if gb.startswith(m_info["gb_prefix"]) or n1 == metro_key or n3 == metro_key:
-        if utype == "urban_qu":
-          if "metropolitan_core_district" not in edges:
-            edges.append("metropolitan_core_district")
-          if "big_city_fenzhi" not in edges:
-            edges.append("big_city_fenzhi")
-          for h_cnty in m_info["historic_counties"]:
-            _add_q(f"{h_cnty}志" if not h_cnty.endswith("志") else h_cnty)
-          for fz in m_info["fenzhi_suffixes"]:
-            _add_q(f"{m_info['city_zh']}{fz}")
-
-    if city_zh and city_zh != name_zh and city_zh != prov_zh:
-      if utype == "urban_qu" and "big_city_fenzhi" not in edges:
-        edges.append("big_city_fenzhi")
-        city_stem = city_zh.rstrip("市")
-        _add_q(f"{city_stem}市志")
-        _add_q(f"{city_stem}市志·大事记")
-        _add_q(f"{city_stem}市志·军事志")
-        _add_q(f"{city_stem}市志·地名志")
-
-    if citas_zh and citas_zh != name_zh and "市轄區" not in citas_zh:
-      c_hans = self._to_hans(citas_zh).split(" ")[-1]
-      if c_hans and c_hans not in base_name:
-        _add_q(f"{c_hans}县志" if not c_hans.endswith(("县", "市", "旗", "区")) else f"{c_hans}志")
-
-    edges.append("dimingzhi_check")
-    _add_q(f"{name_zh}地名志")
-    if name_hant != name_zh:
-      _add_q(f"{name_hant}志")
+    """Build edge_cases flags and clean Simplified Chinese gazetteer search queries for a PRC adm_3 unit."""
+    meta = {
+      "gb_code": arg1_gb,
+      "name_en": arg3_n3,
+      "name_zh": arg4_name_zh,
+      "parent_adm1": arg2_n1,
+      "parent_adm1_zh": arg6_prov_zh,
+      "parent_adm2_zh": arg7_city_zh,
+      "unit_type": arg8_utype,
+    }
+    edges, _, queries = prc_lineage_helpers.build_chronicle_search_plan(meta, {}, self.edge_cases, self.reforms_1954_2026)
 
     # Return statement
     return edges, queries

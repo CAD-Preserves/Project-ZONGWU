@@ -1,0 +1,240 @@
+// Spatial and parent-code registry mapping post-1990 State-level New Areas, SEZs, development zones, XPCC cities, and 2024 new counties back to 1985-2000 GB/T 2260 parent jurisdictions.
+{
+  "schema_version": 1,
+  "functional_zones": {
+    "fz_binhai_xinqu": {
+      "established_year": 1994,
+      "gb_2026": "120116",
+      "kind": "state_new_area",
+      "name_zh": "滨海新区",
+      "parent_1990s_names_zh": ["塘沽区", "汉沽区", "大港区"],
+      "parent_1990s_unit_ids": ["prc_120107_tanggu", "prc_120108_hangu", "prc_120109_dagang"],
+      "parent_adm1_zh": "天津市"
+    },
+    "fz_changchun_xinqu": {
+      "established_year": 2016,
+      "gb_2026": "",
+      "kind": "state_new_area",
+      "name_zh": "长春新区",
+      "parent_1990s_names_zh": ["朝阳区", "宽城区", "德惠县", "九台县"],
+      "parent_1990s_unit_ids": ["prc_220104_chaoyang", "prc_220103_kuancheng", "prc_220124_dehui", "prc_220123_jiutai"],
+      "parent_adm1_zh": "吉林省"
+    },
+    "fz_dianzhong_xinqu": {
+      "established_year": 2015,
+      "gb_2026": "",
+      "kind": "state_new_area",
+      "name_zh": "滇中新区",
+      "parent_1990s_names_zh": ["安宁县", "嵩明县", "官渡区", "禄丰县"],
+      "parent_1990s_unit_ids": ["prc_530123_anning", "prc_530127_songming", "prc_530111_guandu", "prc_532331_lufeng"],
+      "parent_adm1_zh": "云南省"
+    },
+    "fz_ganjiang_xinqu": {
+      "established_year": 2016,
+      "gb_2026": "",
+      "kind": "state_new_area",
+      "name_zh": "赣江新区",
+      "parent_1990s_names_zh": ["新建县", "永修县"],
+      "parent_1990s_unit_ids": ["prc_360122_xinjian", "prc_360425_yongxiu"],
+      "parent_adm1_zh": "江西省"
+    },
+    "fz_guian_xinqu": {
+      "established_year": 2014,
+      "gb_2026": "",
+      "kind": "state_new_area",
+      "name_zh": "贵安新区",
+      "parent_1990s_names_zh": ["花溪区", "清镇县", "平坝县"],
+      "parent_1990s_unit_ids": ["prc_520111_huaxi", "prc_520124_qingzhen", "prc_522521_pingba"],
+      "parent_adm1_zh": "贵州省"
+    },
+    "fz_harbin_xinqu": {
+      "established_year": 2015,
+      "gb_2026": "",
+      "kind": "state_new_area",
+      "name_zh": "哈尔滨新区",
+      "parent_1990s_names_zh": ["呼兰县", "道里区"],
+      "parent_1990s_unit_ids": ["prc_230121_hulan", "prc_230102_daoli"],
+      "parent_adm1_zh": "黑龙江省"
+    },
+    "fz_hengqin_hezuequ": {
+      "established_year": 2009,
+      "gb_2026": "",
+      "kind": "special_cooperation_zone",
+      "name_zh": "横琴粤澳深度合作区",
+      "parent_1990s_names_zh": ["珠海市香洲区", "珠海市"],
+      "parent_1990s_unit_ids": ["prc_440402_xiangzhou"],
+      "parent_adm1_zh": "广东省"
+    },
+    "fz_jiangbei_xinqu": {
+      "established_year": 2015,
+      "gb_2026": "",
+      "kind": "state_new_area",
+      "name_zh": "南京江北新区",
+      "parent_1990s_names_zh": ["浦口区", "大厂区", "六合县", "江浦县"],
+      "parent_1990s_unit_ids": ["prc_320111_pukou", "prc_320112_dachang", "prc_320123_luhe", "prc_320122_jiangpu"],
+      "parent_adm1_zh": "江苏省"
+    },
+    "fz_jinpu_xinqu": {
+      "established_year": 2014,
+      "gb_2026": "",
+      "kind": "state_new_area",
+      "name_zh": "大连金普新区",
+      "parent_1990s_names_zh": ["金州区", "金县"],
+      "parent_1990s_unit_ids": ["prc_210213_jinzhou"],
+      "parent_adm1_zh": "辽宁省"
+    },
+    "fz_khorgas_edz": {
+      "established_year": 2010,
+      "gb_2026": "654004",
+      "kind": "border_sez",
+      "name_zh": "霍尔果斯经济开发区",
+      "parent_1990s_names_zh": ["霍城县", "伊宁市"],
+      "parent_1990s_unit_ids": ["prc_654123_huocheng", "prc_654101_yining"],
+      "parent_adm1_zh": "新疆维吾尔自治区"
+    },
+    "fz_lanzhou_xinqu": {
+      "established_year": 2012,
+      "gb_2026": "",
+      "kind": "state_new_area",
+      "name_zh": "兰州新区",
+      "parent_1990s_names_zh": ["永登县", "皋兰县"],
+      "parent_1990s_unit_ids": ["prc_620121_yongdeng", "prc_620122_gaolan"],
+      "parent_adm1_zh": "甘肃省"
+    },
+    "fz_liangjiang_xinqu": {
+      "established_year": 2010,
+      "gb_2026": "",
+      "kind": "state_new_area",
+      "name_zh": "两江新区",
+      "parent_1990s_names_zh": ["江北区", "江北县", "北碚区"],
+      "parent_1990s_unit_ids": ["prc_510213_jiangbei", "prc_510224_jiangbei", "prc_510218_beibei"],
+      "parent_adm1_zh": "重庆市"
+    },
+    "fz_nansha_xinqu": {
+      "established_year": 2012,
+      "gb_2026": "440115",
+      "kind": "state_new_area",
+      "name_zh": "南沙新区",
+      "parent_1990s_names_zh": ["番禺县", "番禺市"],
+      "parent_1990s_unit_ids": ["prc_440126_panyu"],
+      "parent_adm1_zh": "广东省"
+    },
+    "fz_pudong_xinqu": {
+      "established_year": 1992,
+      "gb_2026": "310115",
+      "kind": "state_new_area",
+      "name_zh": "浦东新区",
+      "parent_1990s_names_zh": ["川沙县", "南汇县", "黄浦区", "杨浦区"],
+      "parent_1990s_unit_ids": ["prc_310224_chuansha", "prc_310225_nanhui", "prc_310101_huangpu"],
+      "parent_adm1_zh": "上海市"
+    },
+    "fz_qingdao_xihaian_xinqu": {
+      "established_year": 2014,
+      "gb_2026": "370211",
+      "kind": "state_new_area",
+      "name_zh": "青岛西海岸新区",
+      "parent_1990s_names_zh": ["黄岛区", "胶南县"],
+      "parent_1990s_unit_ids": ["prc_370211_huangdao", "prc_370223_jiaonan"],
+      "parent_adm1_zh": "山东省"
+    },
+    "fz_suzhou_sip": {
+      "established_year": 1994,
+      "gb_2026": "320571",
+      "kind": "industrial_park",
+      "name_zh": "苏州工业园区",
+      "parent_1990s_names_zh": ["吴县", "苏州市郊区"],
+      "parent_1990s_unit_ids": ["prc_320524_wuxian", "prc_320511_jiaoqu"],
+      "parent_adm1_zh": "江苏省"
+    },
+    "fz_tianfu_xinqu": {
+      "established_year": 2014,
+      "gb_2026": "",
+      "kind": "state_new_area",
+      "name_zh": "四川天府新区",
+      "parent_1990s_names_zh": ["双流县", "华阳县", "仁寿县", "新津县"],
+      "parent_1990s_unit_ids": ["prc_510122_shuangliu", "prc_511121_renshou", "prc_510132_xinjin"],
+      "parent_adm1_zh": "四川省"
+    },
+    "fz_xiangjiang_xinqu": {
+      "established_year": 2015,
+      "gb_2026": "",
+      "kind": "state_new_area",
+      "name_zh": "湖南湘江新区",
+      "parent_1990s_names_zh": ["岳麓区", "望城县", "宁乡县"],
+      "parent_1990s_unit_ids": ["prc_430104_yuelu", "prc_430122_wangcheng", "prc_430124_ningxiang"],
+      "parent_adm1_zh": "湖南省"
+    },
+    "fz_xiongan_xinqu": {
+      "established_year": 2017,
+      "gb_2026": "",
+      "kind": "state_new_area",
+      "name_zh": "雄安新区",
+      "parent_1990s_names_zh": ["雄县", "容城县", "安新县"],
+      "parent_1990s_unit_ids": ["prc_132436_xiongxian", "prc_132425_rongcheng", "prc_132434_anxin"],
+      "parent_adm1_zh": "河北省"
+    },
+    "fz_xixian_xinqu": {
+      "established_year": 2014,
+      "gb_2026": "",
+      "kind": "state_new_area",
+      "name_zh": "西咸新区",
+      "parent_1990s_names_zh": ["长安县", "咸阳市秦都区", "渭城区", "泾阳县"],
+      "parent_1990s_unit_ids": ["prc_610121_changan", "prc_610402_qindu", "prc_610404_weicheng", "prc_610423_jingyang"],
+      "parent_adm1_zh": "陕西省"
+    },
+    "fz_yangling_shifanqu": {
+      "established_year": 1997,
+      "gb_2026": "610403",
+      "kind": "hi_tech_zone",
+      "name_zh": "杨凌农业高新技术产业示范区",
+      "parent_1990s_names_zh": ["武功县", "杨陵区", "扶风县"],
+      "parent_1990s_unit_ids": ["prc_610431_wugong", "prc_610403_yangling"],
+      "parent_adm1_zh": "陕西省"
+    },
+    "fz_yangpu_edz": {
+      "established_year": 1992,
+      "gb_2026": "460400",
+      "kind": "sez",
+      "name_zh": "洋浦经济开发区",
+      "parent_1990s_names_zh": ["儋县", "儋州市"],
+      "parent_1990s_unit_ids": ["prc_460029_danxian"],
+      "parent_adm1_zh": "海南省"
+    },
+    "fz_zhengzhou_hangkonggang": {
+      "established_year": 2013,
+      "gb_2026": "",
+      "kind": "airport_economic_zone",
+      "name_zh": "郑州航空港经济综合实验区",
+      "parent_1990s_names_zh": ["新郑县", "中牟县", "尉氏县"],
+      "parent_1990s_unit_ids": ["prc_410123_xinzheng", "prc_410122_zhongmu", "prc_410223_weishi"],
+      "parent_adm1_zh": "河南省"
+    },
+    "fz_zhoushan_qundao_xinqu": {
+      "established_year": 2011,
+      "gb_2026": "",
+      "kind": "state_new_area",
+      "name_zh": "浙江舟山群岛新区",
+      "parent_1990s_names_zh": ["定海区", "普陀区", "岱山县", "嵊泗县"],
+      "parent_1990s_unit_ids": ["prc_330902_dinghai", "prc_330903_putuo", "prc_330921_daishan", "prc_330922_shengsi"],
+      "parent_adm1_zh": "浙江省"
+    }
+  },
+  "hotan_2024_origins": {
+    "653228": {"name_zh": "和安县", "parent_1990s_names_zh": ["和田县", "皮山县"], "parent_1990s_unit_ids": ["prc_653221_hotan_xian", "prc_653223_pishan"]},
+    "653229": {"name_zh": "和康县", "parent_1990s_names_zh": ["和田县", "皮山县"], "parent_1990s_unit_ids": ["prc_653221_hotan_xian", "prc_653223_pishan"]}
+  },
+  "xpcc_origins": {
+    "659001": {"name_zh": "石河子市", "parent_1990s_names_zh": ["石河子市", "玛纳斯县", "沙湾县"], "parent_1990s_unit_ids": ["prc_659001_shihezi", "prc_652324_manas", "prc_654223_shawan"]},
+    "659002": {"name_zh": "阿拉尔市", "parent_1990s_names_zh": ["阿克苏市", "阿瓦提县"], "parent_1990s_unit_ids": ["prc_652901_aksu", "prc_652928_awat"]},
+    "659003": {"name_zh": "图木舒克市", "parent_1990s_names_zh": ["巴楚县", "莎车县"], "parent_1990s_unit_ids": ["prc_653130_bachu", "prc_653125_yarkant"]},
+    "659004": {"name_zh": "五家渠市", "parent_1990s_names_zh": ["昌吉市", "米泉县"], "parent_1990s_unit_ids": ["prc_652301_changji", "prc_652322_miquan"]},
+    "659005": {"name_zh": "北屯市", "parent_1990s_names_zh": ["阿勒泰市", "福海县"], "parent_1990s_unit_ids": ["prc_654301_altay", "prc_654323_fuhai"]},
+    "659006": {"name_zh": "铁门关市", "parent_1990s_names_zh": ["库尔勒市"], "parent_1990s_unit_ids": ["prc_652801_korla"]},
+    "659007": {"name_zh": "双河市", "parent_1990s_names_zh": ["博乐市"], "parent_1990s_unit_ids": ["prc_652701_bole"]},
+    "659008": {"name_zh": "可克达拉市", "parent_1990s_names_zh": ["霍城县", "察布查尔锡伯自治县"], "parent_1990s_unit_ids": ["prc_654123_huocheng"]},
+    "659009": {"name_zh": "昆玉市", "parent_1990s_names_zh": ["墨玉县", "皮山县"], "parent_1990s_unit_ids": ["prc_653222_moyu", "prc_653223_pishan"]},
+    "659010": {"name_zh": "胡杨河市", "parent_1990s_names_zh": ["奎屯市", "乌苏县"], "parent_1990s_unit_ids": ["prc_654003_kuitun", "prc_654222_usu"]},
+    "659011": {"name_zh": "新星市", "parent_1990s_names_zh": ["哈密市"], "parent_1990s_unit_ids": ["prc_652201_hami"]},
+    "659012": {"name_zh": "白杨市", "parent_1990s_names_zh": ["塔城市", "额敏县"], "parent_1990s_unit_ids": ["prc_654201_tacheng", "prc_654221_emin"]}
+  }
+}

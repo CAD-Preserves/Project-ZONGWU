@@ -893,6 +893,7 @@ class AnnualAdminBuilder:
       adm3_features.append({
         "type": "Feature",
         "properties": {
+          "_seat_key": key,
           "adm_level": 3,
           "category": cat,
           "country": country,
@@ -941,6 +942,9 @@ class AnnualAdminBuilder:
     annual_tusi_helpers.emit_resolved_tusis(year, resolved_tusis, adm1_features, adm2_features, adm3_features)
     annual_tusi_helpers.strip_unclaimed_micro_holes(adm1_features, 0.002)
     annual_tusi_helpers.strip_unclaimed_micro_holes(adm2_features, 0.002)
+    annual_tusi_helpers.populate_feature_seats_and_parents(adm1_features, None, self.precision)
+    annual_tusi_helpers.populate_feature_seats_and_parents(adm2_features, None, self.precision)
+    annual_tusi_helpers.populate_feature_seats_and_parents(adm3_features, atom_geom_map, self.precision)
 
     c1 = self._write_fast_geojson(os.path.join(self.adm_annual_dir, f"adm_1_{year}.geojson"), adm1_features)
     c2 = self._write_fast_geojson(os.path.join(self.adm_annual_dir, f"adm_2_{year}.geojson"), adm2_features)

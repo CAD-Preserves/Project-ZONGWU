@@ -68,6 +68,9 @@ def _collect_failures (arg1_root_dir):
       "common.localisation_maps",
       "common.modern_gazetteer_crosswalk",
       "common.ocr_translation_config",
+      "common.prc_admin_lineage",
+      "common.prc_admin_reforms",
+      "common.prc_functional_zones",
       "common.province_defines",
       "common.series_a_sources_config",
       "common.source_registry",
@@ -95,6 +98,7 @@ def _collect_failures (arg1_root_dir):
       "output.chronicles_dir",
       "output.gis.adm_annual_dir",
       "output.gis.layers_dir",
+      "output.gis.prc_annual_dir",
       "output.newspapers_dir",
       "tests.outputs_dir",
     ):
@@ -167,6 +171,12 @@ def _collect_failures (arg1_root_dir):
   modern_files = [fn for fn in os.listdir(path_helpers.resolve_path("input.gis.modern_dir", root_dir)) if fn.endswith(".geojson")]
   if len(modern_files) != 10:
     failures.append(f"Expected 10 GeoJSON files in input/gis/modern/, found {len(modern_files)}")
+
+  prc_annual_dir = path_helpers.resolve_path("output.gis.prc_annual_dir", root_dir)
+  if os.path.isdir(prc_annual_dir):
+    prc_ann_files = [fn for fn in os.listdir(prc_annual_dir) if fn.endswith(".geojson")]
+    if len(prc_ann_files) != 219:
+      failures.append(f"Expected 219 GeoJSON files in output/gis/prc_annual_1954_2026/, found {len(prc_ann_files)}")
 
   # 5. core/server AST, naming & line-limit checks
   classes_dir = os.path.join(root_dir, "core", "server", "classes")
@@ -255,11 +265,131 @@ def _collect_failures (arg1_root_dir):
           failures.append(f"Stale reference '{pat}' in {md_path}")
 
   _check_historical_invariants(root_dir, failures, active_tusis, deprecated_tusi_ids)
+  _check_prc_1954_2026_invariants(root_dir, failures)
   _check_topology_invariants(root_dir, failures, active_tusis, deprecated_tusi_ids, xizang_tusi_ids)
   _check_series_a_invariants(root_dir, failures)
 
   # Return statement
   return failures
+
+
+def _check_prc_1954_2026_invariants (arg1_root_dir, arg2_failures):
+  """Verify 1953 seat propagation, 1954-2026 PRC GeoJSON/PNG coverage, Hotan/XPCC additions, lineage, and schema v2 crosswalk."""
+  # Convert from parameters
+  failures = arg2_failures
+  root_dir = os.path.abspath(arg1_root_dir)
+
+  # Declare local instance variables.
+  adm_annual_dir = path_helpers.resolve_path("output.gis.adm_annual_dir", root_dir)
+  cw_path = path_helpers.resolve_path("common.modern_gazetteer_crosswalk", root_dir)
+  lin_path = path_helpers.resolve_path("common.prc_admin_lineage", root_dir)
+  modern_dir = path_helpers.resolve_path("input.gis.modern_dir", root_dir)
+  prc_annual_dir = path_helpers.resolve_path("output.gis.prc_annual_dir", root_dir)
+  reforms_cfg = gis_helpers.load_json5(path_helpers.resolve_path("common.prc_admin_reforms", root_dir)) or {}
+  req_gbs = {"653228", "653229"} | {f"6590{i:02d}" for i in range(1, 13)}
+  tests_outputs_dir = path_helpers.resolve_path("tests.outputs_dir", root_dir)
+
+  # 1. Verify adm_{1,2,3}_1953.geojson hand-off seats
+  for lvl in (1, 2, 3):
+    p53 = os.path.join(adm_annual_dir, f"adm_{lvl}_1953.geojson")
+    if os.path.exists(p53):
+      with open(p53, "r", encoding="utf-8") as fh:
+        f53 = json.load(fh).get("features", [])
+      miss = sum(1 for ft in f53 if ft.get("properties", {}).get("seat_lon") is None or ft.get("properties", {}).get("seat_lat") is None)
+      if miss > 0:
+        failures.append(f"adm_{lvl}_1953.geojson has {miss} features missing seat_lon/seat_lat")
+
+  # 2. Verify PRC_modern_adm_{1,2,3}.png & all 219 PRC_adm_{1,2,3}_{1954..2026}.png existence and freshness
+  for lvl in (1, 2, 3):
+    m_geo = os.path.join(modern_dir, f"prc_adm_{lvl}.geojson")
+    m_png = os.path.join(tests_outputs_dir, f"PRC_modern_adm_{lvl}.png")
+    if not os.path.isfile(m_png):
+      failures.append(f"Missing modern verification PNG: {m_png}")
+    elif os.path.exists(m_geo) and os.path.getmtime(m_png) < os.path.getmtime(m_geo) - 5.0:
+      failures.append(f"Stale modern PNG older than GeoJSON: {os.path.basename(m_png)}")
+
+  for yr in range(1954, 2027):
+    for lvl in (1, 2, 3):
+      g_p = os.path.join(prc_annual_dir, f"prc_adm_{lvl}_{yr}.geojson")
+      p_p = os.path.join(tests_outputs_dir, f"PRC_adm_{lvl}_{yr}.png")
+      if not os.path.isfile(p_p):
+        failures.append(f"Missing 1954-2026 verification PNG: {os.path.basename(p_p)}")
+      elif os.path.exists(g_p) and os.path.getmtime(p_p) < os.path.getmtime(g_p) - 5.0:
+        failures.append(f"Stale 1954-2026 PNG older than GeoJSON: {os.path.basename(p_p)}")
+
+  # 3. Verify 2024 Hotan counties and XPCC shi cities in modern & 2026 layers
+  for lbl, gpath in (("prc_adm_3.geojson", os.path.join(modern_dir, "prc_adm_3.geojson")), ("prc_adm_3_2026.geojson", os.path.join(prc_annual_dir, "prc_adm_3_2026.geojson"))):
+    if os.path.exists(gpath):
+      with open(gpath, "r", encoding="utf-8") as fh:
+        gbs = {str(ft.get("properties", {}).get("gb_code") or "") for ft in json.load(fh).get("features", [])}
+      missing_gb = sorted(req_gbs - gbs)
+      if missing_gb:
+        failures.append(f"{lbl} missing expected 2026 GB codes: {missing_gb}")
+
+  # 4. Landmark snapshot assertions & Mainland hole checks
+  for yr in (1954, 1959, 1970, 1989, 1998, 2000, 2026):
+    p1 = os.path.join(prc_annual_dir, f"prc_adm_1_{yr}.geojson")
+    if not os.path.exists(p1):
+      continue
+    with open(p1, "r", encoding="utf-8") as fh:
+      f1 = json.load(fh).get("features", [])
+    names1 = {str(ft.get("properties", {}).get("name_en") or "") for ft in f1}
+    countries1 = {str(ft.get("properties", {}).get("country") or "") for ft in f1}
+    if yr >= 1959:
+      tusi_cnt = sum(1 for ft in f1 if ft.get("properties", {}).get("category") == "tusi")
+      if tusi_cnt > 0:
+        failures.append(f"Unexpected post-1958 Tusi remaining in prc_adm_1_{yr}.geojson: {tusi_cnt}")
+    if yr in (1998, 2000, 2026) and ("Chongqing" not in names1 or "Hong Kong SAR" not in names1):
+      failures.append(f"prc_adm_1_{yr}.geojson missing Chongqing or Hong Kong SAR")
+    if yr in (2000, 2026) and "Macau SAR" not in names1:
+      failures.append(f"prc_adm_1_{yr}.geojson missing Macau SAR")
+    if yr == 2026:
+      if "Taoyuan" not in names1 or "Mongolia" not in countries1 or "Russian Federation" not in countries1:
+        failures.append(f"prc_adm_1_2026.geojson missing expected 2026 entities (names={sorted(names1)[:10]}, countries={sorted(countries1)})")
+    cn_geoms = [
+      shape(ft["geometry"])
+      for ft in f1
+      if ft.get("geometry") and ft.get("properties", {}).get("country") in ("People's Republic of China", "United Kingdom (Hong Kong)", "Portugal (Macau)")
+    ]
+    if cn_geoms:
+      u_cn = unary_union(cn_geoms)
+      for poly in ([u_cn] if u_cn.geom_type == "Polygon" else list(u_cn.geoms)):
+        for r in poly.interiors:
+          hp = Polygon(r)
+          if hp.area > 0.05:
+            unclaimed = hp.difference(u_cn).area
+            if unclaimed > 0.05:
+              failures.append(f"Unclaimed Mainland interior hole in prc_adm_1_{yr}.geojson: area={unclaimed:.4f} at {hp.centroid.coords[0]}")
+
+  # 5. Lineage & crosswalk schema v2 checks
+  lin_doc = gis_helpers.load_json5(lin_path)
+  if not isinstance(lin_doc, dict) or lin_doc.get("schema_version") != 1 or lin_doc.get("coverage_years") != [1954, 2026]:
+    failures.append(f"Invalid prc_admin_lineage_1954_2026 schema in {lin_path}")
+  elif "fz_xiongan_xinqu" not in lin_doc.get("units_by_id", {}):
+    failures.append("prc_admin_lineage_1954_2026 missing fz_xiongan_xinqu functional zone")
+
+  cw_doc = gis_helpers.load_json5(cw_path)
+  banned_pre1949 = set(reforms_cfg.get("epoch_1_1954_1979", {}).get("pre_1949_imperial_republican_names_banned_in_mainland_xinzhi", []))
+  if not isinstance(cw_doc, dict) or cw_doc.get("schema_version") != 2:
+    failures.append(f"Expected schema_version == 2 in {cw_path}")
+  else:
+    if not isinstance(cw_doc.get("functional_zone_redirects"), dict) or "fz_xiongan_xinqu" not in cw_doc.get("functional_zone_redirects", {}):
+      failures.append("modern_gazetteer_crosswalk missing functional_zone_redirects")
+    bad_qs = []
+    missing_plan = 0
+    for uid, rec in cw_doc.get("by_modern_unit", {}).items():
+      if rec.get("region") != "mainland_prc":
+        continue
+      plan = rec.get("chronicle_search_plan")
+      if not isinstance(plan, dict) or "rung_1_1990s_exact" not in plan:
+        missing_plan += 1
+      for q in rec.get("search_queries", []):
+        if "ctext.org" in str(q) or str(q) in banned_pre1949 or str(q).rstrip("志") in banned_pre1949:
+          bad_qs.append((uid, q))
+    if missing_plan > 0:
+      failures.append(f"modern_gazetteer_crosswalk has {missing_plan} mainland_prc units missing chronicle_search_plan")
+    if bad_qs:
+      failures.append(f"Mainland query hygiene violation in crosswalk: {bad_qs[:5]}")
 
 
 def _check_series_a_invariants (arg1_root_dir, arg2_failures):
@@ -425,13 +555,20 @@ def _check_topology_invariants (arg1_root_dir, arg2_failures, arg3_active_tusis,
           ctry = str(p.get("country") or "").lower()
           if ("china" in ctry or "qing" in ctry) and g.intersects(nefa_box) and g.intersection(nefa_box).area > 0.02:
             failures.append(f"Unexpected post-1951 Chinese coverage south of 27.55N in adm_1_{yr}.geojson: {p.get('unit_id')}")
+          if "china" in ctry:
+            parts = [g] if g.geom_type == "Polygon" else list(g.geoms)
+            for part in parts:
+              if 0.0002 <= part.area < 0.05 and 90.0 <= part.centroid.x <= 97.5 and part.centroid.y < 27.9:
+                failures.append(f"Detached South Tibet sliver south of McMahon Line in adm_1_{yr}.geojson: {p.get('unit_id')} area={part.area:.5f} at {part.centroid.coords[0]}")
         if geoms_yr:
           u_yr = unary_union(geoms_yr)
           for poly in ([u_yr] if u_yr.geom_type == "Polygon" else list(u_yr.geoms)):
             for r in poly.interiors:
               hp = Polygon(r)
               if hp.area > 0.05 and qinghai_box.contains(hp.centroid):
-                failures.append(f"Unclaimed Golok/Qinghai hole in adm_1_{yr}.geojson: area={hp.area:.4f} at {hp.centroid.coords[0]}")
+                unclaimed_area = hp.difference(u_yr).area
+                if unclaimed_area > 0.05:
+                  failures.append(f"Unclaimed Golok/Qinghai hole in adm_1_{yr}.geojson: area={unclaimed_area:.4f} at {hp.centroid.coords[0]}")
 
     for lvl in (1, 2, 3):
       geo_p = os.path.join(adm_annual_dir, f"adm_{lvl}_{yr}.geojson")
@@ -447,7 +584,7 @@ def _check_topology_invariants (arg1_root_dir, arg2_failures, arg3_active_tusis,
       with open(m_path, "r", encoding="utf-8") as fh:
         m_feats = json.load(fh).get("features", [])
       u_m = unary_union([shape(ft["geometry"]) for ft in m_feats if ft.get("geometry")])
-      large_holes = [Polygon(r).area for poly in ([u_m] if u_m.geom_type == "Polygon" else list(u_m.geoms)) for r in poly.interiors if Polygon(r).area > 0.001]
+      large_holes = [Polygon(r).difference(u_m).area for poly in ([u_m] if u_m.geom_type == "Polygon" else list(u_m.geoms)) for r in poly.interiors if Polygon(r).difference(u_m).area > 0.001]
       if large_holes:
         failures.append(f"prc_adm_{lvl}.geojson retains {len(large_holes)} unclaimed interior holes >0.001 deg2 (max={max(large_holes):.5f})")
       if lvl == 2:

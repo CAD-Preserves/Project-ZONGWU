@@ -116,6 +116,59 @@ def build_wikisource_parse_url (arg1_api_url, arg2_page_title):
   return f"{api_url}?{params}"
 
 
+def evaluate_stage_a_candidate (arg1_candidate, arg2_region, arg3_sources_cfg, arg4_blocked_titles=None):
+  """Enforce Zero-JiuZhi filtering, blocked post-2000 titles, and regional publication cutoffs on Stage A hits.
+
+  @param arg1_candidate Candidate dict containing title, url, optional year/pub_year.
+  @param arg2_region Region key ('mainland_prc', 'taiwan', 'mongolia', 'tuva_republic').
+  @param arg3_sources_cfg Parsed common/sources/series_a_sources_config.json5 dict.
+  @param arg4_blocked_titles Optional list/set of blocked post-2000 chronicle titles.
+  @return Dict with allowed (bool), needs_colophon_year_audit (bool), cutoff_year (int), reason (str).
+  """
+  # Convert from parameters
+  blocked_titles = {str(t).strip() for t in (arg4_blocked_titles or []) if str(t).strip()}
+  cand = dict(arg1_candidate or {})
+  cfg = dict(arg3_sources_cfg or {})
+  region = str(arg2_region or "mainland_prc").strip().lower()
+
+  # Declare local instance variables.
+  banned_kws = [str(k).strip() for k in cfg.get("stage_a_banned_jiuzhi_keywords", []) if str(k).strip()]
+  cutoffs = cfg.get("regional_pub_year_cutoffs", {})
+  cutoff_yr = int(cutoffs.get(region, 2000))
+  pub_yr = None
+  raw_yr = cand.get("pub_year") if cand.get("pub_year") is not None else cand.get("year")
+  title = str(cand.get("title") or "").strip()
+  url = str(cand.get("url") or "").strip()
+
+  if "ctext.org" in url.lower():
+    return {"allowed": False, "cutoff_year": cutoff_yr, "needs_colophon_year_audit": False, "reason": "blocked_ctext_domain"}
+
+  for kw in banned_kws:
+    if kw in title:
+      return {"allowed": False, "cutoff_year": cutoff_yr, "needs_colophon_year_audit": False, "reason": f"banned_jiuzhi_keyword:{kw}"}
+
+  for bt in blocked_titles:
+    if bt in title:
+      return {"allowed": False, "cutoff_year": cutoff_yr, "needs_colophon_year_audit": False, "reason": f"blocked_post_2000_title:{bt}"}
+
+  if raw_yr is not None:
+    yr_m = re.search(r"(1[89]\d{2}|20[0-2]\d)", str(raw_yr))
+    if yr_m:
+      pub_yr = int(yr_m.group(1))
+
+  if pub_yr is not None and pub_yr > cutoff_yr:
+    return {"allowed": False, "cutoff_year": cutoff_yr, "needs_colophon_year_audit": False, "reason": f"exceeds_cutoff:{pub_yr}>{cutoff_yr}"}
+
+  # Return statement
+  return {
+    "allowed": True,
+    "cutoff_year": cutoff_yr,
+    "needs_colophon_year_audit": pub_yr is None,
+    "pub_year": pub_yr,
+    "reason": "accepted" if pub_yr is not None else "needs_colophon_year_audit",
+  }
+
+
 def extract_paragraphs_from_html (arg1_html_text):
   """Extract clean paragraph lines from HTML content.
 

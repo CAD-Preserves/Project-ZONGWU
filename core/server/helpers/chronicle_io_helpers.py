@@ -271,6 +271,24 @@ def extract_division_gis_history (arg1_slug, arg2_base_dir=None):
   }
 
 
+def load_prc_lineage_and_crosswalk (arg1_base_dir=None):
+  """Load common/defines lineage, schema v2 crosswalk, and functional-zone redirect tables.
+
+  @param arg1_base_dir Optional workspace root directory.
+  @return Tuple (lineage_doc, crosswalk_doc, functional_zones_doc).
+  """
+  # Convert from parameters
+  base_dir = os.path.abspath(arg1_base_dir) if arg1_base_dir else path_helpers.get_project_root()
+
+  # Declare local instance variables.
+  cw_doc = gis_helpers.load_json5(path_helpers.resolve_path("common.modern_gazetteer_crosswalk", base_dir)) or {}
+  fz_doc = gis_helpers.load_json5(path_helpers.resolve_path("common.prc_functional_zones", base_dir)) or {}
+  lin_doc = gis_helpers.load_json5(path_helpers.resolve_path("common.prc_admin_lineage", base_dir)) or {}
+
+  # Return statement
+  return lin_doc, cw_doc, fz_doc
+
+
 def load_source_registry (arg1_base_dir=None):
   """Load common/sources/source_registry.json5 safely, initialising schema defaults if empty.
 
@@ -318,6 +336,125 @@ def resolve_division_abs_path (arg1_chronicle_path, arg2_base_dir=None):
 
   # Return statement
   return abs_dir
+
+
+def resolve_prc_retrospective_jurisdiction (arg1_unit_id_or_name, arg2_year, arg3_base_dir=None):
+  """Resolve 1954-2026 retrospective jurisdiction and 1990s parent unit IDs for a unit or functional zone.
+
+  @param arg1_unit_id_or_name Modern unit_id, GB code, functional-zone ID, or Chinese name.
+  @param arg2_year Target historical snapshot year (1954..2026).
+  @param arg3_base_dir Optional workspace root directory.
+  @return Dict with resolved 1990s unit IDs, names, conversion events, and functional-zone redirect flag.
+  """
+  # Convert from parameters
+  base_dir = os.path.abspath(arg3_base_dir) if arg3_base_dir else path_helpers.get_project_root()
+  query_key = str(arg1_unit_id_or_name or "").strip()
+  yr = int(arg2_year)
+
+  # Declare local instance variables.
+  entry = None
+  lin_doc, cw_doc, fz_doc = load_prc_lineage_and_crosswalk(base_dir)
+  units_map = lin_doc.get("units_by_id", {})
+  redirects = cw_doc.get("functional_zone_redirects", {})
+
+  if query_key in units_map:
+    entry = units_map[query_key]
+  elif query_key in redirects:
+    r = redirects[query_key]
+    return {
+      "conversion_events": [],
+      "is_functional_zone_redirect": True,
+      "parent_1990s_names_zh": list(r.get("parent_1990s_names_zh") or []),
+      "parent_1990s_unit_ids": list(r.get("parent_1990s_unit_ids") or []),
+      "query_key": query_key,
+      "year": yr,
+    }
+  else:
+    for uid, rec in units_map.items():
+      s26 = rec.get("unit_2026_snapshot", {})
+      s90 = rec.get("unit_1990s_snapshot", {})
+      if query_key in (uid, str(s26.get("gb_code") or ""), str(s26.get("name_zh") or ""), str(s90.get("gb_1990") or "")) or query_key in s90.get("names_1980_2000", []):
+        entry = rec
+        query_key = uid
+        break
+
+  if entry is None:
+    for bkt in ("functional_zones", "hotan_2024_origins", "xpcc_origins"):
+      for k, v in fz_doc.get(bkt, {}).items():
+        if query_key in (k, str(v.get("name_zh") or ""), str(v.get("gb_2026") or "")):
+          return {
+            "conversion_events": [],
+            "is_functional_zone_redirect": True,
+            "parent_1990s_names_zh": list(v.get("parent_1990s_names_zh") or []),
+            "parent_1990s_unit_ids": list(v.get("parent_1990s_unit_ids") or []),
+            "query_key": k,
+            "year": yr,
+          }
+    # Return statement
+    return {"conversion_events": [], "is_functional_zone_redirect": False, "parent_1990s_names_zh": [], "parent_1990s_unit_ids": [], "query_key": query_key, "year": yr}
+
+  snap90 = entry.get("unit_1990s_snapshot", {})
+  snap26 = entry.get("unit_2026_snapshot", {})
+  events = list(snap90.get("conversion_events") or [])
+  eff_name = str(snap26.get("name_zh") or "")
+  for ev in sorted(events, key=lambda x: int(x.get("snapshot_year", 9999))):
+    if yr < int(ev.get("snapshot_year", 9999)) and ev.get("from_name"):
+      eff_name = str(ev["from_name"])
+      break
+
+  # Return statement
+  return {
+    "conversion_events": events,
+    "effective_name_zh": eff_name,
+    "is_functional_zone_redirect": bool(entry.get("is_post_1990_sez_or_new_area")),
+    "parent_1990s_names_zh": list(snap90.get("names_1980_2000") or []),
+    "parent_1990s_unit_ids": list(entry.get("parent_1990s_unit_ids") or []),
+    "query_key": query_key,
+    "year": yr,
+  }
+
+
+def resolve_unit_1990s_search_target (arg1_modern_unit_id, arg2_lineage_doc=None, arg3_crosswalk_doc=None):
+  """Resolve 1990s search target, clean 4-rung search plan, and blocked post-2000 titles for a unit ID.
+
+  @param arg1_modern_unit_id Modern unit ID from modern_gazetteer_crosswalk.json5 or lineage graph.
+  @param arg2_lineage_doc Optional preloaded prc_admin_lineage_1954_2026 dict.
+  @param arg3_crosswalk_doc Optional preloaded modern_gazetteer_crosswalk v2 dict.
+  @return Dict containing parent_1990s_unit_ids, unit_1990s_snapshot, chronicle_search_plan, and blocked_post_2000_titles.
+  """
+  # Convert from parameters
+  cw_doc = arg3_crosswalk_doc if isinstance(arg3_crosswalk_doc, dict) else {}
+  lin_doc = arg2_lineage_doc if isinstance(arg2_lineage_doc, dict) else {}
+  uid = str(arg1_modern_unit_id or "").strip()
+
+  if not lin_doc and not cw_doc:
+    lin_doc, cw_doc, _ = load_prc_lineage_and_crosswalk()
+
+  # Declare local instance variables.
+  by_mod = cw_doc.get("by_modern_unit", {}).get(uid, {})
+  lin_entry = lin_doc.get("units_by_id", {}).get(uid, {})
+  plan = dict(by_mod.get("chronicle_search_plan") or {})
+  redirects = cw_doc.get("functional_zone_redirects", {}).get(uid, {})
+  snap90 = dict(by_mod.get("unit_1990s_snapshot") or lin_entry.get("unit_1990s_snapshot") or {})
+  parent_ids = list(by_mod.get("parent_1990s_unit_ids") or lin_entry.get("parent_1990s_unit_ids") or redirects.get("parent_1990s_unit_ids") or [])
+
+  if redirects and not plan:
+    p_names = list(redirects.get("parent_1990s_names_zh") or [])
+    plan = {
+      "blocked_post_2000_titles": [f"{redirects.get('name_zh')}志"] if redirects.get("name_zh") else [],
+      "rung_1_1990s_exact": [f"{nm}志" for nm in p_names if nm],
+      "rung_2_eth_stripped": [],
+      "rung_3_shortened_bare": [],
+      "rung_4_higher_admin": [],
+    }
+
+  # Return statement
+  return {
+    "blocked_post_2000_titles": list(plan.get("blocked_post_2000_titles") or []),
+    "chronicle_search_plan": plan,
+    "parent_1990s_unit_ids": parent_ids,
+    "unit_1990s_snapshot": snap90,
+  }
 
 
 def save_source_registry (arg1_registry, arg2_base_dir=None):

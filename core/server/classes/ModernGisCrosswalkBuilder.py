@@ -14,6 +14,7 @@ SERVER_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if SERVER_DIR not in sys.path:
   sys.path.insert(0, SERVER_DIR)
 from classes.ModernLayerAssembler import ModernLayerAssembler
+from classes.PrcAnnualAdminBuilder import PrcAnnualAdminBuilder
 from classes.ScanlineRasteriser import ScanlineRasteriser
 from helpers import gis_helpers, path_helpers
 
@@ -249,14 +250,18 @@ class ModernGisCrosswalkBuilder:
         mod_items.append({
           "adm_level": lvl,
           "area": max(g.area, 1e-12),
+          "chronicle_search_plan": dict(props.get("chronicle_search_plan") or {}),
           "edge_cases": list(props.get("edge_cases") or []),
           "gb_code": str(props.get("gb_code") or ""),
           "geom": g,
           "modern_unit_id": str(props.get("modern_unit_id") or ""),
           "name_en": str(props.get("name_en") or ""),
           "name_zh": str(props.get("name_zh") or props.get("name_mn_cyrl") or props.get("name_ru") or ""),
+          "parent_1990s_unit_ids": list(props.get("parent_1990s_unit_ids") or []),
           "region": str(props.get("region") or region),
           "search_queries": list(props.get("search_queries") or []),
+          "unit_1990s_snapshot": dict(props.get("unit_1990s_snapshot") or {}),
+          "unit_2026_snapshot": dict(props.get("unit_2026_snapshot") or {}),
           "unit_type": str(props.get("unit_type") or ""),
         })
 
@@ -371,10 +376,21 @@ class ModernGisCrosswalkBuilder:
 
   def build_crosswalk_and_rasters (self):
     """Assemble modern layers, intersect with 1912-1953 polygons, write crosswalk, and render PNG audits."""
-    # 1. Build ./input/gis/modern/ GeoJSONs
-    layer_counts = ModernLayerAssembler(self.base_dir).build_all()
+    # 1. Build ./input/gis/modern/ GeoJSONs, export prc_admin_lineage_1954_2026.json5, and build 1954-2026 annual GeoJSONs
+    print("[STEP G 1/5] Building input/gis/modern/ layers...", flush=True)
+    assembler = ModernLayerAssembler(self.base_dir)
+    layer_counts = assembler.build_all()
+    print("[STEP G 2/5] Exporting prc_admin_lineage_1954_2026.json5 and building 219 1954-2026 GeoJSONs...", flush=True)
+    lineage_path = path_helpers.resolve_path("common.prc_admin_lineage", self.base_dir)
+    self._write_json5(
+      lineage_path,
+      "1954-2026 administrative lineage graph linking 1980-2000 GB/T 2260 compilation-era jurisdictions to 2026 units and functional zones.",
+      assembler.last_lineage_doc,
+    )
+    prc_annual_res = PrcAnnualAdminBuilder(self.cfg, self.base_dir).build_all_years(1954, 2026)
 
     # 2. Load historical geometries and modern local-history index
+    print("[STEP G 3/5] Computing spatial crosswalk and exporting modern_gazetteer_crosswalk.json5 v2...", flush=True)
     unique_geoms, hist_units = self._collect_historical_geometries()
     mod_items = self._load_modern_crosswalk_index()
     mod_geoms = [it["geom"] for it in mod_items]
@@ -418,7 +434,7 @@ class ModernGisCrosswalkBuilder:
     unmatched_hist = 0
 
     for m_it in mod_items:
-      by_mod_unit[m_it["modern_unit_id"]] = {
+      bm_row = {
         "covered_historical_adm3": set(),
         "covered_provinces": set(),
         "covered_tusis": set(),
@@ -430,6 +446,12 @@ class ModernGisCrosswalkBuilder:
         "search_queries": list(m_it["search_queries"]),
         "unit_type": m_it["unit_type"],
       }
+      if m_it.get("chronicle_search_plan"):
+        bm_row["chronicle_search_plan"] = m_it["chronicle_search_plan"]
+        bm_row["parent_1990s_unit_ids"] = list(m_it["parent_1990s_unit_ids"])
+        bm_row["unit_1990s_snapshot"] = dict(m_it["unit_1990s_snapshot"])
+        bm_row["unit_2026_snapshot"] = dict(m_it["unit_2026_snapshot"])
+      by_mod_unit[m_it["modern_unit_id"]] = bm_row
 
     for (_, _), hu in sorted(hist_units.items()):
       p_slug = hu["province_slug"]
@@ -486,14 +508,20 @@ class ModernGisCrosswalkBuilder:
           e_flags.append("frontier_subdivision")
         if is_fb and "fallback_nearest_match" not in e_flags:
           e_flags.append("fallback_nearest_match")
-        entries.append({
+        entry_row = {
           "area_overlap_ratio": round(r_hist, 4),
           "contains_historical_seat": has_seat,
           "edge_cases": e_flags,
           "modern_unit_id": m_it["modern_unit_id"],
           "search_queries": list(m_it["search_queries"]),
           "unit_type": m_it["unit_type"],
-        })
+        }
+        if m_it["region"] == "mainland_prc" and m_it.get("chronicle_search_plan"):
+          entry_row["chronicle_search_plan"] = m_it["chronicle_search_plan"]
+          entry_row["parent_1990s_unit_ids"] = list(m_it["parent_1990s_unit_ids"])
+          entry_row["unit_1990s_snapshot"] = dict(m_it["unit_1990s_snapshot"])
+          entry_row["unit_2026_snapshot"] = dict(m_it["unit_2026_snapshot"])
+        entries.append(entry_row)
 
         bm = by_mod_unit[m_it["modern_unit_id"]]
         bm["covered_provinces"].add(p_slug)
@@ -512,15 +540,28 @@ class ModernGisCrosswalkBuilder:
       bm["covered_provinces"] = sorted(bm["covered_provinces"])
       bm["covered_tusis"] = sorted(bm["covered_tusis"])
 
+    fz_cfg = gis_helpers.load_json5(path_helpers.resolve_path("common.prc_functional_zones", self.base_dir)) or {}
+    fz_redirects = {}
+    for bucket_key in ("functional_zones", "hotan_2024_origins", "xpcc_origins"):
+      for rk, rv in fz_cfg.get(bucket_key, {}).items():
+        fz_redirects[rk] = {
+          "kind": rv.get("kind", bucket_key),
+          "name_zh": rv.get("name_zh", ""),
+          "parent_1990s_names_zh": list(rv.get("parent_1990s_names_zh") or []),
+          "parent_1990s_unit_ids": list(rv.get("parent_1990s_unit_ids") or []),
+        }
+
     crosswalk_payload = {
       "by_historical_province": by_hist_prov,
       "by_modern_unit": by_mod_unit,
       "by_tusi": by_tusi,
-      "schema_version": 1,
+      "functional_zone_redirects": fz_redirects,
+      "schema_version": 2,
       "summary": {
         "historical_county_pairs": len(hist_units),
         "historical_provinces_and_tusis": len(by_hist_prov),
         "modern_units_indexed": len(by_mod_unit),
+        "prc_annual_files": prc_annual_res.get("files_written", 219),
         "tusis_mapped": len(by_tusi),
         "unmatched_historical_units": unmatched_hist,
       },
@@ -528,17 +569,18 @@ class ModernGisCrosswalkBuilder:
     crosswalk_path = path_helpers.resolve_path("common.modern_gazetteer_crosswalk", self.base_dir)
     self._write_json5(
       crosswalk_path,
-      "Bidirectional spatial crosswalk from 1912-1953 historical divisions and Tusis to modern local-history units.",
+      "Bidirectional spatial crosswalk (schema v2) from 1912-1953 historical divisions and Tusis to modern local-history units.",
       crosswalk_payload,
     )
 
-    # 5. Rasterise ./tests/PRC_modern_adm_<1|2|3>.png (retained for user visual inspection)
+    # 5. Rasterise ./tests/outputs/PRC_modern_adm_<1|2|3>.png and all 219 PRC_adm_<1|2|3>_<1954..2026>.png
     tusi_geoms = []
     tusi_geo_path = path_helpers.resolve_path("output.gis.tusi", self.base_dir)
     if os.path.exists(tusi_geo_path):
       with open(tusi_geo_path, "r", encoding="utf-8") as fh:
         tusi_geoms = [ft["geometry"] for ft in json.load(fh).get("features", []) if ft.get("geometry")]
 
+    print("[STEP G 4/5] Rendering PRC_modern_adm_{1,2,3}.png...", flush=True)
     rasteriser = ScanlineRasteriser(self.cfg)
     level_specs = [
       (1, [("prc_adm_1.geojson", "China (PRC)"), ("twn_adm_1.geojson", "Taiwan"), ("mng_adm_1.geojson", "Mongolia"), ("tuva_adm_1.geojson", "Tuva")]),
@@ -550,10 +592,26 @@ class ModernGisCrosswalkBuilder:
       png_out = os.path.join(self.tests_outputs_dir, f"PRC_modern_adm_{lvl}.png")
       png_counts[f"PRC_modern_adm_{lvl}.png"] = self._rasterise_modern_level(rasteriser, files_spec, lvl, png_out, tusi_geoms)
 
+    print("[STEP G 5/5] Rendering PRC_adm_{1,2,3}_{1954..2026}.png...", flush=True)
+    prc_annual_dir = path_helpers.resolve_path("output.gis.prc_annual_dir", self.base_dir)
+    prc_pngs = 0
+    for yr in range(1954, 2027):
+      for lvl in (1, 2, 3):
+        in_p = os.path.join(prc_annual_dir, f"prc_adm_{lvl}_{yr}.geojson")
+        out_p = os.path.join(self.tests_outputs_dir, f"PRC_adm_{lvl}_{yr}.png")
+        if os.path.exists(in_p):
+          rasteriser.render_geojson_to_png(in_p, out_p, yr, lvl)
+          prc_pngs += 1
+      if yr in (1954, 1960, 1970, 1980, 1990, 2000, 2010, 2020, 2026):
+        print(f"  [STEP G 5/5] Rendered PRC_adm_{{1,2,3}}_{yr}.png ({prc_pngs}/219)", flush=True)
+    png_counts["prc_annual_pngs"] = prc_pngs
+
     # Return statement
     return {
       "crosswalk_path": crosswalk_path,
+      "lineage_path": lineage_path,
       "modern_layers": layer_counts,
+      "prc_annual": prc_annual_res,
       "raster_units": png_counts,
       "summary": crosswalk_payload["summary"],
     }

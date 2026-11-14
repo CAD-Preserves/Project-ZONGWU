@@ -126,8 +126,45 @@
       "tusi"
     ]
   },
+  "regional_pub_year_cutoffs": {
+    "mainland_prc": 2000,
+    "mongolia": 2026,
+    "taiwan": 2005,
+    "tuva_republic": 2026
+  },
   "request_delay_seconds": 0.4,
   "request_timeout_seconds": 45,
   "schema_version": 1,
+  "stage_a_banned_jiuzhi_keywords": [
+    "旧志",
+    "舊志",
+    "民国志",
+    "民國志",
+    "清志",
+    "点校",
+    "點校",
+    "校注",
+    "影印",
+    "中国方志丛书",
+    "中國方志叢書",
+    "中国地方志集成",
+    "中國地方志集成",
+    "续修",
+    "續修",
+    "第二轮",
+    "第二輪",
+    "康熙",
+    "雍正",
+    "乾隆",
+    "嘉庆",
+    "嘉慶",
+    "道光",
+    "咸丰",
+    "同治",
+    "光绪",
+    "光緒",
+    "宣统",
+    "宣統"
+  ],
   "user_agent": "ProjectZongwuArchivalIndexer/1.0 (https://confoederatio.org; historical-research)"
 }

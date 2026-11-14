@@ -280,6 +280,7 @@ def B_build_1911_baseline (arg1_paths, arg2_cfg, arg3_base_dir):
       continue
     cho_en, cho_ch = _map_taiwan_cho_1911(n2)
     cho_groups.setdefault((cho_en, cho_ch), []).append(geom)
+    rp_twn = geom.representative_point()
     adm3_features.append((
       {
         "adm_level": 3,
@@ -289,6 +290,8 @@ def B_build_1911_baseline (arg1_paths, arg2_cfg, arg3_base_dir):
         "occupied_by": "Japan",
         "parent_adm1": "Taiwan",
         "parent_adm2": cho_en,
+        "seat_lat": round(float(rp_twn.y), precision),
+        "seat_lon": round(float(rp_twn.x), precision),
         "sys_id": str(rec.get("GID_2") or ""),
         "type_py": "Subprefecture",
         "unit_id": f"twn_{gis_helpers.slugify_snake(n2)}",

@@ -89,12 +89,21 @@ class ScanlineRasteriser:
     elif "Mongol" in country or "MPR" in country:
       base_rgb = tuple(self.palette.get("mongolia_base_rgb", [118, 176, 214]))
       delta = (digest[1] % 21) - 10
-    elif "Tuva" in country or "Uriankhai" in country or "USSR" in country or "Tyva" in prov_key:
+    elif "Tuva" in country or "Uriankhai" in country or "USSR" in country or "Russian Federation" in country or "Tyva" in prov_key:
       base_rgb = tuple(self.palette.get("tuva_base_rgb", [168, 146, 204]))
       delta = (digest[1] % 19) - 9
     else:
-      if prov_key in prov_map:
-        base_rgb = tuple(prov_map[prov_key])
+      prov_alias = {
+        "Guangxi": "Guangxi Zhuang Autonomous Region",
+        "NeiMongol": "Inner Mongolia Autonomous Region",
+        "NewTaipei": "New Taipei",
+        "NingxiaHui": "Ningxia Hui Autonomous Region",
+        "XinjiangUygur": "Xinjiang Uygur Autonomous Region",
+        "Xizang": "Tibet Autonomous Region",
+      }
+      prov_norm = prov_alias.get(prov_key, prov_key)
+      if prov_norm in prov_map:
+        base_rgb = tuple(prov_map[prov_norm])
       else:
         p_digest = hashlib.md5(prov_key.encode("utf-8")).digest()
         base_rgb = tuple(fallback_china[int.from_bytes(p_digest[:2], "big") % len(fallback_china)])

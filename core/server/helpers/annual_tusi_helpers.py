@@ -204,12 +204,15 @@ def apply_reference_frontline_masks (arg1_builder):
   # Ensure Powo Kingdom, post-1918 Chamdo salient, and western Ngari PRC margin have seamless China background
   cov_union = gis_helpers.clean_polygonal_geometry(unary_union(xz_sc_geoms)) if xz_sc_geoms else None
   gadm_arunachal = _load_gadm_subset_union(builder, "gadm_ind_3", "arunachal")
+  gadm_assam = _load_gadm_subset_union(builder, "gadm_ind_3", "assam")
   gadm_prc_xizang = _load_gadm_subset_union(builder, "gadm_chn_3", "xizang")
   loss_parts = []
   mcmahon_ids = set(builder.tusi_modelling_cfg.get("mcmahon_southern_ids", []))
   tusi_geoms = getattr(builder, "tusi_geoms", {})
   if gadm_arunachal is not None:
     loss_parts.append(gadm_arunachal)
+  if gadm_assam is not None:
+    loss_parts.append(gadm_assam)
   for bh_id in ("merak_brokpa_estate", "sakteng_brokpa_estate"):
     if bh_id in tusi_geoms:
       loss_parts.append(tusi_geoms[bh_id]["geom"])
@@ -221,6 +224,7 @@ def apply_reference_frontline_masks (arg1_builder):
       mg = gis_helpers.clean_polygonal_geometry(mg.difference(gadm_prc_xizang))
     if mg is not None and not mg.is_empty:
       loss_parts.append(mg)
+  builder.gadm_prc_xizang_union = gadm_prc_xizang
   builder.south_tibet_post1951_loss_union = gis_helpers.clean_polygonal_geometry(unary_union(loss_parts)) if loss_parts else None
   builder.post1951_south_cache = {}
 
@@ -295,6 +299,19 @@ def clip_post_annexation_south_tibet (arg1_builder, arg2_atom, arg3_year, arg4_g
       return builder.post1951_south_cache[cache_key]
 
   rem = gis_helpers.clean_polygonal_geometry(geom.difference(loss_union))
+  if rem is not None and not rem.is_empty:
+    polys = [rem] if rem.geom_type == "Polygon" else list(rem.geoms)
+    prc_xz = getattr(builder, "gadm_prc_xizang_union", None)
+    kept = []
+    for p in polys:
+      if p.area <= 0.0005:
+        continue
+      c_pt = p.centroid
+      if p.area < 0.05 and 90.0 <= c_pt.x <= 97.5 and c_pt.y < 27.95:
+        continue
+      if p.area >= 0.05 or prc_xz is None or prc_xz.intersects(p.representative_point()):
+        kept.append(p)
+    rem = gis_helpers.clean_polygonal_geometry(unary_union(kept)) if kept else None
   if rem is None or rem.area <= 0.0005:
     if cache_key is not None:
       builder.post1951_south_cache[cache_key] = (None, None)
@@ -302,6 +319,12 @@ def clip_post_annexation_south_tibet (arg1_builder, arg2_atom, arg3_year, arg4_g
     return None, None
 
   cg, cd = builder._cache_geom(rem)
+  if cg is not None and not cg.is_empty:
+    cg_polys = [cg] if cg.geom_type == "Polygon" else list(cg.geoms)
+    cg_kept = [p for p in cg_polys if p.area > 0.0005 and not (p.area < 0.05 and 90.0 <= p.centroid.x <= 97.5 and p.centroid.y < 27.95)]
+    if len(cg_kept) != len(cg_polys):
+      rem2 = gis_helpers.clean_polygonal_geometry(unary_union(cg_kept)) if cg_kept else None
+      cg, cd = builder._cache_geom(rem2) if rem2 is not None else (None, None)
   if cache_key is not None:
     builder.post1951_south_cache[cache_key] = (cg, cd)
 
@@ -417,6 +440,8 @@ def emit_resolved_tusis (arg1_year, arg2_resolved_tusis, arg3_adm1_features, arg
           "parent_adm2": t["name_en"] if lvl == 3 else "",
           "polity_type": ptype or "tusi",
           "rank_title": t.get("rank_title", "Tusi"),
+          "seat_lat": round(float(t.get("seat_lat", 0.0)), 5),
+          "seat_lon": round(float(t.get("seat_lon", 0.0)), 5),
           "start_year": int(t.get("start_year", 1911)),
           "tusi_status": t.get("tusi_status", "de_jure_and_de_facto"),
           "unit_id": f"tusi_{tid}",
@@ -626,3 +651,45 @@ def strip_unclaimed_micro_holes (arg1_features, arg2_max_hole_area_deg2=0.002):
 
   # Return statement
   return stripped
+
+
+def populate_feature_seats_and_parents (arg1_features, arg2_geom_lookup=None, arg3_precision=5):
+  """Populate required hand-off seat coordinates and parent_adm2 attributes on exported features.
+
+  @param arg1_features Mutable list of GeoJSON feature dicts at adm_1, adm_2, or adm_3.
+  @param arg2_geom_lookup Optional mapping key -> Shapely geometry to avoid re-parsing GeoJSON.
+  @param arg3_precision Coordinate rounding decimal places.
+  @return Count of features enriched.
+  """
+  # Convert from parameters
+  features = arg1_features
+  geom_lookup = arg2_geom_lookup or {}
+  precision = int(arg3_precision)
+
+  # Declare local instance variables.
+  enriched = 0
+  g = None
+  props = None
+  rp = None
+
+  for feat in features:
+    props = feat.get("properties")
+    if not isinstance(props, dict):
+      continue
+    if "parent_adm2" not in props:
+      props["parent_adm2"] = ""
+    if "parent_adm1" not in props:
+      props["parent_adm1"] = ""
+    if "seat_lon" not in props or "seat_lat" not in props:
+      g = geom_lookup.get(props.get("_seat_key"))
+      if g is None and feat.get("geometry"):
+        g = shape(feat["geometry"])
+      if g is not None and not g.is_empty:
+        rp = g.representative_point()
+        props["seat_lat"] = round(float(rp.y), precision)
+        props["seat_lon"] = round(float(rp.x), precision)
+    props.pop("_seat_key", None)
+    enriched += 1
+
+  # Return statement
+  return enriched
