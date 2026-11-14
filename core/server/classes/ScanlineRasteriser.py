@@ -71,15 +71,6 @@ class ScanlineRasteriser:
     if occ != "":
       base_rgb = tuple(self.palette.get("occupied_base_rgb", [216, 116, 108]))
       delta = (digest[1] % 19) - 9
-    elif "tusi" in unit_type.lower():
-      base_rgb = tuple(self.palette.get("feudatory_base_rgb", [224, 188, 86]))
-      delta = (digest[1] % 19) - 9
-    elif "Mongol" in country or "MPR" in country:
-      base_rgb = tuple(self.palette.get("mongolia_base_rgb", [118, 176, 214]))
-      delta = (digest[1] % 21) - 10
-    elif "Tuva" in country or "Uriankhai" in country or "USSR" in country or "Tyva" in prov_key:
-      base_rgb = tuple(self.palette.get("tuva_base_rgb", [168, 146, 204]))
-      delta = (digest[1] % 19) - 9
     elif country in (
       "Bhutan",
       "British India",
@@ -92,6 +83,15 @@ class ScanlineRasteriser:
     ):
       base_rgb = tuple(self.palette.get("foreign_stone_rgb", [204, 198, 188]))
       delta = (digest[1] % 13) - 6
+    elif "tusi" in unit_type.lower():
+      base_rgb = tuple(self.palette.get("feudatory_base_rgb", [224, 188, 86]))
+      delta = (digest[1] % 19) - 9
+    elif "Mongol" in country or "MPR" in country:
+      base_rgb = tuple(self.palette.get("mongolia_base_rgb", [118, 176, 214]))
+      delta = (digest[1] % 21) - 10
+    elif "Tuva" in country or "Uriankhai" in country or "USSR" in country or "Tyva" in prov_key:
+      base_rgb = tuple(self.palette.get("tuva_base_rgb", [168, 146, 204]))
+      delta = (digest[1] % 19) - 9
     else:
       if prov_key in prov_map:
         base_rgb = tuple(prov_map[prov_key])
@@ -259,6 +259,16 @@ class ScanlineRasteriser:
     prov_buf = np.zeros((self.height, self.width), dtype=np.int32)
     prov_ids = {}
     all_borders = []
+    foreign_countries = (
+      "Bhutan",
+      "British India",
+      "France (Guangzhouwan)",
+      "German Empire (Kiautschou)",
+      "India",
+      "Portugal (Macau)",
+      "United Kingdom (Hong Kong)",
+      "United Kingdom (Weihaiwei)",
+    )
     tusi_borders = []
 
     for feat in features:
@@ -268,10 +278,12 @@ class ScanlineRasteriser:
         continue
       (sy, sx0, sx1), blines = self._get_cached_spans(geom_dict)
       col = self._colour_for_feature(props)
+      country = str(props.get("country") or "")
+      is_foreign = (country in foreign_countries)
       is_occ = (str(props.get("occupied_by") or "") != "")
-      is_tusi = ("tusi" in str(props.get("category") or props.get("unit_type") or "").lower())
+      is_tusi = ("tusi" in str(props.get("category") or props.get("unit_type") or "").lower()) and not is_foreign
       prov_key = str(props.get("parent_adm1") or props.get("name_en") or "unknown")
-      pkey = (str(props.get("country") or ""), prov_key, is_occ, is_tusi)
+      pkey = (country, prov_key, is_occ, is_tusi)
       if pkey not in prov_ids:
         prov_ids[pkey] = len(prov_ids) + 1
       pid = prov_ids[pkey]

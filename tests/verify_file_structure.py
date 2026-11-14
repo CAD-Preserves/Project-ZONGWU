@@ -6,7 +6,7 @@ import os
 import re
 import sys
 from shapely import STRtree
-from shapely.geometry import LineString, shape
+from shapely.geometry import LineString, Polygon, box, shape
 from shapely.ops import unary_union
 
 SERVER_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "core", "server"))
@@ -69,6 +69,7 @@ def _collect_failures (arg1_root_dir):
       "common.modern_gazetteer_crosswalk",
       "common.ocr_translation_config",
       "common.province_defines",
+      "common.series_a_sources_config",
       "common.source_registry",
       "common.tibet_reference_config",
       "common.transport_corridors",
@@ -102,12 +103,23 @@ def _collect_failures (arg1_root_dir):
         failures.append(f"Missing resolved path for {dot_key}: {resolved}")
 
   # 3. province_defines.json5 & output/chronicles/ hierarchy
+  tusi_cat = gis_helpers.load_json5(path_helpers.resolve_path("common.tusi_catalog", root_dir))
+  tusi_entries = tusi_cat.get("tusis", []) if isinstance(tusi_cat, dict) else []
+  active_tusis = [t for t in tusi_entries if not t.get("deprecated", False)]
+  active_tusi_ids = {t["tusi_id"] for t in active_tusis}
+  deprecated_tusi_ids = {t["tusi_id"] for t in tusi_entries if t.get("deprecated", False)}
+  deprecated_slugs = {gis_helpers.slugify_snake(tid) for tid in deprecated_tusi_ids}
+  xizang_tusi_ids = {t["tusi_id"] for t in tusi_entries if t.get("parent_province") == "Xizang"}
+  expected_divisions = 127 + len(active_tusi_ids)
   defines = gis_helpers.load_json5(path_helpers.resolve_path("common.province_defines", root_dir))
   provinces_map = defines.get("provinces", {}) if isinstance(defines, dict) else {}
-  if len(provinces_map) != 750:
-    failures.append(f"Expected 750 entries in province_defines.json5['provinces'], found {len(provinces_map)}")
+  if len(provinces_map) != expected_divisions:
+    failures.append(f"Expected {expected_divisions} entries in province_defines.json5['provinces'], found {len(provinces_map)}")
   else:
+    expected_abs_dirs = set()
     for slug, entry in provinces_map.items():
+      if slug in deprecated_slugs:
+        failures.append(f"Deprecated Tusi present in province_defines.json5: {slug}")
       c_path = str(entry.get("chronicle_path") or "")
       if not c_path.startswith("./output/chronicles/") or not c_path.endswith("/"):
         failures.append(f"Invalid chronicle_path for {slug}: {c_path}")
@@ -116,8 +128,32 @@ def _collect_failures (arg1_root_dir):
         failures.append(f"Duplicate chronicle_path: {c_path}")
       seen_rel_paths.add(c_path)
       abs_dir = os.path.normpath(os.path.join(root_dir, c_path))
+      expected_abs_dirs.add(abs_dir)
       if not os.path.isdir(abs_dir):
         failures.append(f"Missing chronicle directory on disk: {abs_dir}")
+    chron_root = path_helpers.resolve_path("output.chronicles_dir", root_dir)
+    actual_leaf_dirs = set()
+    if os.path.isdir(chron_root):
+      for top_d in os.listdir(chron_root):
+        top_abs = os.path.join(chron_root, top_d)
+        if not os.path.isdir(top_abs):
+          continue
+        if top_d == "tusi":
+          for reg_d in os.listdir(top_abs):
+            reg_abs = os.path.join(top_abs, reg_d)
+            if os.path.isdir(reg_abs):
+              for leaf_d in os.listdir(reg_abs):
+                leaf_abs = os.path.normpath(os.path.join(reg_abs, leaf_d))
+                if os.path.isdir(leaf_abs):
+                  actual_leaf_dirs.add(leaf_abs)
+        else:
+          for leaf_d in os.listdir(top_abs):
+            leaf_abs = os.path.normpath(os.path.join(top_abs, leaf_d))
+            if os.path.isdir(leaf_abs):
+              actual_leaf_dirs.add(leaf_abs)
+    extra_chron = sorted(actual_leaf_dirs - expected_abs_dirs)
+    if extra_chron:
+      failures.append(f"Orphan chronicle directories on disk ({len(extra_chron)}): {extra_chron[:5]}")
 
   # 4. GeoJSON asset counts
   adm_files = [fn for fn in os.listdir(path_helpers.resolve_path("output.gis.adm_annual_dir", root_dir)) if fn.endswith(".geojson")]
@@ -187,6 +223,7 @@ def _collect_failures (arg1_root_dir):
     "5.scrape-province",
     "6.ocr-translate-province",
     "7.chronology-province",
+    "series-a-workflow",
   }
   if not os.path.isfile(os.path.join(root_dir, ".agents", "rules", "project_architecture.md")):
     failures.append("Missing .agents/rules/project_architecture.md")
@@ -217,10 +254,63 @@ def _collect_failures (arg1_root_dir):
         if pat in content:
           failures.append(f"Stale reference '{pat}' in {md_path}")
 
-  _check_historical_invariants(root_dir, failures)
+  _check_historical_invariants(root_dir, failures, active_tusis, deprecated_tusi_ids)
+  _check_topology_invariants(root_dir, failures, active_tusis, deprecated_tusi_ids, xizang_tusi_ids)
+  _check_series_a_invariants(root_dir, failures)
 
   # Return statement
   return failures
+
+
+def _check_series_a_invariants (arg1_root_dir, arg2_failures):
+  """Verify Series A input/output separation, source_registry schema, and index_manifest linkage.
+
+  @param arg1_root_dir Workspace root directory path.
+  @param arg2_failures Failure list updated in place.
+  """
+  # Convert from parameters
+  failures = arg2_failures
+  root_dir = os.path.abspath(arg1_root_dir)
+
+  # Declare local instance variables.
+  chronicles_dir = path_helpers.resolve_path("output.chronicles_dir", root_dir)
+  input_dir = os.path.join(root_dir, "input")
+  leaked_suffixes = ("_orig.pdf", "_zh.pdf", "_en.pdf", "_zh_raw.md", "_en_raw.md")
+  manifest = None
+  reg = None
+  reg_path = path_helpers.resolve_path("common.source_registry", root_dir)
+  reg_sources = {}
+
+  for r, _, files in os.walk(input_dir):
+    for fn in files:
+      if fn.endswith(leaked_suffixes) or (fn.startswith("chronology_") and fn.endswith(".md")):
+        failures.append(f"Generated Series A artefact leaked into input/: {os.path.join(r, fn)}")
+
+  reg = gis_helpers.load_json5(reg_path)
+  if not isinstance(reg, dict) or reg.get("schema_version") != 1 or not isinstance(reg.get("sources"), dict):
+    failures.append(f"Invalid source_registry schema in {reg_path}")
+    return
+  reg_sources = reg.get("sources", {})
+
+  if os.path.isdir(chronicles_dir):
+    for r, _, files in os.walk(chronicles_dir):
+      for fn in files:
+        if fn != "index_manifest.json5":
+          continue
+        mpath = os.path.join(r, fn)
+        try:
+          manifest = gis_helpers.load_json5(mpath)
+        except Exception as exc:
+          failures.append(f"Failed to parse {mpath}: {exc}")
+          continue
+        if not isinstance(manifest, dict):
+          failures.append(f"Non-dict manifest in {mpath}")
+          continue
+        for unit in manifest.get("units_indexed", []):
+          for src in unit.get("sources", []):
+            sid = str(src.get("source_id") or "")
+            if not sid or sid not in reg_sources:
+              failures.append(f"Unregistered source_id '{sid}' in {mpath}")
 
 
 def _check_year_name_rules (arg1_yr, arg2_occ_by_key, arg3_failures):
@@ -270,9 +360,114 @@ def _check_year_name_rules (arg1_yr, arg2_occ_by_key, arg3_failures):
       failures.append(f"Unexpected Japanese occupation at {yr} for {k}: {occ_by_key[k]!r}")
 
 
-def _check_historical_invariants (arg1_root_dir, arg2_failures):
+def _check_topology_invariants (arg1_root_dir, arg2_failures, arg3_active_tusis, arg4_deprecated_ids, arg5_xizang_tusi_ids):
+  """Verify Pamir clip, PNG freshness, post-1951 Tibet/Golok constraints, deprecated Tusi exclusion, and PRC hole removal."""
+  # Convert from parameters
+  active_tusis = list(arg3_active_tusis or [])
+  deprecated_ids = set(arg4_deprecated_ids or set())
+  failures = arg2_failures
+  root_dir = arg1_root_dir
+  xizang_tusi_ids = set(arg5_xizang_tusi_ids or set())
+
+  # Declare local instance variables.
+  adm_annual_dir = path_helpers.resolve_path("output.gis.adm_annual_dir", root_dir)
+  base1_path = path_helpers.resolve_path("input.gis.chgis_1911_adm1_base", root_dir)
+  modern_dir = path_helpers.resolve_path("input.gis.modern_dir", root_dir)
+  nefa_box = box(91.6, 26.5, 97.4, 27.55)
+  qinghai_box = box(89.0, 31.5, 103.0, 39.0)
+  tests_outputs_dir = path_helpers.resolve_path("tests.outputs_dir", root_dir)
+  tusi_geo_path = path_helpers.resolve_path("output.gis.tusi", root_dir)
+
+  if os.path.exists(base1_path):
+    with open(base1_path, "r", encoding="utf-8") as fh:
+      b_feats = json.load(fh).get("features", [])
+    min_lon = min((shape(ft["geometry"]).bounds[0] for ft in b_feats if ft.get("geometry")), default=999.0)
+    if min_lon < 73.45:
+      failures.append(f"East Tajikistan remains in {base1_path}: min_lon={min_lon:.4f}")
+
+  if os.path.exists(tusi_geo_path):
+    with open(tusi_geo_path, "r", encoding="utf-8") as fh:
+      t_feats = json.load(fh).get("features", [])
+    if len(t_feats) != len(active_tusis):
+      failures.append(f"Expected {len(active_tusis)} active features in tusi_1912_1953.geojson, found {len(t_feats)}")
+    found_dep = [ft.get("properties", {}).get("tusi_id") for ft in t_feats if ft.get("properties", {}).get("tusi_id") in deprecated_ids]
+    if found_dep:
+      failures.append(f"Deprecated Tusis present in tusi_1912_1953.geojson: {found_dep[:10]}")
+    min_t_lon = min((shape(ft["geometry"]).bounds[0] for ft in t_feats if ft.get("geometry")), default=999.0)
+    if min_t_lon < 73.45:
+      failures.append(f"East Tajikistan remains in tusi_1912_1953.geojson: min_lon={min_t_lon:.4f}")
+
+  for yr in range(1911, 1954):
+    a1_path = os.path.join(adm_annual_dir, f"adm_1_{yr}.geojson")
+    if os.path.exists(a1_path):
+      with open(a1_path, "r", encoding="utf-8") as fh:
+        a1_feats = json.load(fh).get("features", [])
+      yr_min_lon = min((shape(ft["geometry"]).bounds[0] for ft in a1_feats if ft.get("geometry")), default=999.0)
+      if yr_min_lon < 73.45:
+        failures.append(f"East Badakhshan/Tajikistan remains in adm_1_{yr}.geojson: min_lon={yr_min_lon:.4f}")
+      if yr in (1952, 1953):
+        xz_t = [
+          ft.get("properties", {}).get("unit_id")
+          for ft in a1_feats
+          if ft.get("properties", {}).get("category") == "tusi"
+          and (
+            str(ft.get("properties", {}).get("unit_id") or "")[5:] in xizang_tusi_ids
+            or ft.get("properties", {}).get("parent_adm1") == "Xizang"
+          )
+        ]
+        if xz_t:
+          failures.append(f"Unexpected post-1951 Xizang Tusi in adm_1_{yr}.geojson: {xz_t[:5]}")
+        geoms_yr = []
+        for ft in a1_feats:
+          g = shape(ft["geometry"])
+          geoms_yr.append(g)
+          p = ft.get("properties", {})
+          ctry = str(p.get("country") or "").lower()
+          if ("china" in ctry or "qing" in ctry) and g.intersects(nefa_box) and g.intersection(nefa_box).area > 0.02:
+            failures.append(f"Unexpected post-1951 Chinese coverage south of 27.55N in adm_1_{yr}.geojson: {p.get('unit_id')}")
+        if geoms_yr:
+          u_yr = unary_union(geoms_yr)
+          for poly in ([u_yr] if u_yr.geom_type == "Polygon" else list(u_yr.geoms)):
+            for r in poly.interiors:
+              hp = Polygon(r)
+              if hp.area > 0.05 and qinghai_box.contains(hp.centroid):
+                failures.append(f"Unclaimed Golok/Qinghai hole in adm_1_{yr}.geojson: area={hp.area:.4f} at {hp.centroid.coords[0]}")
+
+    for lvl in (1, 2, 3):
+      geo_p = os.path.join(adm_annual_dir, f"adm_{lvl}_{yr}.geojson")
+      png_p = os.path.join(tests_outputs_dir, f"CHGIS_adm_{lvl}_{yr}.png")
+      if not os.path.isfile(png_p):
+        failures.append(f"Missing verification raster PNG: {png_p}")
+      elif os.path.exists(geo_p) and os.path.getmtime(png_p) < os.path.getmtime(geo_p) - 5.0:
+        failures.append(f"Stale verification PNG older than GeoJSON: {os.path.basename(png_p)}")
+
+  for lvl in (1, 2):
+    m_path = os.path.join(modern_dir, f"prc_adm_{lvl}.geojson")
+    if os.path.exists(m_path):
+      with open(m_path, "r", encoding="utf-8") as fh:
+        m_feats = json.load(fh).get("features", [])
+      u_m = unary_union([shape(ft["geometry"]) for ft in m_feats if ft.get("geometry")])
+      large_holes = [Polygon(r).area for poly in ([u_m] if u_m.geom_type == "Polygon" else list(u_m.geoms)) for r in poly.interiors if Polygon(r).area > 0.001]
+      if large_holes:
+        failures.append(f"prc_adm_{lvl}.geojson retains {len(large_holes)} unclaimed interior holes >0.001 deg2 (max={max(large_holes):.5f})")
+      if lvl == 2:
+        seen_pref = set()
+        dup_pref = []
+        for ft in m_feats:
+          p = ft.get("properties", {})
+          pk = (str(p.get("parent_adm1") or ""), str(p.get("name_en") or ""))
+          if pk in seen_pref:
+            dup_pref.append(pk)
+          seen_pref.add(pk)
+        if dup_pref:
+          failures.append(f"prc_adm_2.geojson has duplicate (parent_adm1, name_en) pairs: {dup_pref[:5]}")
+
+
+def _check_historical_invariants (arg1_root_dir, arg2_failures, arg3_active_tusis, arg4_deprecated_ids):
   """Verify 1911 seat metadata, 1911 Feudatory continuity, enclave-free occupation, and historical frontline assertions."""
   # Convert from parameters
+  active_tusis = list(arg3_active_tusis or [])
+  deprecated_ids = set(arg4_deprecated_ids or set())
   failures = arg2_failures
   root_dir = arg1_root_dir
 
@@ -292,8 +487,12 @@ def _check_historical_invariants (arg1_root_dir, arg2_failures):
     with open(p_1911, "r", encoding="utf-8") as fh:
       f_1911 = json.load(fh).get("features", [])
     tusi_1911 = sum(1 for ft in f_1911 if ft.get("properties", {}).get("category") == "tusi")
-    if tusi_1911 < 620:
-      failures.append(f"Expected >= 620 Feudatories in adm_3_1911.geojson, found {tusi_1911}")
+    expected_1911 = sum(1 for t in active_tusis if int(t.get("de_facto_start_year", 1911)) <= 1911 <= int(t.get("de_facto_end_year", 1953)))
+    if tusi_1911 < expected_1911 - 2:
+      failures.append(f"Expected >= {expected_1911 - 2} active Feudatories in adm_3_1911.geojson, found {tusi_1911}")
+    dep_1911 = [ft.get("properties", {}).get("unit_id") for ft in f_1911 if ft.get("properties", {}).get("category") == "tusi" and str(ft.get("properties", {}).get("unit_id") or "")[5:] in deprecated_ids]
+    if dep_1911:
+      failures.append(f"Deprecated Tusis present in adm_3_1911.geojson: {dep_1911[:5]}")
 
   for yr in (1938, 1939, 1940, 1942, 1944, 1945):
     ypath = os.path.join(adm_annual_dir, f"adm_3_{yr}.geojson")
@@ -386,7 +585,9 @@ def main ():
     print(f"[VERIFY FAIL] {len(failures)} check(s) failed.", file=sys.stderr)
     return 1
 
-  print("[VERIFY OK] 7-folder layout, paths.json5, 750 chronicle targets, GeoJSON counts, server AST and 7 skills verified.")
+  tusi_cat = gis_helpers.load_json5(path_helpers.resolve_path("common.tusi_catalog", root_dir))
+  active_cnt = sum(1 for t in tusi_cat.get("tusis", []) if not t.get("deprecated", False))
+  print(f"[VERIFY OK] 7-folder layout, paths.json5, {127 + active_cnt} chronicle targets, GeoJSON/PNG topology & freshness, server AST and 7 skills verified.")
 
   # Return statement
   return 0

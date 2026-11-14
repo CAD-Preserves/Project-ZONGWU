@@ -3,14 +3,61 @@
 import json
 import os
 import sys
+import zipfile
 from shapely import STRtree
-from shapely.geometry import Point, shape
+from shapely.geometry import Point, Polygon, shape
 from shapely.ops import unary_union
 
 if os.path.abspath(os.path.join(os.path.dirname(__file__), "..")) not in sys.path:
   sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from helpers import gis_helpers, path_helpers
+
+
+def _load_gadm_subset_union (arg1_builder, arg2_file_key, arg3_name1_filter):
+  """Load and union GADM polygons whose NAME_1 contains arg3_name1_filter.
+
+  @param arg1_builder AnnualAdminBuilder instance with cfg and base_dir.
+  @param arg2_file_key Key under cfg['gadm']['files'] (e.g. 'gadm_ind_3').
+  @param arg3_name1_filter Case-insensitive substring matched against NAME_1.
+  @return Cleaned Shapely union geometry, or None if unavailable.
+  """
+  # Convert from parameters
+  builder = arg1_builder
+  file_key = str(arg2_file_key)
+  name_filter = str(arg3_name1_filter).lower()
+
+  # Declare local instance variables.
+  data = {}
+  feats = []
+  g = None
+  gadm_path = path_helpers.resolve_provider_file(builder.cfg, "gadm", file_key, builder.base_dir)
+  geoms = []
+  jname = None
+
+  if not os.path.exists(gadm_path):
+    return None
+
+  if gadm_path.lower().endswith(".zip"):
+    with zipfile.ZipFile(gadm_path, "r") as zf:
+      jname = next((n for n in zf.namelist() if n.lower().endswith((".json", ".geojson"))), None)
+      if jname:
+        data = json.loads(zf.read(jname).decode("utf-8"))
+  else:
+    with open(gadm_path, "r", encoding="utf-8") as fh:
+      data = json.load(fh)
+
+  feats = data.get("features", [])
+  for feat in feats:
+    n1 = str(feat.get("properties", {}).get("NAME_1") or "").lower()
+    if name_filter not in n1:
+      continue
+    g = gis_helpers.clean_polygonal_geometry(shape(feat["geometry"]))
+    if g is not None and not g.is_empty:
+      geoms.append(g)
+
+  # Return statement
+  return gis_helpers.clean_polygonal_geometry(unary_union(geoms)) if geoms else None
 
 
 def append_xizang_watershed_atoms (arg1_builder, arg2_feat, arg3_geom):
@@ -103,9 +150,10 @@ def apply_reference_frontline_masks (arg1_builder):
   with open(ref_path, "r", encoding="utf-8") as fh:
     for feat in json.load(fh).get("features", []):
       tid = feat.get("properties", {}).get("tusi_id")
-      if tid in ("__mask_dalai_lama_1916__", "__mask_beiyang_1916__", "__mask_dalai_lama_post1918__", "powo_kingdom"):
+      if tid in ("__mask_dalai_lama_1916__", "__mask_beiyang_1916__", "__mask_dalai_lama_post1918__", "powo_kingdom", "gyirong_nyalam_joint_monastic"):
         mask_map[tid] = gis_helpers.clean_polygonal_geometry(shape(feat["geometry"]))
 
+  gyirong_g = mask_map.get("gyirong_nyalam_joint_monastic")
   m_dl16 = mask_map.get("__mask_dalai_lama_1916__")
   m_by16 = mask_map.get("__mask_beiyang_1916__")
   m_dl18 = mask_map.get("__mask_dalai_lama_post1918__")
@@ -153,9 +201,36 @@ def apply_reference_frontline_masks (arg1_builder):
         new_atoms.append(_clone_atom(atom, "fr_rem" if split_hit else "keep", rg, rd, ""))
         xz_sc_geoms.append(rg)
 
-  # Ensure Powo Kingdom and post-1918 Chamdo salient have seamless underlying China background when active Tusis expire
+  # Ensure Powo Kingdom, post-1918 Chamdo salient, and western Ngari PRC margin have seamless China background
   cov_union = gis_helpers.clean_polygonal_geometry(unary_union(xz_sc_geoms)) if xz_sc_geoms else None
-  for z_geom, tag, l2_fallback in ((powo_g, "dalai_1916", "U-Tsang & Changtang"), (zone_post18, "dalai_post1918", "Chamdo")):
+  gadm_arunachal = _load_gadm_subset_union(builder, "gadm_ind_3", "arunachal")
+  gadm_prc_xizang = _load_gadm_subset_union(builder, "gadm_chn_3", "xizang")
+  loss_parts = []
+  mcmahon_ids = set(builder.tusi_modelling_cfg.get("mcmahon_southern_ids", []))
+  tusi_geoms = getattr(builder, "tusi_geoms", {})
+  if gadm_arunachal is not None:
+    loss_parts.append(gadm_arunachal)
+  for bh_id in ("merak_brokpa_estate", "sakteng_brokpa_estate"):
+    if bh_id in tusi_geoms:
+      loss_parts.append(tusi_geoms[bh_id]["geom"])
+  for m_id in mcmahon_ids:
+    if m_id in ("merak_brokpa_estate", "sakteng_brokpa_estate") or m_id not in tusi_geoms:
+      continue
+    mg = tusi_geoms[m_id]["geom"]
+    if gadm_prc_xizang is not None:
+      mg = gis_helpers.clean_polygonal_geometry(mg.difference(gadm_prc_xizang))
+    if mg is not None and not mg.is_empty:
+      loss_parts.append(mg)
+  builder.south_tibet_post1951_loss_union = gis_helpers.clean_polygonal_geometry(unary_union(loss_parts)) if loss_parts else None
+  builder.post1951_south_cache = {}
+
+  backfill_specs = [(powo_g, "dalai_1916", "U-Tsang & Changtang"), (gyirong_g, "dalai_1916", "U-Tsang & Changtang"), (zone_post18, "dalai_post1918", "Chamdo")]
+  if m_dl16 is not None and gadm_prc_xizang is not None:
+    m_dl16_prc = gis_helpers.clean_polygonal_geometry(m_dl16.intersection(gadm_prc_xizang))
+    if m_dl16_prc is not None and not m_dl16_prc.is_empty:
+      backfill_specs.append((m_dl16_prc, "dalai_1916", "U-Tsang & Changtang"))
+
+  for z_geom, tag, l2_fallback in backfill_specs:
     if z_geom is None or z_geom.is_empty:
       continue
     fill_g = z_geom if cov_union is None else gis_helpers.clean_polygonal_geometry(z_geom.difference(cov_union))
@@ -176,6 +251,7 @@ def apply_reference_frontline_masks (arg1_builder):
           "orig_uid": f"ref_backfill_{tag}",
           "ref_frontline": tag,
         })
+        cov_union = gis_helpers.clean_polygonal_geometry(cov_union.union(fg)) if cov_union is not None else fg
         created += 1
 
   builder.china_atoms = new_atoms
@@ -183,6 +259,54 @@ def apply_reference_frontline_masks (arg1_builder):
 
   # Return statement
   return created
+
+
+def clip_post_annexation_south_tibet (arg1_builder, arg2_atom, arg3_year, arg4_geom, arg5_dict):
+  """Remove Arunachal Pradesh (NEFA) and eastern Bhutan Merak-Sakteng from Xizang/Chamdo post-1951.
+
+  @param arg1_builder AnnualAdminBuilder instance.
+  @param arg2_atom Atomic China unit dictionary.
+  @param arg3_year Snapshot year evaluated on 1 January GMT+0.
+  @param arg4_geom Current Shapely geometry after active Tusi subtraction.
+  @param arg5_dict GeoJSON geometry dict corresponding to arg4_geom.
+  @return Tuple (clipped_geom, clipped_dict), or (None, None) when completely removed.
+  """
+  # Convert from parameters
+  atom = arg2_atom
+  builder = arg1_builder
+  geom = arg4_geom
+  geom_dict = arg5_dict
+  year = int(arg3_year)
+
+  # Declare local instance variables.
+  cache_key = None
+  loss_union = getattr(builder, "south_tibet_post1951_loss_union", None)
+  rem = None
+
+  if year < 1952 or atom.get("l1_1911") not in ("Xizang", "Sichuan"):
+    return geom, geom_dict
+  if loss_union is None or geom is None or geom.is_empty or not geom.intersects(loss_union):
+    return geom, geom_dict
+
+  if geom is atom.get("geom"):
+    cache_key = atom["atom_id"]
+    if cache_key in builder.post1951_south_cache:
+      # Return statement
+      return builder.post1951_south_cache[cache_key]
+
+  rem = gis_helpers.clean_polygonal_geometry(geom.difference(loss_union))
+  if rem is None or rem.area <= 0.0005:
+    if cache_key is not None:
+      builder.post1951_south_cache[cache_key] = (None, None)
+    # Return statement
+    return None, None
+
+  cg, cd = builder._cache_geom(rem)
+  if cache_key is not None:
+    builder.post1951_south_cache[cache_key] = (cg, cd)
+
+  # Return statement
+  return cg, cd
 
 
 def classify_frontline_atom (arg1_atom, arg2_year, arg3_country):
@@ -341,8 +465,14 @@ def resolve_annual_tusis (arg1_builder, arg2_year, arg3_active_tusis, arg4_tg_ma
       if h_occ:
         t_occ = h_occ
     ptype = str(t.get("polity_type") or "")
-    is_nefa = tid in mcmahon_ids or (t.get("parent_province") == "Xizang" and ptype in ("himalayan_polity", "zhaomeng_vassal", "autonomous_confederation") and float(t.get("seat_lon", 0.0)) > 91.5)
-    if tid in ("gartok_bhutan_enclave", "darchen_bhutan_monastic_enclave"):
+    bhutan_ids = {
+      "darchen_bhutan_monastic_enclave",
+      "gartok_bhutan_enclave",
+      "merak_brokpa_estate",
+      "sakteng_brokpa_estate",
+    }
+    is_nefa = (tid in mcmahon_ids) and (tid not in bhutan_ids)
+    if tid in bhutan_ids:
       t_adm1 = "Bhutan"
       t_country = "Bhutan"
       t_occ = ""
@@ -359,7 +489,7 @@ def resolve_annual_tusis (arg1_builder, arg2_year, arg3_active_tusis, arg4_tg_ma
         t_adm1 = "Xikang"
     elif tid == "chamdo_phagpalha_estate" and year <= 1918:
       t_adm1 = "Chuanbian" if year >= 1915 else "Sichuan"
-    elif year >= 1951 and is_nefa:
+    elif year >= 1952 and is_nefa:
       t_adm1 = "North-East Frontier Agency"
       t_country = "India"
       t_occ = ""
@@ -419,3 +549,80 @@ def index_tusi_host_atoms (arg1_tusi_catalog, arg2_china_atoms, arg3_china_perm_
 
   # Return statement
   return host_map
+
+
+def strip_unclaimed_micro_holes (arg1_features, arg2_max_hole_area_deg2=0.002):
+  """Remove unclaimed micro-sliver interior rings from dissolved administrative features.
+
+  @param arg1_features Mutable list of GeoJSON Feature dicts (after Tusi emission).
+  @param arg2_max_hole_area_deg2 Maximum interior-ring area in deg2 eligible for micro-sliver stripping.
+  @return Total number of interior sliver rings stripped.
+  """
+  # Convert from parameters
+  features = arg1_features
+  max_area = float(arg2_max_hole_area_deg2)
+
+  # Declare local instance variables.
+  candidates = []
+  geoms = []
+  stripped = 0
+  tree = None
+
+  for idx, feat in enumerate(features):
+    geom_dict = feat.get("geometry") or {}
+    g_type = geom_dict.get("type")
+    coords = geom_dict.get("coordinates") or []
+    has_holes = (g_type == "Polygon" and len(coords) > 1) or (g_type == "MultiPolygon" and any(len(part) > 1 for part in coords))
+    g = shape(geom_dict) if geom_dict else None
+    geoms.append(g)
+    if has_holes:
+      candidates.append(idx)
+
+  if not candidates:
+    # Return statement
+    return 0
+
+  valid_pairs = [(i, g) for i, g in enumerate(geoms) if g is not None and not g.is_empty]
+  if not valid_pairs:
+    # Return statement
+    return 0
+  valid_idxs = [p[0] for p in valid_pairs]
+  tree = STRtree([p[1] for p in valid_pairs])
+
+  def filter_poly_rings (arg1_rings, arg2_owner_idx):
+    nonlocal stripped
+    if len(arg1_rings) <= 1:
+      return arg1_rings
+    kept = [arg1_rings[0]]
+    for ring in arg1_rings[1:]:
+      hp = Polygon(ring)
+      if not hp.is_valid:
+        hp = gis_helpers.clean_polygonal_geometry(hp)
+      if hp is None or hp.is_empty or hp.area > max_area:
+        kept.append(ring)
+        continue
+      rp = hp.representative_point()
+      claimed = False
+      for hit in tree.query(hp):
+        other_idx = valid_idxs[int(hit)]
+        if other_idx == arg2_owner_idx:
+          continue
+        og = geoms[other_idx]
+        if og.contains(rp) or og.intersection(hp).area > 0.5*hp.area:
+          claimed = True
+          break
+      if claimed:
+        kept.append(ring)
+      else:
+        stripped += 1
+    return kept
+
+  for idx in candidates:
+    geom_dict = features[idx]["geometry"]
+    if geom_dict["type"] == "Polygon":
+      geom_dict["coordinates"] = filter_poly_rings(geom_dict["coordinates"], idx)
+    elif geom_dict["type"] == "MultiPolygon":
+      geom_dict["coordinates"] = [filter_poly_rings(part, idx) for part in geom_dict["coordinates"]]
+
+  # Return statement
+  return stripped

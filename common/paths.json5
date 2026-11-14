@@ -10,6 +10,7 @@
     "modern_gazetteer_crosswalk": "common/defines/modern_gazetteer_crosswalk.json5",
     "ocr_translation_config": "common/ocr/ocr_translation_config.json5",
     "province_defines": "common/defines/province_defines.json5",
+    "series_a_sources_config": "common/sources/series_a_sources_config.json5",
     "source_registry": "common/sources/source_registry.json5",
     "tibet_reference_config": "common/gis/tibet_reference_config.json5",
     "transport_corridors": "common/gis/transport_corridors.json5",

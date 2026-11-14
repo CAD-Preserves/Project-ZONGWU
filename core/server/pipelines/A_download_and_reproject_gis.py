@@ -37,6 +37,49 @@ def _clip_linear_geom (arg1_geom, arg2_bbox):
   return clipped
 
 
+def _clip_pamir_east_tajikistan (arg1_geom, arg2_pamir_box, arg3_prc_xj_union, arg4_min_lobe_area):
+  """Remove undemarcated East Tajikistan Pamir lobes west of the Sarikol Range from CHGIS 1911 Xinjiang priors.
+
+  @param arg1_geom Input CHGIS Shapely geometry.
+  @param arg2_pamir_box Bounding box covering the Pamir border region.
+  @param arg3_prc_xj_union Modern GADM Xinjiang union inside arg2_pamir_box.
+  @param arg4_min_lobe_area Minimum exterior lobe area in deg2 to strip.
+  @return Clipped polygonal Shapely geometry.
+  """
+  # Convert from parameters
+  geom = arg1_geom
+  min_lobe = float(arg4_min_lobe_area)
+  pamir_box = arg2_pamir_box
+  prc_xj_union = arg3_prc_xj_union
+
+  # Declare local instance variables.
+  lobes = []
+  outside = None
+  parts = []
+  trimmed = None
+
+  if geom is None or geom.is_empty or pamir_box is None or prc_xj_union is None:
+    return geom
+  if not geom.intersects(pamir_box):
+    return geom
+
+  outside = gis_helpers.clean_polygonal_geometry(geom.intersection(pamir_box).difference(prc_xj_union))
+  if outside is None or outside.is_empty:
+    return geom
+
+  parts = [outside] if outside.geom_type == "Polygon" else list(outside.geoms)
+  lobes = [p for p in parts if p.area >= min_lobe]
+  if not lobes:
+    return geom
+
+  trimmed = gis_helpers.clean_polygonal_geometry(geom.difference(unary_union(lobes)))
+  if trimmed is None or trimmed.is_empty:
+    return geom
+
+  # Return statement
+  return trimmed
+
+
 def _load_gadm_geojson_from_path (arg1_path):
   """Load a GADM GeoJSON file either directly or from a .json.zip archive."""
   # Convert from parameters
@@ -137,12 +180,23 @@ def B_build_1911_baseline (arg1_paths, arg2_cfg, arg3_base_dir):
   paths = arg1_paths
 
   # Declare local instance variables.
+  admin_map_cfg = gis_helpers.load_json5(path_helpers.resolve_path("common.admin_mappings", base_dir))
   adm1_features = []
   adm1_out = path_helpers.resolve_path("input.gis.chgis_1911_adm1_base", base_dir)
   adm2_features = []
   adm2_out = path_helpers.resolve_path("input.gis.chgis_1911_adm2_base", base_dir)
   adm3_features = []
   adm3_out = path_helpers.resolve_path("input.gis.chgis_1911_adm3_base", base_dir)
+  pamir_cfg = admin_map_cfg.get("pamir_east_tajikistan_clip", {}) if isinstance(admin_map_cfg, dict) else {}
+  pamir_bbox = pamir_cfg.get("bbox")
+  pamir_box = box(float(pamir_bbox[0]), float(pamir_bbox[1]), float(pamir_bbox[2]), float(pamir_bbox[3])) if pamir_bbox and len(pamir_bbox) == 4 else None
+  min_pamir_lobe = float(pamir_cfg.get("min_exterior_lobe_deg2", 0.02))
+  chn_gadm = _load_gadm_geojson_from_path(paths["gadm_chn_3"]) if (pamir_box is not None and "gadm_chn_3" in paths) else []
+  xj_pamir_geoms = [
+    g for r, g in chn_gadm
+    if "xinjiang" in str(r.get("NAME_1") or "").lower() and pamir_box is not None and g.intersects(pamir_box)
+  ]
+  prc_xj_pamir_union = gis_helpers.clean_polygonal_geometry(unary_union(xj_pamir_geoms)) if xj_pamir_geoms else None
   precision = int(cfg.get("coordinate_precision", 5))
   raw_cnty = gis_helpers.read_zip_shapefile_wgs84(paths["chgis_1911_cnty"], "utf-8", precision)
   raw_pref = gis_helpers.read_zip_shapefile_wgs84(paths["chgis_1911_pref"], "utf-8", precision)
@@ -153,6 +207,8 @@ def B_build_1911_baseline (arg1_paths, arg2_cfg, arg3_base_dir):
   for rec, geom in raw_prov:
     name_py = gis_helpers.normalise_lev1_name(rec.get("NAME_PY"), rec.get("NAME_CH"))
     name_ch = str(rec.get("NAME_CH") or "").strip()
+    if name_py == "Xinjiang":
+      geom = _clip_pamir_east_tajikistan(geom, pamir_box, prc_xj_pamir_union, min_pamir_lobe)
     is_jp = (name_py == "Taiwan")
     props = {
       "adm_level": 1,
@@ -177,6 +233,8 @@ def B_build_1911_baseline (arg1_paths, arg2_cfg, arg3_base_dir):
     name_ch = str(rec.get("NAME_CH") or "").strip()
     if name_py == "Xuzhou Fu" and lev1_py == "Anhui":
       lev1_py = "Jiangsu"
+    if lev1_py == "Xinjiang":
+      geom = _clip_pamir_east_tajikistan(geom, pamir_box, prc_xj_pamir_union, min_pamir_lobe)
     lon = None
     lat = None
     if rec.get("X_COORD") not in (None, "", 0) and rec.get("Y_COORD") not in (None, "", 0):
@@ -264,6 +322,8 @@ def B_build_1911_baseline (arg1_paths, arg2_cfg, arg3_base_dir):
     lev1_py = gis_helpers.normalise_lev1_name(rec.get("LEV1_PY"), rec.get("LEV1_CH"))
     name_py = str(rec.get("NAME_PY") or "").strip()
     name_ch = str(rec.get("NAME_CH") or "").strip()
+    if lev1_py == "Xinjiang":
+      geom = _clip_pamir_east_tajikistan(geom, pamir_box, prc_xj_pamir_union, min_pamir_lobe)
     lon = None
     lat = None
     if rec.get("X_COORD") not in (None, "", 0) and rec.get("Y_COORD") not in (None, "", 0):

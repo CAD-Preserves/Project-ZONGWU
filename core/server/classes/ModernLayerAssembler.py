@@ -11,7 +11,7 @@ from shapely.ops import unary_union
 SERVER_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if SERVER_DIR not in sys.path:
   sys.path.insert(0, SERVER_DIR)
-from helpers import gis_helpers, path_helpers
+from helpers import gis_helpers, modern_gis_helpers, path_helpers
 
 
 class ModernLayerAssembler:
@@ -190,6 +190,8 @@ class ModernLayerAssembler:
         "unit_type": "soum",
       }, geom))
 
+    m1_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(m1_feats, 0.01)
+    m2_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(m2_feats, 0.01)
     c1 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "mng_adm_1.geojson"), m1_feats, self.precision)
     c2 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "mng_adm_2.geojson"), m2_feats, self.precision)
 
@@ -289,6 +291,8 @@ class ModernLayerAssembler:
       })
 
     units = self._assign_frontier_citas_pieces(citas_list, units)
+    units = modern_gis_helpers.harmonise_prc_units(units, gb_lookup)
+    units = modern_gis_helpers.patch_unclaimed_holes_in_units(units, 0.05)
 
     adm3_feats = []
     for u in units:
@@ -344,6 +348,9 @@ class ModernLayerAssembler:
         "unit_type": "province_level_unit",
       }, merged))
 
+    adm1_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(adm1_feats, 0.05)
+    adm2_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(adm2_feats, 0.05)
+    adm3_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(adm3_feats, 0.05)
     c1 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "prc_adm_1.geojson"), adm1_feats, self.precision)
     c2 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "prc_adm_2.geojson"), adm2_feats, self.precision)
     c3 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "prc_adm_3.geojson"), adm3_feats, self.precision)
@@ -437,6 +444,8 @@ class ModernLayerAssembler:
       "unit_type": "republic",
     }, tuva_adm1_geom)]
 
+    t1_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(t1_feats, 0.01)
+    t2_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(t2_feats, 0.01)
     c1 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "tuva_adm_1.geojson"), t1_feats, self.precision)
     c2 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "tuva_adm_2.geojson"), t2_feats, self.precision)
 
@@ -627,6 +636,9 @@ class ModernLayerAssembler:
         "unit_type": "province_or_special_municipality",
       }, merged))
 
+    t1_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(t1_feats, 0.01)
+    t2_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(t2_feats, 0.01)
+    t3_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(t3_feats, 0.01)
     c1 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "twn_adm_1.geojson"), t1_feats, self.precision)
     c2 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "twn_adm_2.geojson"), t2_feats, self.precision)
     c3 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "twn_adm_3.geojson"), t3_feats, self.precision)

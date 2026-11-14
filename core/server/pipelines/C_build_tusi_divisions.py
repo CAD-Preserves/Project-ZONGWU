@@ -24,6 +24,7 @@ def main ():
   out_geojson = ""
   pngs = []
   refresh_maps = "--refresh-maps" in sys.argv[1:]
+  reuse_unchanged = "--reuse-unchanged" in sys.argv[1:]
 
   if refresh_maps:
     feat_count = modeller.load_existing_geojson()
@@ -31,7 +32,7 @@ def main ():
     pngs = modeller.render_diagnostic_maps()
     print(f"[STEP C REFRESH] features={feat_count} geojson={out_geojson} pngs={len(pngs)}")
   else:
-    metrics = modeller.build_all_tusis()
+    metrics = modeller.build_all_tusis(reuse_unchanged)
     out_geojson, feat_count = modeller.export_geojson()
     pngs = modeller.render_diagnostic_maps()
     print(f"[STEP C DONE] features={feat_count} (direct={metrics['chgis_direct']}, tier_b={metrics['tier_b']}, tier_c={metrics['tier_c']}) max_ov={metrics['max_overlap_deg2']:.9f} geojson={out_geojson} pngs={len(pngs)}")

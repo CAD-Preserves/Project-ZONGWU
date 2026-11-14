@@ -30,6 +30,10 @@
     "云南": "Yunnan",
     "浙江": "Zhejiang"
   },
+  "pamir_east_tajikistan_clip": {
+    "bbox": [71.5, 36.6, 75.3, 39.2],
+    "min_exterior_lobe_deg2": 0.02
+  },
   "taiwan_cho_1911": {
     "default": ["Taihoku Cho", "台北厅"],
     "mappings": {

@@ -232,7 +232,8 @@ class AnnualAdminBuilder:
     tusi_geo_path = path_helpers.resolve_path("output.gis.tusi", self.base_dir)
     if os.path.exists(tusi_cat_path) and os.path.exists(tusi_geo_path):
       cat_obj = gis_helpers.load_json5(tusi_cat_path)
-      self.tusi_catalog = cat_obj.get("tusis", []) if isinstance(cat_obj, dict) else []
+      raw_tusis = cat_obj.get("tusis", []) if isinstance(cat_obj, dict) else []
+      self.tusi_catalog = [t for t in raw_tusis if not t.get("deprecated", False)]
       for t in self.tusi_catalog:
         self.tusi_by_id[t["tusi_id"]] = t
         for cuid in t.get("chgis_unit_ids", []):
@@ -818,7 +819,7 @@ class AnnualAdminBuilder:
       and int(t.get("de_facto_start_year", t.get("start_year", 1911))) <= year <= int(t.get("de_facto_end_year", t.get("end_year", 1953)))
     ]
     active_chgis_tusi_uids = set()
-    active_kriged_geoms = []
+    active_tusi_geoms = []
     adm1_buckets = {}
     adm2_buckets = {}
     adm3_features = []
@@ -828,22 +829,19 @@ class AnnualAdminBuilder:
       if t.get("geometry_mode") == "chgis_direct":
         for cuid in t.get("chgis_unit_ids", []):
           active_chgis_tusi_uids.add(cuid)
-      else:
-        active_kriged_geoms.append(tg_map[t["tusi_id"]]["geom"])
+      active_tusi_geoms.append(tg_map[t["tusi_id"]]["geom"])
 
-    kriged_union = None
-    kriged_tree = None
-    if active_kriged_geoms:
-      kriged_union = gis_helpers.clean_polygonal_geometry(unary_union(active_kriged_geoms))
-      kriged_tree = STRtree(active_kriged_geoms)
+    tusi_union = None
+    tusi_tree = None
+    if active_tusi_geoms:
+      tusi_union = gis_helpers.clean_polygonal_geometry(unary_union(active_tusi_geoms))
+      tusi_tree = STRtree(active_tusi_geoms)
 
     # Collect classified atomic units (China + Taiwan + Mongolia + Tuva)
     classified_atoms = []
+    active_tusi_sig = frozenset(t["tusi_id"] for t in active_tusis)
 
     for atom in self.china_atoms:
-      # Skip CHGIS direct-polygon Tusis here because they are emitted as first-level Tusis below
-      if atom["orig_uid"] in active_chgis_tusi_uids:
-        continue
       res = self._classify_china_atom(atom, year)
       if res is None:
         continue
@@ -851,20 +849,25 @@ class AnnualAdminBuilder:
       g = atom["geom"]
       g_dict = atom["dict"]
 
-      # Subtract active kriged Tusis only if bounding boxes intersect
-      if kriged_tree is not None and kriged_tree.query(g).size > 0:
-        diff_key = (atom["atom_id"], year >= 1932, frozenset(t["tusi_id"] for t in active_tusis if t.get("geometry_mode") != "chgis_direct"))
+      # Subtract all active Tusis (including trimmed chgis_direct parents like Qinghai Golok)
+      if tusi_tree is not None and tusi_tree.query(g).size > 0:
+        diff_key = (atom["atom_id"], year >= 1932, active_tusi_sig)
         if diff_key in self.diff_cache:
           g, g_dict = self.diff_cache[diff_key]
         else:
-          rem = gis_helpers.clean_polygonal_geometry(g.difference(kriged_union))
-          if rem is None or rem.area <= 0.0005:
+          min_rem = 0.005 if atom["orig_uid"] in active_chgis_tusi_uids else 0.0005
+          rem = gis_helpers.clean_polygonal_geometry(g.difference(tusi_union))
+          if rem is None or rem.area <= min_rem:
             self.diff_cache[diff_key] = (None, None)
             continue
           g, g_dict = self._cache_geom(rem)
           self.diff_cache[diff_key] = (g, g_dict)
         if g is None:
           continue
+
+      g, g_dict = annual_tusi_helpers.clip_post_annexation_south_tibet(self, atom, year, g, g_dict)
+      if g is None:
+        continue
 
       key = f"ch_{atom['atom_id']}_{year}"
       atom_geom_map[key] = g
@@ -936,6 +939,8 @@ class AnnualAdminBuilder:
 
     # Emit active Feudatories as first-level autonomous divisions across adm_1, adm_2, and adm_3
     annual_tusi_helpers.emit_resolved_tusis(year, resolved_tusis, adm1_features, adm2_features, adm3_features)
+    annual_tusi_helpers.strip_unclaimed_micro_holes(adm1_features, 0.002)
+    annual_tusi_helpers.strip_unclaimed_micro_holes(adm2_features, 0.002)
 
     c1 = self._write_fast_geojson(os.path.join(self.adm_annual_dir, f"adm_1_{year}.geojson"), adm1_features)
     c2 = self._write_fast_geojson(os.path.join(self.adm_annual_dir, f"adm_2_{year}.geojson"), adm2_features)

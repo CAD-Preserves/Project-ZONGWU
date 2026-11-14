@@ -13,12 +13,21 @@
     "min_chars_per_text_page": 40,
     "min_cjk_ratio_zh": 0.6
   },
+  "font_fallbacks": {
+    "bo": "C:/Windows/Fonts/himalaya.ttf",
+    "ja": "C:/Windows/Fonts/msgothic.ttc",
+    "latin_cyrillic": "C:/Windows/Fonts/georgia.ttf",
+    "mn_hudum": "C:/Windows/Fonts/monbaiti.ttf",
+    "zh": "C:/Windows/Fonts/msyh.ttc"
+  },
   "models": {
     "easyocr_detector": {
       "craft_text_threshold": 0.7,
       "link_threshold": 0.4,
       "low_text": 0.4
     },
+    "max_ocr_pages_per_volume": 24,
+    "multimodal_vlm_model": "Qwen/Qwen2.5-VL-3B-Instruct",
     "trocr_historical_fallback": "ZihCiLin/trocr-traditional-chinese-historical-finetune",
     "trocr_traditional_primary": "ZihCiLin/trocr-traditional-chinese-baseline"
   },

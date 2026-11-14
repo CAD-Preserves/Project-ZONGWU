@@ -103,6 +103,7 @@ class ModernGisCrosswalkBuilder:
   def _collect_historical_geometries (self):
     """Scan adm_3_1912..1953 and tusi_1912_1953 to collect deduplicated geometries and seat points."""
     # Declare local instance variables.
+    deprecated_ids = set()
     hist_units = {}
     seats_by_sysid, seats_by_name = self._load_1911_seat_points()
     tusi_seats = {}
@@ -111,6 +112,10 @@ class ModernGisCrosswalkBuilder:
 
     for t_entry in self.tusi_catalog.get("tusis", []):
       tid = str(t_entry.get("tusi_id") or "").strip()
+      if t_entry.get("deprecated", False):
+        if tid:
+          deprecated_ids.add(gis_helpers.slugify_snake(tid))
+        continue
       slon = t_entry.get("seat_lon")
       slat = t_entry.get("seat_lat")
       if tid and slon is not None and slat is not None:
@@ -162,7 +167,7 @@ class ModernGisCrosswalkBuilder:
       for ft in t_feats:
         props = ft.get("properties", {})
         tid = gis_helpers.slugify_snake(props.get("tusi_id") or "")
-        if not tid:
+        if not tid or tid in deprecated_ids:
           continue
         geom_dict = ft.get("geometry")
         if not geom_dict:

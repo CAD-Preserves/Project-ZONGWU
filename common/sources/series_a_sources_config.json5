@@ -1,0 +1,133 @@
+// Declarative primary-source repository endpoints, gazetteer keywords, newspapers, and wave priority configuration for Series A chronicles.
+{
+  "api_endpoints": {
+    "internet_archive_metadata": "https://archive.org/metadata/",
+    "internet_archive_search": "https://archive.org/advancedsearch.php",
+    "ndl_iiif_manifest_template": "https://dl.ndl.go.jp/api/iiif/{pid}/manifest.json",
+    "ndl_opensearch": "https://ndlsearch.ndl.go.jp/api/opensearch",
+    "wikimedia_commons": "https://commons.wikimedia.org/w/api.php",
+    "wikisource_en": "https://en.wikisource.org/w/api.php",
+    "wikisource_ja": "https://ja.wikisource.org/w/api.php",
+    "wikisource_ru": "https://ru.wikisource.org/w/api.php",
+    "wikisource_zh": "https://zh.wikisource.org/w/api.php"
+  },
+  "gazetteer_section_keywords": [
+    "大事记",
+    "大事記",
+    "建置沿革",
+    "沿革",
+    "疆域",
+    "兵事",
+    "武備",
+    "軍事",
+    "土司",
+    "邊防",
+    "職官",
+    "政事",
+    "人物"
+  ],
+  "max_iiif_pages": 40,
+  "max_single_pdf_bytes": 83886080,
+  "newspapers": {
+    "dagongbao": {
+      "active_years": [1912, 1949],
+      "coverage_categories": ["municipality", "province"],
+      "language": "zh_hant",
+      "search_terms": ["大公報", "大公报"],
+      "title_en": "Ta Kung Pao",
+      "title_zh": "大公報"
+    },
+    "guomin_zhengfu_gongbao": {
+      "active_years": [1925, 1948],
+      "coverage_categories": ["municipality", "province", "special_region"],
+      "language": "zh_hant",
+      "search_terms": ["國民政府公報", "国民政府公报"],
+      "title_en": "National Government Gazette",
+      "title_zh": "國民政府公報"
+    },
+    "linshi_zhengfu_gongbao": {
+      "active_years": [1912, 1912],
+      "coverage_categories": ["municipality", "province"],
+      "language": "zh_hant",
+      "search_terms": ["臨時政府公報", "临时政府公报"],
+      "title_en": "Provisional Government Gazette",
+      "title_zh": "臨時政府公報"
+    },
+    "manshukoku_seifu_koho": {
+      "active_years": [1932, 1945],
+      "coverage_categories": ["puppet_province", "leased_territory"],
+      "coverage_regions": ["manchukuo"],
+      "language": "ja",
+      "search_terms": ["滿洲國政府公報", "満州国政府公報", "康徳"],
+      "title_en": "Manchukuo Government Gazette",
+      "title_zh": "滿洲國政府公報"
+    },
+    "north_china_herald": {
+      "active_years": [1912, 1941],
+      "coverage_categories": ["municipality", "province", "leased_territory"],
+      "language": "en",
+      "search_terms": ["North China Herald"],
+      "title_en": "North China Herald",
+      "title_zh": "字林西報"
+    },
+    "shenbao": {
+      "active_years": [1912, 1949],
+      "coverage_categories": ["municipality", "province"],
+      "language": "zh_hant",
+      "search_terms": ["申報", "申报"],
+      "title_en": "Shen Bao",
+      "title_zh": "申報"
+    },
+    "taiwan_sotokufu_ho": {
+      "active_years": [1911, 1945],
+      "coverage_categories": ["colony"],
+      "coverage_divisions": ["taiwan"],
+      "language": "ja",
+      "search_terms": ["臺灣總督府報", "台湾総督府報", "臺灣總督府"],
+      "title_en": "Taiwan Government-General Gazette",
+      "title_zh": "臺灣總督府報"
+    },
+    "zhengfu_gongbao_beiyang": {
+      "active_years": [1912, 1928],
+      "coverage_categories": ["municipality", "province", "special_region", "frontier_polity"],
+      "language": "zh_hant",
+      "search_terms": ["政府公報 民國", "北洋政府公報"],
+      "title_en": "Beiyang Government Gazette",
+      "title_zh": "政府公報"
+    },
+    "zhongyang_ribao": {
+      "active_years": [1928, 1953],
+      "coverage_categories": ["municipality", "province", "colony"],
+      "language": "zh_hant",
+      "search_terms": ["中央日報", "中央日报"],
+      "title_en": "Central Daily News",
+      "title_zh": "中央日報"
+    }
+  },
+  "priority_category_order": {
+    "wave_1": [
+      "municipality",
+      "province"
+    ],
+    "wave_2": [
+      "special_region",
+      "autonomous_region",
+      "autonomous_oblast",
+      "colony",
+      "leased_territory",
+      "occupied_city",
+      "occupied_province",
+      "puppet_province",
+      "republic",
+      "frontier_polity",
+      "aimag"
+    ],
+    "wave_3": [
+      "tusi"
+    ]
+  },
+  "request_delay_seconds": 0.4,
+  "request_timeout_seconds": 45,
+  "schema_version": 1,
+  "user_agent": "ProjectZongwuArchivalIndexer/1.0 (https://confoederatio.org; historical-research)"
+}

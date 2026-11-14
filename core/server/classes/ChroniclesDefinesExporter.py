@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 import sys
 
 SERVER_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -26,6 +27,7 @@ class ChroniclesDefinesExporter:
     self.adm_annual_dir = path_helpers.resolve_path("output.gis.adm_annual_dir", base_dir)
     self.chronicles_dir = path_helpers.resolve_path("output.chronicles_dir", base_dir)
     self.defines_path = path_helpers.resolve_path("common.province_defines", base_dir)
+    self.deprecated_tusi_dirs = []
     self.loc_maps = gis_helpers.load_json5(path_helpers.resolve_path("common.localisation_maps", base_dir))
     self.loc_dir = path_helpers.resolve_path("localisation.dir", base_dir)
     self.province_records = {}
@@ -113,6 +115,11 @@ class ChroniclesDefinesExporter:
     for entry in entries:
       tusi_id = str(entry.get("tusi_id") or "").strip()
       slug = gis_helpers.slugify_snake(tusi_id or entry.get("name_en", ""))
+      if entry.get("deprecated", False):
+        if slug:
+          dep_rel = path_helpers.resolve_chronicle_relpath(slug, "tusi", str(entry.get("region") or "").strip(), self.loc_maps)
+          self.deprecated_tusi_dirs.append(os.path.normpath(os.path.join(self.base_dir, dep_rel)))
+        continue
       name_en = str(entry.get("name_en") or tusi_id).strip()
       name_zh = str(entry.get("name_zh") or entry.get("name_ch") or "").strip()
       start_y = int(entry.get("de_facto_start_year", entry.get("start_year", 1911)))
@@ -200,6 +207,10 @@ class ChroniclesDefinesExporter:
     self._load_tusi_catalog()
     os.makedirs(self.chronicles_dir, exist_ok=True)
     os.makedirs(self.loc_dir, exist_ok=True)
+
+    for dep_dir in self.deprecated_tusi_dirs:
+      if os.path.isdir(dep_dir) and all(not f_list for _, _, f_list in os.walk(dep_dir)):
+        shutil.rmtree(dep_dir)
 
     # Declare local instance variables.
     de_strings = {}

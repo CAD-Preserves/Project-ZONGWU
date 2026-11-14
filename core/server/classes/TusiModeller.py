@@ -44,6 +44,8 @@ class TusiModeller:
     self.adm3_features = []
     self.adm3_map = {}
     self.all_seats = np.zeros((0, 2), dtype=np.float64)
+    self.all_tusi_by_id = {}
+    self.all_tusi_entries = []
     self.base_dir = base_dir
     self.bp_engine = None
     self.catalog_path = path_helpers.resolve_path("common.tusi_catalog", base_dir)
@@ -51,6 +53,7 @@ class TusiModeller:
     self.chgis_1911_adm3_base = path_helpers.resolve_path("input.gis.chgis_1911_adm3_base", base_dir)
     self.china_land = None
     self.config_path = path_helpers.resolve_path("common.tusi_modelling_config", base_dir)
+    self.deprecated_liuguan_seats = []
     self.ds_path = path_helpers.resolve_path("common.data_sources", base_dir)
     self.elev_builder = None
     self.gadm_ap_adm2 = {}
@@ -59,6 +62,15 @@ class TusiModeller:
     self.precision = 5
     self.priors_dir = path_helpers.resolve_path("input.gis.priors_dir", base_dir)
     self.roads = []
+    self.subordinate_deprecated_ids = {
+      "araturuk_yiwu_kumul_beg",
+      "burqin_kanas_uriankhai",
+      "heshuotenanzuoyici_qi",
+      "kazakh_jeminay_saur",
+      "mengsa_tusi",
+      "sharasume_abak_kerei",
+      "yongdeng_lu_tusi_zhuanglang",
+    }
     self.tests_outputs_dir = path_helpers.resolve_path("tests.outputs_dir", base_dir)
     self.tier_map = {}
     self.town_pts = np.zeros((0, 2), dtype=np.float64)
@@ -70,9 +82,15 @@ class TusiModeller:
 
     self.config = gis_helpers.load_json5(self.config_path)
     cat_obj = gis_helpers.load_json5(self.catalog_path)
-    self.tusis = cat_obj.get("tusis", []) if isinstance(cat_obj, dict) else list(cat_obj)
-    for t in self.tusis:
-      self.tusi_by_id[t["tusi_id"]] = t
+    self.all_tusi_entries = cat_obj.get("tusis", []) if isinstance(cat_obj, dict) else list(cat_obj)
+    for t in self.all_tusi_entries:
+      tid = t["tusi_id"]
+      self.all_tusi_by_id[tid] = t
+      if not t.get("deprecated", False):
+        self.tusis.append(t)
+        self.tusi_by_id[tid] = t
+      elif t.get("geometry_mode") == "borderpool_modelled" and tid not in self.subordinate_deprecated_ids:
+        self.deprecated_liuguan_seats.append((float(t["seat_lon"]), float(t["seat_lat"])))
     self.all_seats = np.asarray([(float(t["seat_lon"]), float(t["seat_lat"])) for t in self.tusis], dtype=np.float64)
     self._load_base_layers()
 
@@ -201,7 +219,7 @@ class TusiModeller:
     # Declare local instance variables.
     enclosed = []
     parent_id = cfg["parent_tusi_id"]
-    parent_entry = self.tusi_by_id[parent_id]
+    parent_entry = self.all_tusi_by_id[parent_id]
     parent_geoms = [self.adm3_map[u] for u in parent_entry.get("chgis_unit_ids", []) if u in self.adm3_map]
     parent_poly = gis_helpers.clean_polygonal_geometry(parent_geoms[0] if len(parent_geoms) == 1 else unary_union(parent_geoms))
 
@@ -212,6 +230,10 @@ class TusiModeller:
       if parent_poly.contains(sp) or parent_poly.distance(sp) < 1e-6:
         enclosed.append(t)
         self.tier_map[t["tusi_id"]] = "tier_b"
+
+    if not enclosed:
+      # Return statement
+      return None, {}
 
     out_geoms, n_atoms, n_anc, n_edges = self.bp_engine.partition_cluster_borderpool(enclosed, parent_poly, cfg, False, self.all_seats)
     print(f"[STEP 2] Tier B {parent_id:16s}: {len(out_geoms):2d}/{len(enclosed):2d} polities | atoms={n_atoms:4d} | anchors={n_anc:4d} | edges={n_edges:5d}")
@@ -224,23 +246,32 @@ class TusiModeller:
 
     @param arg1_cluster Tier C cluster config dict.
     @param arg2_polities List of catalog dicts belonging to this cluster.
-    @param arg3_excluded_union Union of all 126 locked Tier A + B CHGIS polygons.
+    @param arg3_excluded_union Union of all locked Tier A + B CHGIS polygons.
     @return Dict mapping tusi_id -> clean Shapely Polygon.
     """
     # Convert from parameters
-    cluster = arg1_cluster
+    cluster = dict(arg1_cluster)
     excluded_union = arg3_excluded_union
     polities = list(arg2_polities)
 
     # Declare local instance variables.
-    allow_bg = bool(cluster.get("allow_background", True))
     cid = cluster["cluster_id"]
+    allow_bg = True if cid == "sc_kham_north_dege" else bool(cluster.get("allow_background", True))
+    extra_bg = list(cluster.get("bg_seeds", []))
     seat_pts = [(float(t["seat_lon"]), float(t["seat_lat"])) for t in polities]
     host_domain = self._build_host_domain(cluster, excluded_union, seat_pts)
 
     if host_domain is None or host_domain.is_empty:
       print(f"[ERROR] Empty host domain for cluster {cid}", file=sys.stderr)
       return {}
+
+    if allow_bg and self.deprecated_liuguan_seats:
+      for bx, by in self.deprecated_liuguan_seats:
+        bp = Point(bx, by)
+        if host_domain.contains(bp) or host_domain.distance(bp) < 1e-6:
+          extra_bg.append([bx, by])
+      if extra_bg:
+        cluster["bg_seeds"] = extra_bg
 
     for t in polities:
       self.tier_map[t["tusi_id"]] = "tier_c"
@@ -527,11 +558,68 @@ class TusiModeller:
     # Return statement
     return {"mean_sinuosity": voronoi["mean_sinuosity"], "modelled_holes": len(hole_issues), "modelled_multiparts": len(multipart_issues), "seats_inside": seat_inside_cnt, "total": len(tusi_geoms), "voronoi_violations": len(voronoi["voronoi_violations"])}
 
-  def build_all_tusis (self):
-    """Execute the spatial pipeline for all catalog polities and verify assertions."""
+  def _load_cached_cluster_geoms (self):
+    """Load existing modelled GeoJSON polygons keyed by tusi_id for cluster-level reuse.
+
+    @return Dict mapping tusi_id -> clean Shapely geometry.
+    """
+    # Declare local instance variables.
+    cached = {}
+    geo_path = os.path.join(self.layers_dir, "tusi_1912_1953.geojson")
+
+    if not os.path.exists(geo_path):
+      return cached
+
+    with open(geo_path, "r", encoding="utf-8") as fh:
+      for feat in json.load(fh).get("features", []):
+        tid = feat.get("properties", {}).get("tusi_id")
+        if not tid:
+          continue
+        g = gis_helpers.clean_polygonal_geometry(shape(feat["geometry"]))
+        if g is not None and not g.is_empty:
+          cached[tid] = g
+
+    # Return statement
+    return cached
+
+  def _resolve_tier_b_parent_poly (self, arg1_parent_id):
+    """Build the clean CHGIS 1911 parent polygon for a Tier B cluster.
+
+    @param arg1_parent_id Parent tusi_id.
+    @return Clean Shapely geometry or None.
+    """
+    # Convert from parameters
+    parent_id = arg1_parent_id
+
+    # Declare local instance variables.
+    parent_entry = self.all_tusi_by_id.get(parent_id)
+
+    if parent_entry is None:
+      return None
+
+    parent_geoms = [self.adm3_map[u] for u in parent_entry.get("chgis_unit_ids", []) if u in self.adm3_map]
+    if not parent_geoms:
+      return None
+
+    # Return statement
+    return gis_helpers.clean_polygonal_geometry(parent_geoms[0] if len(parent_geoms) == 1 else unary_union(parent_geoms))
+
+  def build_all_tusis (self, arg1_reuse_unchanged=False):
+    """Execute the spatial pipeline for all active catalog polities and verify assertions.
+
+    @param arg1_reuse_unchanged When True, reuse unmodified cluster polygons from existing output/gis/layers/tusi_1912_1953.geojson.
+    @return Summary build metrics dictionary.
+    """
+    # Convert from parameters
+    reuse_unchanged = bool(arg1_reuse_unchanged)
+
+    # Declare local instance variables.
+    cached_geoms = self._load_cached_cluster_geoms() if reuse_unchanged else {}
+    dep_borderpool = [t for t in self.all_tusi_entries if t.get("deprecated", False) and t.get("geometry_mode") not in ("chgis_direct", "reference_vectorised")]
     direct_geoms, tier_a_union = self._build_tier_a_direct()
-    ref_geoms, tier_r_union = self._build_tier_r_reference()
     excluded_parts = []
+    ref_geoms, tier_r_union = self._build_tier_r_reference()
+
     if tier_a_union is not None:
       excluded_parts.append(tier_a_union)
     if tier_r_union is not None:
@@ -539,9 +627,50 @@ class TusiModeller:
     raw_geoms, tier_b_geoms, tier_c_geoms = dict(direct_geoms), {}, {}
     raw_geoms.update(ref_geoms)
 
+    # Track deprecated chgis_direct / reference polygons whose exclusion changed around Tier C clusters
+    changed_excl_parts = []
+    for t in self.all_tusi_entries:
+      if t.get("deprecated", False) and t.get("geometry_mode") in ("chgis_direct", "reference_vectorised") and t["tusi_id"] in cached_geoms:
+        changed_excl_parts.append(cached_geoms[t["tusi_id"]])
+    changed_excl_union = gis_helpers.clean_polygonal_geometry(unary_union(changed_excl_parts)) if changed_excl_parts else None
+
+    tier_b_polys = []
+    tier_b_taken_dep = set()
     for tb_cfg in self.config.get("tier_b_clusters", []):
-      parent_poly, b_part = self._build_tier_b_subdivided(tb_cfg)
+      parent_id = tb_cfg["parent_tusi_id"]
+      parent_poly = self._resolve_tier_b_parent_poly(parent_id)
+      if parent_poly is None:
+        continue
+      tier_b_polys.append(parent_poly)
+      enclosed = []
+      has_dep = False
+      for t in self.tusis:
+        if t.get("geometry_mode") in ("chgis_direct", "reference_vectorised"):
+          continue
+        sp = Point(float(t["seat_lon"]), float(t["seat_lat"]))
+        if parent_poly.contains(sp) or parent_poly.distance(sp) < 1e-6:
+          enclosed.append(t)
+      for dt in dep_borderpool:
+        dsp = Point(float(dt["seat_lon"]), float(dt["seat_lat"]))
+        if parent_poly.contains(dsp) or parent_poly.distance(dsp) < 1e-6:
+          tier_b_taken_dep.add(dt["tusi_id"])
+          has_dep = True
+      if not enclosed:
+        continue
+      can_reuse = reuse_unchanged and (not has_dep) and all(
+        t["tusi_id"] in cached_geoms
+        and cached_geoms[t["tusi_id"]].geom_type == "Polygon"
+        and (cached_geoms[t["tusi_id"]].contains(Point(float(t["seat_lon"]), float(t["seat_lat"]))) or cached_geoms[t["tusi_id"]].distance(Point(float(t["seat_lon"]), float(t["seat_lat"]))) < 1e-6)
+        for t in enclosed
+      )
       excluded_parts.append(parent_poly)
+      if can_reuse:
+        b_part = {t["tusi_id"]: cached_geoms[t["tusi_id"]] for t in enclosed}
+        for t in enclosed:
+          self.tier_map[t["tusi_id"]] = "tier_b"
+        print(f"[STEP 2] Tier B {parent_id:16s}: {len(b_part):2d}/{len(enclosed):2d} polities (reused cached)")
+      else:
+        _, b_part = self._build_tier_b_subdivided(tb_cfg)
       tier_b_geoms.update(b_part)
       raw_geoms.update(b_part)
 
@@ -550,6 +679,7 @@ class TusiModeller:
     clusters = self.config.get("kriging_clusters", [])
     cluster_doms = {cl["cluster_id"]: self._resolve_cluster_raw_domain(cl) for cl in clusters}
     assigned_c = {cl["cluster_id"]: [] for cl in clusters}
+    assigned_dep = {cl["cluster_id"]: 0 for cl in clusters}
 
     for t in tier_c_candidates:
       sp = Point(float(t["seat_lon"]), float(t["seat_lat"]))
@@ -559,11 +689,34 @@ class TusiModeller:
         continue
       assigned_c[hit_cid].append(t)
 
+    for dt in dep_borderpool:
+      if dt["tusi_id"] in tier_b_taken_dep:
+        continue
+      dsp = Point(float(dt["seat_lon"]), float(dt["seat_lat"]))
+      hit_cid = next((cl["cluster_id"] for cl in clusters if cluster_doms[cl["cluster_id"]] is not None and (cluster_doms[cl["cluster_id"]].contains(dsp) or cluster_doms[cl["cluster_id"]].distance(dsp) < 1e-6)), None)
+      if hit_cid is not None:
+        assigned_dep[hit_cid] += 1
+
     for cl in clusters:
-      pols = assigned_c.get(cl["cluster_id"], [])
+      cid = cl["cluster_id"]
+      pols = assigned_c.get(cid, [])
       if not pols:
         continue
-      c_part = self._build_tier_c_cluster(cl, pols, excluded_union)
+      dom = cluster_doms[cid]
+      excl_changed = bool(changed_excl_union is not None and dom is not None and dom.intersects(changed_excl_union) and dom.intersection(changed_excl_union).area > 1e-6)
+      can_reuse = reuse_unchanged and assigned_dep.get(cid, 0) == 0 and (not excl_changed) and all(
+        t["tusi_id"] in cached_geoms
+        and cached_geoms[t["tusi_id"]].geom_type == "Polygon"
+        and (cached_geoms[t["tusi_id"]].contains(Point(float(t["seat_lon"]), float(t["seat_lat"]))) or cached_geoms[t["tusi_id"]].distance(Point(float(t["seat_lon"]), float(t["seat_lat"]))) < 1e-6)
+        for t in pols
+      )
+      if can_reuse:
+        c_part = {t["tusi_id"]: cached_geoms[t["tusi_id"]] for t in pols}
+        for t in pols:
+          self.tier_map[t["tusi_id"]] = "tier_c"
+        print(f"[STEP 2] Tier C {cid:21s}: {len(c_part):2d}/{len(pols):2d} polities (reused cached)")
+      else:
+        c_part = self._build_tier_c_cluster(cl, pols, excluded_union)
       tier_c_geoms.update(c_part)
       raw_geoms.update(c_part)
 
