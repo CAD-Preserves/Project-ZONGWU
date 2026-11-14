@@ -11,7 +11,7 @@ from shapely.ops import unary_union
 SERVER_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if SERVER_DIR not in sys.path:
   sys.path.insert(0, SERVER_DIR)
-from helpers import gis_helpers, modern_gis_helpers, path_helpers, prc_lineage_helpers
+from helpers import ctamap_io_helpers, gis_helpers, modern_gis_helpers, path_helpers, planar_topology_helpers, prc_lineage_helpers
 
 
 class ModernLayerAssembler:
@@ -30,69 +30,80 @@ class ModernLayerAssembler:
     self.cfg = gis_helpers.load_json5(path_helpers.resolve_path("common.data_sources", base_dir))
     self.edge_cases = gis_helpers.load_json5(path_helpers.resolve_path("common.local_history_edge_cases", base_dir))
     self.fz_cfg = gis_helpers.load_json5(path_helpers.resolve_path("common.prc_functional_zones", base_dir)) or {}
+    self.last_areacodes = {}
+    self.last_ctamap_tables = {}
     self.last_lineage_doc = {}
     self.last_prc_units = []
+    self.mng_adm1_meta_by_name = {}
+    self.mng_adm2_features = []
     self.modern_dir = path_helpers.resolve_path("input.gis.modern_dir", base_dir)
+    self.prc_adm3_features = []
     self.precision = int(self.cfg.get("coordinate_precision", 5))
     self.reforms_1954_2026 = gis_helpers.load_json5(path_helpers.resolve_path("common.prc_admin_reforms", base_dir)) or {}
+    self.roc_fujian_mask = None
     self.st_map = {}
     self.ts_map = {}
+    self.tuva_adm1_meta = {}
+    self.tuva_adm2_features = []
+    self.twn_adm2_meta_by_id = {}
+    self.twn_adm3_features = []
 
     self._download_modern_sources()
     self._load_opencc_maps()
 
-  def _assign_frontier_citas_pieces (self, arg1_citas, arg2_gadm_items):
-    """Fill GADM CHN_3 frontier holes (Southern Tibet, Aksai Chin, Heixiazi) from CITAS 1990 polygons.
-
-    @param arg1_citas List of CITAS 1990 dicts with 'gb', 'geom', 'name_zh'.
-    @param arg2_gadm_items List of cleaned PRC GADM unit dicts.
-    @return Updated arg2_gadm_items with frontier remainder pieces merged into matching counties.
-    """
+  def _aggregate_prc_layers (self, arg1_adm3_feats):
+    """Aggregate globally noded Mainland PRC adm_3 features into watertight adm_2 and adm_1 layers."""
     # Convert from parameters
-    citas_list = arg1_citas
-    items = arg2_gadm_items
+    adm3_feats = list(arg1_adm3_feats or [])
 
     # Declare local instance variables.
-    by_gb = {}
-    gadm_union = gis_helpers.clean_polygonal_geometry(unary_union([it["geom"] for it in items]))
-    item_tree = STRtree([it["geom"] for it in items])
+    adm1_feats = []
+    adm2_feats = []
 
-    for idx, it in enumerate(items):
-      if it.get("gb_1990"):
-        by_gb[it["gb_1990"]] = idx
-      if it.get("gb_code"):
-        by_gb[it["gb_code"]] = idx
-
-    for c_rec in citas_list:
-      gb = c_rec["gb"]
-      if gb.startswith(("71", "81", "82")) or len(gb) != 6:
-        continue
-      cg = c_rec["geom"]
-      if cg is None or cg.is_empty:
-        continue
-      rem = gis_helpers.clean_polygonal_geometry(cg.difference(gadm_union))
-      if rem is None or rem.area <= 0.008:
-        continue
-      target_idx = by_gb.get(gb)
-      if target_idx is None:
-        prov2 = gb[:2]
-        best_dist = 1e9
-        for cand_idx in item_tree.query(rem.buffer(0.5)):
-          if items[cand_idx]["gb_code"][:2] != prov2:
-            continue
-          d_val = items[cand_idx]["geom"].distance(rem)
-          if d_val < best_dist:
-            best_dist = d_val
-            target_idx = cand_idx
-      if target_idx is not None:
-        merged = gis_helpers.clean_polygonal_geometry(unary_union([items[target_idx]["geom"], rem]))
-        if merged is not None:
-          items[target_idx]["geom"] = merged
-          if "citas_frontier_hole_filled" not in items[target_idx]["edge_cases"]:
-            items[target_idx]["edge_cases"].append("citas_frontier_hole_filled")
+    adm2_feats = planar_topology_helpers.aggregate_coverage_by_key(
+      adm3_feats,
+      lambda p: (str(p.get("parent_adm1_gb") or ""), str(p.get("parent_adm2_gb") or ""), str(p.get("parent_adm2") or "")),
+      lambda k, ms: {
+        "gb_code": ms[0]["parent_adm2_gb"],
+        "modern_unit_id": f"prc_adm2_{ms[0]['parent_adm2_gb']}_{gis_helpers.slugify_snake(ms[0]['parent_adm2'])}",
+        "name_en": ms[0]["parent_adm2"],
+        "name_zh": ms[0]["parent_adm2_zh"],
+        "name_zh_hant": self._to_hant(ms[0]["parent_adm2_zh"]),
+        "parent_adm1": ms[0]["parent_adm1"],
+        "parent_adm1_gb": ms[0]["parent_adm1_gb"],
+        "parent_adm1_zh": ms[0]["parent_adm1_zh"],
+        "region": "mainland_prc",
+        "search_queries": [f"{ms[0]['parent_adm2_zh']}志", f"{ms[0]['parent_adm2_zh'].rstrip('市地区盟州')}地区志", f"{ms[0]['parent_adm2_zh'].rstrip('市地区盟州')}市志·大事记", f"{ms[0]['parent_adm2_zh'].rstrip('市地区盟州')}市志·军事志", f"{ms[0]['parent_adm2_zh'].rstrip('市地区盟州')}地名志"],
+        "unit_type": "prefecture_level_unit",
+      },
+      1e-5,
+      0.05,
+    )
+    adm1_feats = planar_topology_helpers.aggregate_coverage_by_key(
+      adm3_feats,
+      lambda p: (str(p.get("parent_adm1_gb") or ""), str(p.get("parent_adm1") or ""), str(p.get("parent_adm1_zh") or "")),
+      lambda k, ms: {
+        "gb_code": k[0],
+        "modern_unit_id": f"prc_adm1_{k[0]}_{gis_helpers.slugify_snake(k[1])}",
+        "name_en": k[1],
+        "name_zh": k[2],
+        "name_zh_hant": self._to_hant(k[2]),
+        "region": "mainland_prc",
+        "search_queries": [
+          f"{k[2].replace('特别行政区', '').replace('壮族自治区', '').replace('回族自治区', '').replace('维吾尔自治区', '').replace('自治区', '').rstrip('省市')}通志",
+          f"{k[2].replace('特别行政区', '').replace('壮族自治区', '').replace('回族自治区', '').replace('维吾尔自治区', '').replace('自治区', '').rstrip('省市')}省志·大事记",
+          f"{k[2].replace('特别行政区', '').replace('壮族自治区', '').replace('回族自治区', '').replace('维吾尔自治区', '').replace('自治区', '').rstrip('省市')}省志·军事志",
+          f"{k[2].replace('特别行政区', '').replace('壮族自治区', '').replace('回族自治区', '').replace('维吾尔自治区', '').replace('自治区', '').rstrip('省市')}省志·地名志",
+          f"{k[2].replace('特别行政区', '').replace('壮族自治区', '').replace('回族自治区', '').replace('维吾尔自治区', '').replace('自治区', '').rstrip('省市')}省志·建置沿革志",
+        ],
+        "unit_type": "province_level_unit",
+      },
+      1e-5,
+      0.05,
+    )
 
     # Return statement
-    return items
+    return adm1_feats, adm2_feats
 
   def _build_mng_layers (self):
     """Build and export ./input/gis/modern/mng_adm_1.geojson and mng_adm_2.geojson."""
@@ -194,112 +205,203 @@ class ModernLayerAssembler:
         "unit_type": "soum",
       }, geom))
 
-    m1_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(m1_feats, 0.01)
-    m2_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(m2_feats, 0.01)
-    c1 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "mng_adm_1.geojson"), m1_feats, self.precision)
-    c2 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "mng_adm_2.geojson"), m2_feats, self.precision)
+    m1_meta_by_name = {str(p.get("name_en") or ""): dict(p) for p, _ in m1_feats}
+    m2_feats, _ = planar_topology_helpers.harmonise_international_seams(self.prc_adm3_features, m2_feats, 1e-5, 0.03)
+    m2_feats = planar_topology_helpers.clean_planar_coverage(m2_feats, 1e-5, 0.05, 1e-4)
+    self.mng_adm1_meta_by_name = m1_meta_by_name
+    self.mng_adm2_features = m2_feats
 
     # Return statement
-    return {"mng_adm_1": c1, "mng_adm_2": c2}
+    return {"mng_adm_2": len(m2_feats)}
 
   def _build_prc_layers (self):
-    """Build and export ./input/gis/modern/prc_adm_1.geojson, prc_adm_2.geojson, and prc_adm_3.geojson."""
+    """Build and export ./input/gis/modern/prc_adm_{1,2,3}.geojson strictly from CTAmap T2026_county.gpkg."""
     # Declare local instance variables.
-    adm1_buckets = {}
-    adm2_buckets = {}
+    adm1_en = ""
+    adm1_gb = ""
+    adm1_zh = ""
+    adm2_en = ""
+    adm2_gb = ""
+    adm2_meta = {}
+    adm2_zh = ""
+    canon_adm1_by_gb = {
+      "110000": "Beijing",
+      "120000": "Tianjin",
+      "130000": "Hebei",
+      "140000": "Shanxi",
+      "150000": "Inner Mongolia Autonomous Region",
+      "210000": "Liaoning",
+      "220000": "Jilin",
+      "230000": "Heilongjiang",
+      "310000": "Shanghai",
+      "320000": "Jiangsu",
+      "330000": "Zhejiang",
+      "340000": "Anhui",
+      "350000": "Fujian",
+      "360000": "Jiangxi",
+      "370000": "Shandong",
+      "410000": "Henan",
+      "420000": "Hubei",
+      "430000": "Hunan",
+      "440000": "Guangdong",
+      "450000": "Guangxi Zhuang Autonomous Region",
+      "460000": "Hainan",
+      "500000": "Chongqing",
+      "510000": "Sichuan",
+      "520000": "Guizhou",
+      "530000": "Yunnan",
+      "540000": "Tibet Autonomous Region",
+      "610000": "Shaanxi",
+      "620000": "Gansu",
+      "630000": "Qinghai",
+      "640000": "Ningxia Hui Autonomous Region",
+      "650000": "Xinjiang Uygur Autonomous Region",
+      "810000": "Hong Kong SAR",
+      "820000": "Macau SAR",
+    }
     citas_list = self._load_citas_1990()
-    citas_tree = STRtree([c["geom"] for c in citas_list])
-    gb_lookup = self._load_gb2260_lookup()
-    prc_cfg = self.edge_cases["mainland_prc"]
-    raw_chn = self._load_gadm_features(self.cfg["gadm"]["files"]["gadm_chn_3"]["filename"])
+    cleaned_pairs = []
+    ctamap_dir = path_helpers.resolve_path("input.gis.ctamap_dir", self.base_dir)
+    eng_type_map = {
+      "区": "Qu",
+      "县": "Xian",
+      "县级市": "Shi",
+      "市辖区": "Qu",
+      "自治县": "Zizhixian",
+      "自治旗": "Zizhiqi",
+      "旗": "Qi",
+      "林区": "Linqu",
+      "特区": "Tequ",
+      "特别行政区": "SAR",
+    }
+    gpkg_2026 = os.path.join(ctamap_dir, "T2026_county.gpkg")
+    kept_parts = []
+    muni_or_sar = {"110000", "120000", "310000", "500000", "810000", "820000"}
+    raw_2026 = ctamap_io_helpers.read_ctamap_county_year(gpkg_2026, {}, self.precision)
+    raw_pairs = []
+    rep_pt = None
+    seen_adm2_names = set()
     seen_ids = set()
+    synth_seq = 0
+    uid = ""
+    unit_type = ""
     units = []
+    utype_map = {
+      "市辖区": "urban_district",
+      "县": "county",
+      "县级市": "county_level_city",
+      "自治县": "autonomous_county",
+      "自治旗": "autonomous_banner",
+      "旗": "banner",
+      "林区": "forestry_district",
+      "特区": "special_district",
+      "特别行政区": "special_administrative_region",
+    }
 
-    for props, geom in raw_chn:
-      n1 = str(props.get("NAME_1") or "").strip()
-      n2 = str(props.get("NAME_2") or "").strip()
-      n3 = str(props.get("NAME_3") or "").strip()
-      nl1 = str(props.get("NL_NAME_1") or "").strip()
-      nl2 = str(props.get("NL_NAME_2") or "").strip()
-      nl3 = str(props.get("NL_NAME_3") or "").strip()
-      t3 = str(props.get("TYPE_3") or "").strip()
+    for props, geom in raw_2026:
+      adm1_gb = str(props.get("省级码") or "").strip()
+      if adm1_gb in ("0", "710000", ""):
+        continue
+      adm1_zh = str(props.get("省级") or "").strip()
+      adm1_en = canon_adm1_by_gb.get(adm1_gb, str(props.get("NAME_1") or adm1_gb).strip())
+      gb_code = str(props.get("区划码") or "").strip()
+      if gb_code in ("", "0"):
+        synth_seq += 1
+        gb_code = f"{adm1_gb[:2]}99{synth_seq:02d}"
 
-      if n1 == "NA":
-        n1, n2, n3 = "Hong Kong", "Hong Kong", "Hong Kong"
-        nl1, nl2, nl3 = "香港特别行政区", "香港特别行政区", "香港特别行政区"
-        t3 = "SAR"
-      elif n1 == "Shanghai" and n3 == "Shengsi":
-        n1, n2 = "Zhejiang", "Zhoushan"
-        nl1, nl2, nl3 = "浙江省", "舟山市", "嵊泗县"
-
-      prov2 = prc_cfg["prc_prov_name_to_gb2"].get(n1, "00")
-      # Find best-overlapping CITAS 1990 polygon
-      citas_hit = None
-      best_ov = 0.0
-      for idx in citas_tree.query(geom):
-        cg = citas_list[idx]["geom"]
-        if not geom.intersects(cg):
+      name_zh = str(props.get("地名") or "").strip()
+      if gb_code in ("350527", "352427") or name_zh == "金门县":
+        continue
+      if adm1_gb in ("350000", "440000") and self.roc_fujian_mask is not None and geom.intersects(self.roc_fujian_mask):
+        kept_parts = [
+          pt for pt in planar_topology_helpers._extract_polygons(geom)
+          if not (pt.area < 0.05 and pt.intersects(self.roc_fujian_mask))
+        ]
+        if not kept_parts:
           continue
-        ov = geom.intersection(cg).area
-        if ov > best_ov:
-          best_ov = ov
-          citas_hit = citas_list[idx]
+        geom = kept_parts[0] if len(kept_parts) == 1 else MultiPolygon(kept_parts)
+      eng_stem = str(props.get("ENG_NAME") or props.get("NAME_3") or gb_code).strip()
+      cls_zh = str(props.get("县级类") or "").strip()
+      if gb_code == "810000":
+        name_en = "Hong Kong SAR"
+      elif gb_code == "820000":
+        name_en = "Macau SAR"
+      elif cls_zh in ("县", "市辖区", "自治县", "旗", "自治旗"):
+        sfx_en = eng_type_map.get(cls_zh, "")
+        name_en = f"{eng_stem} {sfx_en}".strip() if sfx_en and not eng_stem.endswith(sfx_en) else eng_stem
+      else:
+        name_en = eng_stem
 
-      gb_1990 = citas_hit["gb"] if citas_hit is not None else ""
-      citas_zh = citas_hit["name_zh"] if citas_hit is not None else ""
-      citas_en = citas_hit["name_en"] if citas_hit is not None else ""
+      if adm1_gb in muni_or_sar:
+        adm2_gb = adm1_gb
+        adm2_en = adm1_en
+        adm2_zh = adm1_zh
+      else:
+        raw_p2_gb = str(props.get("地级码") or "").strip()
+        raw_p2_zh = str(props.get("地级") or "").strip()
+        if raw_p2_gb in ("", "0") or raw_p2_zh in ("", "不统计"):
+          adm2_gb = gb_code
+          adm2_zh = name_zh
+          adm2_en = name_en
+        else:
+          adm2_gb = raw_p2_gb
+          adm2_zh = raw_p2_zh
+          adm2_en = str(props.get("NAME_2") or raw_p2_zh or gb_code).strip()
 
-      name_zh = self._resolve_prc_name_zh(n1, n3, nl3, citas_zh)
-      gb_code, official_zh, city_zh = self._resolve_gb2260(prov2, n1, n2, n3, name_zh, gb_1990, gb_lookup)
-      if official_zh and not (official_zh.isascii()):
-        name_zh = official_zh
-      if name_zh.isascii():
-        c4 = gb_lookup["cities"].get(gb_code[:4], {}).get("name", "")
-        if c4 and c4 not in ("市辖区", "县", "省直辖县级行政区划", "自治区直辖县级行政区划"):
-          name_zh = f"{c4}辖区" if not c4.endswith("市") else f"{c4}区"
-        elif prov2 in gb_lookup["provs"]:
-          name_zh = f"{gb_lookup['provs'][prov2]['name']}辖区"
+      if (adm1_en, adm2_gb) not in adm2_meta:
+        cand_en = adm2_en
+        if (adm1_en, cand_en) in seen_adm2_names:
+          cand_en = f"{cand_en} ({adm2_gb})"
+        seen_adm2_names.add((adm1_en, cand_en))
+        adm2_meta[(adm1_en, adm2_gb)] = (adm1_gb, adm1_en, adm1_zh, adm2_gb, cand_en, adm2_zh)
+      adm2_en = adm2_meta[(adm1_en, adm2_gb)][4]
 
-      name_zh_hant = self._to_hant(name_zh)
-      unit_type = self._classify_prc_subtype(n1, t3, name_zh)
-      prov_zh = self._resolve_prov_zh(prov2, n1, nl1, gb_lookup)
-      if not city_zh or city_zh in ("县", "市辖区"):
-        city_zh = self._clean_gadm_zh(nl2) or prov_zh
-
-      uid_base = f"prc_{gb_code}_{gis_helpers.slugify_snake(n3)}"
+      unit_type = utype_map.get(cls_zh, "special_administrative_region" if gb_code in ("810000", "820000") else "county")
+      uid_base = f"prc_{gb_code}_{gis_helpers.slugify_snake(name_en)}"
       uid = uid_base
       if uid in seen_ids:
         uid = f"{uid_base}_{len(seen_ids)}"
       seen_ids.add(uid)
 
-      units.append({
-        "citas_zh": citas_zh,
+      rep_pt = geom.representative_point()
+      raw_pairs.append(({
         "edge_cases": [],
         "gb_code": gb_code,
-        "gb_1990": gb_1990,
-        "geom": geom,
-        "name_en": n3,
-        "name_py": str(props.get("VARNAME_3") or n3) if props.get("VARNAME_3") not in (None, "NA") else n3,
+        "name_en": name_en,
+        "name_py": str(props.get("VARNAME_3") or eng_stem).strip(),
         "name_zh": name_zh,
-        "name_zh_hant": name_zh_hant,
-        "parent_adm1": n1,
-        "parent_adm1_gb": f"{prov2}0000",
-        "parent_adm1_zh": prov_zh,
-        "parent_adm2": n2,
-        "parent_adm2_gb": gb_code[:4] + "00",
-        "parent_adm2_zh": city_zh,
+        "name_zh_hant": self._to_hant(name_zh),
+        "parent_adm1": adm1_en,
+        "parent_adm1_gb": adm1_gb,
+        "parent_adm1_zh": adm1_zh,
+        "parent_adm2": adm2_en,
+        "parent_adm2_gb": adm2_gb,
+        "parent_adm2_zh": adm2_zh,
         "region": "mainland_prc",
         "search_queries": [],
+        "seat_lat": round(float(rep_pt.y), 5),
+        "seat_lon": round(float(rep_pt.x), 5),
         "unit_id": uid,
         "unit_type": unit_type,
-      })
+      }, geom))
 
-    units = self._assign_frontier_citas_pieces(citas_list, units)
-    units = prc_lineage_helpers.carve_2026_prc_additions(units, self.reforms_1954_2026, self.fz_cfg, gb_lookup, self.precision)
-    units = modern_gis_helpers.harmonise_prc_units(units, gb_lookup)
-    units = modern_gis_helpers.patch_unclaimed_holes_in_units(units, 0.05)
+    cleaned_pairs = planar_topology_helpers.simplify_and_clean_coverage(raw_pairs, 0.002, 1e-5, 0.05, 1e-4)
+    cleaned_pairs, _ = planar_topology_helpers.enforce_adm1_contiguity(cleaned_pairs, "parent_adm1", 0.005, 1e-5)
 
-    self.last_lineage_doc = prc_lineage_helpers.build_prc_lineage_graph(units, citas_list, self.reforms_1954_2026, self.fz_cfg, self.edge_cases)
+    for p_item, g_item in cleaned_pairs:
+      rec = dict(p_item)
+      rec["geom"] = g_item
+      units.append(rec)
+
+    self.last_lineage_doc = prc_lineage_helpers.build_prc_lineage_graph(
+      units,
+      citas_list,
+      self.reforms_1954_2026,
+      self.fz_cfg,
+      self.edge_cases,
+      self.last_areacodes,
+      self.last_ctamap_tables.get("change_events_v2", []),
+    )
     lineage_by_id = self.last_lineage_doc.get("units_by_id", {})
     for u in units:
       u["name_zh_hant"] = self._to_hant(u["name_zh"])
@@ -314,73 +416,16 @@ class ModernLayerAssembler:
         u["parent_1990s_unit_ids"] = lin_entry.get("parent_1990s_unit_ids", [])
 
     self.last_prc_units = units
-    adm2_meta = {}
     adm3_feats = []
     for u in units:
-      props_out = {k: v for k, v in u.items() if k not in ("citas_zh", "geom", "gb_1990", "unit_id")}
+      props_out = {k: v for k, v in u.items() if k not in ("_wkb_hex", "citas_zh", "geom", "gb_1990", "unit_id")}
       props_out["modern_unit_id"] = u["unit_id"]
       adm3_feats.append((props_out, u["geom"]))
 
-      p1_key = (u["parent_adm1_gb"], u["parent_adm1"], u["parent_adm1_zh"])
-      adm1_buckets.setdefault(p1_key, []).append(u["geom"])
-      p2_key = (u["parent_adm1"], u["parent_adm2"])
-      adm2_buckets.setdefault(p2_key, []).append(u["geom"])
-      if p2_key not in adm2_meta or (str(adm2_meta[p2_key][3]).endswith("0000") and not str(u["parent_adm2_gb"]).endswith("0000")):
-        adm2_meta[p2_key] = (u["parent_adm1_gb"], u["parent_adm1"], u["parent_adm1_zh"], u["parent_adm2_gb"], u["parent_adm2"], u["parent_adm2_zh"])
-
-    adm2_feats = []
-    seen_p2 = set()
-    for p2_key, geoms in sorted(adm2_buckets.items()):
-      p1_gb, p1_en, p1_zh, p2_gb, p2_en, p2_zh = adm2_meta[p2_key]
-      merged = gis_helpers.clean_polygonal_geometry(unary_union(geoms))
-      if merged is None:
-        continue
-      uid2 = f"prc_adm2_{p2_gb}_{gis_helpers.slugify_snake(p2_en)}"
-      if uid2 in seen_p2:
-        uid2 = f"{uid2}_{len(seen_p2)}"
-      seen_p2.add(uid2)
-      base2 = p2_zh.rstrip("市地区盟州")
-      adm2_feats.append(({
-        "gb_code": p2_gb,
-        "modern_unit_id": uid2,
-        "name_en": p2_en,
-        "name_zh": p2_zh,
-        "name_zh_hant": self._to_hant(p2_zh),
-        "parent_adm1": p1_en,
-        "parent_adm1_gb": p1_gb,
-        "parent_adm1_zh": p1_zh,
-        "region": "mainland_prc",
-        "search_queries": [f"{p2_zh}志", f"{base2}地区志", f"{base2}市志·大事记", f"{base2}市志·军事志", f"{base2}地名志"],
-        "unit_type": "prefecture_level_unit",
-      }, merged))
-
-    adm1_feats = []
-    for (p1_gb, p1_en, p1_zh), geoms in sorted(adm1_buckets.items()):
-      merged = gis_helpers.clean_polygonal_geometry(unary_union(geoms))
-      if merged is None:
-        continue
-      base1 = p1_zh.replace("特别行政区", "").replace("壮族自治区", "").replace("回族自治区", "").replace("维吾尔自治区", "").replace("自治区", "").rstrip("省市")
-      uid1 = f"prc_adm1_{p1_gb}_{gis_helpers.slugify_snake(p1_en)}"
-      adm1_feats.append(({
-        "gb_code": p1_gb,
-        "modern_unit_id": uid1,
-        "name_en": p1_en,
-        "name_zh": p1_zh,
-        "name_zh_hant": self._to_hant(p1_zh),
-        "region": "mainland_prc",
-        "search_queries": [f"{base1}通志", f"{base1}省志·大事记", f"{base1}省志·军事志", f"{base1}省志·地名志", f"{base1}省志·建置沿革志", f"{base1}省志·公安志", f"{base1}省志·报业志"],
-        "unit_type": "province_level_unit",
-      }, merged))
-
-    adm1_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(adm1_feats, 0.05)
-    adm2_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(adm2_feats, 0.05)
-    adm3_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(adm3_feats, 0.05)
-    c1 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "prc_adm_1.geojson"), adm1_feats, self.precision)
-    c2 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "prc_adm_2.geojson"), adm2_feats, self.precision)
-    c3 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "prc_adm_3.geojson"), adm3_feats, self.precision)
+    self.prc_adm3_features = adm3_feats
 
     # Return statement
-    return {"prc_adm_1": c1, "prc_adm_2": c2, "prc_adm_3": c3}
+    return {"prc_adm_3": len(adm3_feats)}
 
   def _build_tuva_layers (self):
     """Build and export ./input/gis/modern/tuva_adm_1.geojson and tuva_adm_2.geojson (17 kozhuuns + 2 cities)."""
@@ -456,8 +501,10 @@ class ModernLayerAssembler:
         "unit_type": m["unit_type"],
       }, u["geom"]))
 
-    tuva_adm1_geom = gis_helpers.clean_polygonal_geometry(unary_union([g for _, g in t2_feats]))
-    t1_feats = [({
+    t2_feats, _ = planar_topology_helpers.harmonise_international_seams(self.prc_adm3_features + self.mng_adm2_features, t2_feats, 1e-5, 0.03)
+    t2_feats = planar_topology_helpers.clean_planar_coverage(t2_feats, 1e-5, 0.05, 1e-4)
+    self.tuva_adm2_features = t2_feats
+    self.tuva_adm1_meta = {
       "edge_cases": ["tuva_tigpi_compendium_pairing"],
       "modern_unit_id": "tuva_adm1_republic_of_tyva",
       "name_en": "Republic of Tyva",
@@ -466,23 +513,21 @@ class ModernLayerAssembler:
       "region": "tuva_republic",
       "search_queries": tigpi_list,
       "unit_type": "republic",
-    }, tuva_adm1_geom)]
-
-    t1_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(t1_feats, 0.01)
-    t2_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(t2_feats, 0.01)
-    c1 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "tuva_adm_1.geojson"), t1_feats, self.precision)
-    c2 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "tuva_adm_2.geojson"), t2_feats, self.precision)
+    }
 
     # Return statement
-    return {"tuva_adm_1": c1, "tuva_adm_2": c2}
+    return {"tuva_adm_2": len(t2_feats)}
 
   def _build_twn_layers (self):
     """Build and export ./input/gis/modern/twn_adm_1.geojson, twn_adm_2.geojson, and twn_adm_3.geojson."""
     # Declare local instance variables.
     adm1_buckets = {}
+    dongding_parts = []
     gb_twn_path = path_helpers.resolve_provider_file(self.cfg, "modern_reference", "tw_townships_geoboundaries", self.base_dir)
     g0v_path = path_helpers.resolve_provider_file(self.cfg, "modern_reference", "tw_townships_g0v", self.base_dir)
     indig_set = set(s.replace("臺", "台") for s in self.edge_cases["taiwan"]["indigenous_mountain_townships"])
+    offshore_geoms = []
+    pratas_parts = []
     raw_twn2 = self._load_gadm_features(self.cfg["gadm"]["files"]["gadm_twn_2"]["filename"])
     t2_by_zh = {}
     t2_feats = []
@@ -493,6 +538,19 @@ class ModernLayerAssembler:
     for props, geom in raw_twn2:
       n1 = str(props.get("NAME_1") or "").strip()
       n2 = str(props.get("NAME_2") or "").strip()
+      if n2 == "Pingtung":
+        kept_p2 = []
+        for pt in planar_topology_helpers._extract_polygons(geom):
+          if pt.centroid.x < 117.5 and pt.centroid.y < 21.5:
+            pratas_parts.append(pt)
+          else:
+            kept_p2.append(pt)
+        if kept_p2:
+          geom = kept_p2[0] if len(kept_p2) == 1 else MultiPolygon(kept_p2)
+      elif n2 == "Kinmen":
+        for pt in planar_topology_helpers._extract_polygons(geom):
+          if 118.48 <= pt.centroid.x <= 118.53 and 24.41 <= pt.centroid.y <= 24.45:
+            dongding_parts.append(pt)
       meta = t2_meta.get(n2, {})
       canon_en = meta.get("name_en", n2)
       name_zh = meta.get("name_zh", str(props.get("NL_NAME_2") or n2))
@@ -575,6 +633,10 @@ class ModernLayerAssembler:
 
     if wuqiu_geom is not None:
       t3_buckets.setdefault(("金門縣", "烏坵鄉"), []).append(wuqiu_geom)
+    if pratas_parts:
+      t3_buckets.setdefault(("高雄市", "旗津區"), []).extend(pratas_parts)
+    if dongding_parts:
+      t3_buckets.setdefault(("金門縣", "金湖鎮"), []).extend(dongding_parts)
 
     seen_t3 = set()
     for (cn_norm, tn_zh), geoms in sorted(t3_buckets.items()):
@@ -648,92 +710,29 @@ class ModernLayerAssembler:
         "unit_type": utype,
       }, merged))
 
-    t1_feats = []
-    for adm1_name, geoms in sorted(adm1_buckets.items()):
-      merged = gis_helpers.clean_polygonal_geometry(unary_union(geoms))
-      if merged is None:
-        continue
-      t1_feats.append(({
-        "modern_unit_id": f"twn_adm1_{gis_helpers.slugify_snake(adm1_name)}",
-        "name_en": adm1_name,
-        "region": "taiwan",
-        "unit_type": "province_or_special_municipality",
-      }, merged))
-
-    t1_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(t1_feats, 0.01)
-    t2_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(t2_feats, 0.01)
-    t3_feats = modern_gis_helpers.strip_unclaimed_holes_in_features(t3_feats, 0.01)
-    c1 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "twn_adm_1.geojson"), t1_feats, self.precision)
-    c2 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "twn_adm_2.geojson"), t2_feats, self.precision)
-    c3 = gis_helpers.write_geojson(os.path.join(self.modern_dir, "twn_adm_3.geojson"), t3_feats, self.precision)
+    t3_feats = planar_topology_helpers.simplify_and_clean_coverage(t3_feats, 0.0005, 1e-5, 0.05, 1e-4)
+    offshore_geoms = [g for p, g in t3_feats if p.get("roc_fujian_offshore")] + [g for p, g in t2_feats if p.get("roc_fujian_offshore")] + pratas_parts
+    if offshore_geoms:
+      self.roc_fujian_mask = unary_union(offshore_geoms).buffer(0.015)
+    self.twn_adm2_meta_by_id = {str(p.get("modern_unit_id") or ""): dict(p) for p, _ in t2_feats}
+    self.twn_adm3_features = t3_feats
 
     # Return statement
-    return {"twn_adm_1": c1, "twn_adm_2": c2, "twn_adm_3": c3}
-
-  def _classify_prc_subtype (self, arg1_prov, arg2_gadm_type, arg3_name_zh):
-    """Classify a PRC adm_3 unit into canonical local-history subtype."""
-    # Convert from parameters
-    gtype = arg2_gadm_type
-    name_zh = arg3_name_zh
-    prov = arg1_prov
-
-    if prov in ("Hong Kong", "Macau"):
-      return "sar_district"
-    if name_zh.endswith("林区"):
-      return "linqu"
-    if name_zh.endswith("特区"):
-      return "tequ"
-    if name_zh.endswith("自治旗") or gtype == "Zìzhìqí":
-      return "autonomous_qi"
-    if name_zh.endswith("旗") or gtype == "Qí":
-      return "banner_qi"
-    if name_zh.endswith("自治县") or gtype == "Zìzhìxiàn":
-      return "autonomous_xian"
-    if name_zh.endswith("区") or gtype in ("Shìxiáqū", "Xīnqū", "Zhíxiáshì"):
-      return "urban_qu"
-    if name_zh.endswith("市") or gtype == "Xiànjíshì":
-      return "county_level_shi"
-
-    # Return statement
-    return "xian"
-
-  def _clean_gadm_zh (self, arg1_raw):
-    """Extract primary Simplified Chinese string from GADM NL_NAME fields."""
-    # Convert from parameters
-    raw = str(arg1_raw or "").strip()
-
-    if raw in ("", "NA"):
-      return ""
-    parts = [p.strip() for p in raw.split("|") if p.strip() and p.strip() != "NA"]
-    if not parts:
-      return ""
-
-    # Return statement
-    return self._to_hans(parts[-1])
+    return {"twn_adm_3": len(t3_feats)}
 
   def _download_modern_sources (self):
-    """Ensure all modern reference sources configured in data_sources.json5 are cached locally."""
+    """Ensure all modern reference sources configured in data_sources.json5 and CTAmap tables/2026 are cached locally."""
     for key, meta in self.cfg.get("modern_reference", {}).get("files", {}).items():
       dest = path_helpers.resolve_provider_file(self.cfg, "modern_reference", key, self.base_dir)
       ok = gis_helpers.download_with_cache(meta["url"], dest)
       if not ok:
         print(f"[WARN] Failed to cache modern_reference source {key}: {meta['url']}", file=sys.stderr)
-
-  def _generate_prc_queries (self, arg1_gb, arg2_n1, arg3_n3, arg4_name_zh, arg5_hant, arg6_prov_zh, arg7_city_zh, arg8_utype, arg9_citas_zh, arg10_cfg):
-    """Build edge_cases flags and clean Simplified Chinese gazetteer search queries for a PRC adm_3 unit."""
-    meta = {
-      "gb_code": arg1_gb,
-      "name_en": arg3_n3,
-      "name_zh": arg4_name_zh,
-      "parent_adm1": arg2_n1,
-      "parent_adm1_zh": arg6_prov_zh,
-      "parent_adm2_zh": arg7_city_zh,
-      "unit_type": arg8_utype,
-    }
-    edges, _, queries = prc_lineage_helpers.build_chronicle_search_plan(meta, {}, self.edge_cases, self.reforms_1954_2026)
-
-    # Return statement
-    return edges, queries
+    ctamap_io_helpers.download_ctamap_archive(self.cfg, self.base_dir, [2000, 2026], 2)
+    ac_res = path_helpers.resolve_provider_file(self.cfg, "modern_reference", "areacodes_result", self.base_dir)
+    ac_json = path_helpers.resolve_provider_file(self.cfg, "modern_reference", "areacodes_codes", self.base_dir)
+    self.last_areacodes = ctamap_io_helpers.load_areacodes_lineage(ac_res, ac_json)
+    tables_zip = os.path.join(path_helpers.resolve_path("input.gis.ctamap_dir", self.base_dir), self.cfg.get("ctamap_zenodo", {}).get("tables_filename", "tables.zip"))
+    self.last_ctamap_tables = ctamap_io_helpers.load_ctamap_events(tables_zip)
 
   def _load_citas_1990 (self):
     """Load 1990 CITAS county polygons in WGS84 for GB/T 2260 alignment and hole filling."""
@@ -776,30 +775,6 @@ class ModernLayerAssembler:
     # Return statement
     return out
 
-  def _load_gb2260_lookup (self):
-    """Load modood/Administrative-divisions-of-China GB/T 2260 lookup indices."""
-    # Declare local instance variables.
-    areas_by_code = {}
-    by_prov_stem = {}
-    cities_by_code = {}
-    provs_by_code = {}
-
-    for fname, target in (("gb2260_provinces", provs_by_code), ("gb2260_cities", cities_by_code), ("gb2260_areas", areas_by_code)):
-      p = path_helpers.resolve_provider_file(self.cfg, "modern_reference", fname, self.base_dir)
-      with open(p, "r", encoding="utf-8") as fh:
-        rows = json.load(fh)
-      for r in rows:
-        target[r["code"]] = r
-
-    for code, r in areas_by_code.items():
-      prov2, nm = r["provinceCode"], r["name"]
-      by_prov_stem.setdefault((prov2, nm), []).append(r)
-      by_prov_stem.setdefault((prov2, self._strip_zh_suffix(nm)), []).append(r)
-
-    # Return statement
-    return {"areas": areas_by_code, "by_prov_stem": by_prov_stem, "cities": cities_by_code, "provs": provs_by_code}
-
-
   def _load_opencc_maps (self):
     """Load OpenCC STCharacters and TSCharacters tables for Simplified/Traditional conversion."""
     for fname, target in (("opencc_st_chars", self.st_map), ("opencc_ts_chars", self.ts_map)):
@@ -812,90 +787,6 @@ class ModernLayerAssembler:
             k, v = line.rstrip("\r\n").split("\t", 1)
             if k and v:
               target[k] = v.split(" ")[0]
-
-
-  def _resolve_gb2260 (self, arg1_prov2, arg2_n1, arg3_n2, arg4_n3, arg5_name_zh, arg6_gb1990, arg7_lookup):
-    """Resolve modern 6-digit GB/T 2260 code, official Chinese name, and city name."""
-    # Convert from parameters
-    gb1990, lookup, n1, n2, n3, name_zh, prov2 = arg6_gb1990, arg7_lookup, arg2_n1, arg3_n2, arg4_n3, arg5_name_zh, arg1_prov2
-
-    if n1 == "Hong Kong":
-      return "810000", "香港特别行政区", "香港特别行政区"
-    if n1 == "Macau":
-      zh_m, code_m = self.edge_cases["mainland_prc"]["hong_kong_and_macau"]["820000"]["parishes"].get(n3, [n3, "820000"])
-      return code_m, zh_m, "澳门特别行政区"
-
-    areas, by_stem, cities = lookup["areas"], lookup["by_prov_stem"], lookup["cities"]
-
-    def _fmt (arg1_row):
-      c_zh = cities.get(arg1_row["cityCode"], {}).get("name", "")
-      if c_zh in ("市辖区", "省直辖县级行政区划", "自治区直辖县级行政区划"):
-        c_zh = lookup["provs"].get(prov2, {}).get("name", "")
-      return arg1_row["code"], arg1_row["name"], c_zh
-
-    cands = by_stem.get((prov2, name_zh)) or by_stem.get((prov2, self._strip_zh_suffix(name_zh))) or []
-    if len(cands) == 1:
-      return _fmt(cands[0])
-    if gb1990 in areas:
-      return _fmt(areas[gb1990])
-    if len(cands) > 1:
-      for r in cands:
-        if r["name"] == name_zh:
-          return _fmt(r)
-      return _fmt(cands[0])
-
-    # Return statement
-    return (gb1990 if len(gb1990) == 6 else f"{prov2}0000"), name_zh, ""
-
-
-  def _resolve_prc_name_zh (self, arg1_n1, arg2_n3, arg3_nl3, arg4_citas_zh):
-    """Resolve cleanest Simplified Chinese county/district name from GADM NL_NAME_3 and CITAS."""
-    # Convert from parameters
-    citas_zh, n1, n3, nl3 = arg4_citas_zh, arg1_n1, arg2_n3, arg3_nl3
-
-    cleaned_nl3 = self._clean_gadm_zh(nl3)
-    if cleaned_nl3:
-      return cleaned_nl3
-    if citas_zh:
-      c_hans = self._to_hans(citas_zh).strip().split(" ")[-1].strip()
-      if c_hans and "辖区" not in c_hans:
-        return c_hans
-    if n1 == "Macau":
-      parishes = self.edge_cases["mainland_prc"]["hong_kong_and_macau"]["820000"]["parishes"]
-      if n3 in parishes:
-        return parishes[n3][0]
-
-    # Return statement
-    return n3
-
-
-  def _resolve_prov_zh (self, arg1_prov2, arg2_n1, arg3_nl1, arg4_lookup):
-    """Resolve official Simplified Chinese provincial name."""
-    # Convert from parameters
-    lookup, n1, nl1, prov2 = arg4_lookup, arg2_n1, arg3_nl1, arg1_prov2
-
-    if n1 == "Hong Kong":
-      return "香港特别行政区"
-    if n1 == "Macau":
-      return "澳门特别行政区"
-    if prov2 in lookup["provs"]:
-      return lookup["provs"][prov2]["name"]
-
-    # Return statement
-    return self._clean_gadm_zh(nl1) or n1
-
-
-  def _strip_zh_suffix (self, arg1_name):
-    """Strip standard Chinese county/district administrative suffix to yield the base stem."""
-    # Convert from parameters
-    stem = str(arg1_name or "")
-
-    for sfx in ("自治县", "自治旗", "林区", "特区", "市", "区", "县", "旗"):
-      if stem.endswith(sfx) and len(stem) > len(sfx):
-        return stem[:-len(sfx)]
-
-    # Return statement
-    return stem
 
 
   def _to_hans (self, arg1_text):
@@ -912,10 +803,116 @@ class ModernLayerAssembler:
 
   def build_all (self):
     """Build and export all 10 modern local-history reference GeoJSON layers under ./input/gis/modern/."""
-    os.makedirs(self.modern_dir, exist_ok=True)
+    # Declare local instance variables.
+    combined_atoms = []
+    grid_size = 10.0 ** (-self.precision)
+    mng_adm1, mng_adm2 = [], []
+    noded_atoms = []
+    prc_adm1, prc_adm2, prc_adm3 = [], [], []
+    rp = None
+    src_prio = {"mng": 1, "prc": 2, "tuva": 0, "twn": 3}
+    src_tag = ""
     summary = {}
-    for fn in (self._build_prc_layers, self._build_twn_layers, self._build_mng_layers, self._build_tuva_layers):
-      summary.update(fn())
+    tuva_adm1, tuva_adm1_geom, tuva_adm2 = [], None, []
+    twn_adm1, twn_adm2, twn_adm3 = [], [], []
+
+    os.makedirs(self.modern_dir, exist_ok=True)
+    for fn in (self._build_twn_layers, self._build_prc_layers, self._build_mng_layers, self._build_tuva_layers):
+      fn()
+
+    for src_tag, feat_list in (
+      ("twn", self.twn_adm3_features),
+      ("prc", self.prc_adm3_features),
+      ("mng", self.mng_adm2_features),
+      ("tuva", self.tuva_adm2_features),
+    ):
+      for props, geom in feat_list:
+        cp = dict(props)
+        cp["_src"] = src_tag
+        combined_atoms.append((cp, geom))
+
+    noded_atoms = planar_topology_helpers.node_planar_coverage(
+      combined_atoms,
+      grid_size,
+      0.05,
+      lambda p, g: (src_prio.get(p.get("_src"), 0), float(g.area)),
+    )
+    for props, geom in noded_atoms:
+      src_tag = str(props.pop("_src", ""))
+      if src_tag == "prc":
+        rp = geom.representative_point()
+        props["seat_lat"] = round(float(rp.y), self.precision)
+        props["seat_lon"] = round(float(rp.x), self.precision)
+        prc_adm3.append((props, geom))
+      elif src_tag == "twn":
+        twn_adm3.append((props, geom))
+      elif src_tag == "mng":
+        mng_adm2.append((props, geom))
+      elif src_tag == "tuva":
+        tuva_adm2.append((props, geom))
+
+    self.twn_adm3_features = twn_adm3
+    self.prc_adm3_features = prc_adm3
+    self.mng_adm2_features = mng_adm2
+    self.tuva_adm2_features = tuva_adm2
+
+    prc_adm1, prc_adm2 = self._aggregate_prc_layers(prc_adm3)
+    twn_adm2 = planar_topology_helpers.aggregate_coverage_by_key(
+      twn_adm3,
+      lambda p: str(p.get("parent_adm2_id") or ""),
+      lambda k, ms: dict(self.twn_adm2_meta_by_id.get(k, {
+        "modern_unit_id": k,
+        "name_en": ms[0]["parent_adm2"],
+        "parent_adm1": ms[0]["parent_adm1"],
+        "region": "taiwan",
+      })),
+      grid_size,
+      0.05,
+    )
+    twn_adm1 = planar_topology_helpers.aggregate_coverage_by_key(
+      twn_adm2,
+      lambda p: str(p.get("parent_adm1") or ""),
+      lambda k, ms: {
+        "modern_unit_id": f"twn_adm1_{gis_helpers.slugify_snake(k)}",
+        "name_en": k,
+        "region": "taiwan",
+        "unit_type": "province_or_special_municipality",
+      },
+      grid_size,
+      0.05,
+    )
+    mng_adm1 = planar_topology_helpers.aggregate_coverage_by_key(
+      mng_adm2,
+      lambda p: str(p.get("parent_adm1") or ""),
+      lambda k, ms: dict(self.mng_adm1_meta_by_name.get(k, {
+        "edge_cases": ["mongolia_aimag_national_search"],
+        "modern_unit_id": f"mng_adm1_{gis_helpers.slugify_snake(k)}",
+        "name_en": k,
+        "region": "mongolia",
+        "unit_type": "aimag",
+      })),
+      grid_size,
+      0.05,
+    )
+    tuva_adm1_geom = planar_topology_helpers._pointwise_snap(
+      planar_topology_helpers._union_polygons([g for _, g in tuva_adm2], True),
+      grid_size,
+    )
+    tuva_adm1 = [(dict(self.tuva_adm1_meta), tuva_adm1_geom)] if tuva_adm1_geom is not None else []
+
+    for fname, feats in (
+      ("twn_adm_1", twn_adm1),
+      ("twn_adm_2", twn_adm2),
+      ("twn_adm_3", twn_adm3),
+      ("prc_adm_1", prc_adm1),
+      ("prc_adm_2", prc_adm2),
+      ("prc_adm_3", prc_adm3),
+      ("mng_adm_1", mng_adm1),
+      ("mng_adm_2", mng_adm2),
+      ("tuva_adm_1", tuva_adm1),
+      ("tuva_adm_2", tuva_adm2),
+    ):
+      summary[fname] = gis_helpers.write_geojson(os.path.join(self.modern_dir, f"{fname}.geojson"), feats, self.precision)
 
     # Return statement
     return summary

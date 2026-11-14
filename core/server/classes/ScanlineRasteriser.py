@@ -94,6 +94,8 @@ class ScanlineRasteriser:
       delta = (digest[1] % 19) - 9
     else:
       prov_alias = {
+        "Chamdo": "Xizang",
+        "Fujian (ROC)": "Fujian",
         "Guangxi": "Guangxi Zhuang Autonomous Region",
         "NeiMongol": "Inner Mongolia Autonomous Region",
         "NewTaipei": "New Taipei",

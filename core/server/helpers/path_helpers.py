@@ -153,6 +153,7 @@ def resolve_source_file (arg1_provider, arg2_filename, arg3_base_dir=None):
   # Declare local instance variables.
   provider_keys = {
     "chgis": "input.gis.chgis_dir",
+    "ctamap": "input.gis.ctamap_dir",
     "gadm": "input.gis.gadm_dir",
     "hydrosheds": "input.gis.hydrosheds_dir",
     "modern": "input.gis.modern_dir",

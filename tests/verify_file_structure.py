@@ -13,7 +13,8 @@ SERVER_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "core
 if SERVER_DIR not in sys.path:
   sys.path.insert(0, SERVER_DIR)
 
-from helpers import gis_helpers, path_helpers
+from classes.ScanlineRasteriser import ScanlineRasteriser
+from helpers import gis_helpers, path_helpers, planar_topology_helpers
 
 
 def _collect_failures (arg1_root_dir):
@@ -82,6 +83,7 @@ def _collect_failures (arg1_root_dir):
       "input.gis.chgis_1911_adm2_base",
       "input.gis.chgis_1911_adm3_base",
       "input.gis.chgis_dir",
+      "input.gis.ctamap_dir",
       "input.gis.gadm_dir",
       "input.gis.hydrosheds_dir",
       "input.gis.modern_dir",
@@ -282,9 +284,11 @@ def _check_prc_1954_2026_invariants (arg1_root_dir, arg2_failures):
   # Declare local instance variables.
   adm_annual_dir = path_helpers.resolve_path("output.gis.adm_annual_dir", root_dir)
   cw_path = path_helpers.resolve_path("common.modern_gazetteer_crosswalk", root_dir)
+  inland_bbox = (94.0, 32.0, 105.0, 40.0)
   lin_path = path_helpers.resolve_path("common.prc_admin_lineage", root_dir)
   modern_dir = path_helpers.resolve_path("input.gis.modern_dir", root_dir)
   prc_annual_dir = path_helpers.resolve_path("output.gis.prc_annual_dir", root_dir)
+  rasteriser = ScanlineRasteriser(gis_helpers.load_json5(path_helpers.resolve_path("common.data_sources", root_dir)))
   reforms_cfg = gis_helpers.load_json5(path_helpers.resolve_path("common.prc_admin_reforms", root_dir)) or {}
   req_gbs = {"653228", "653229"} | {f"6590{i:02d}" for i in range(1, 13)}
   tests_outputs_dir = path_helpers.resolve_path("tests.outputs_dir", root_dir)
@@ -317,49 +321,90 @@ def _check_prc_1954_2026_invariants (arg1_root_dir, arg2_failures):
       elif os.path.exists(g_p) and os.path.getmtime(p_p) < os.path.getmtime(g_p) - 5.0:
         failures.append(f"Stale 1954-2026 PNG older than GeoJSON: {os.path.basename(p_p)}")
 
-  # 3. Verify 2024 Hotan counties and XPCC shi cities in modern & 2026 layers
+  # 3. Verify 2024 Hotan counties and XPCC shi cities in modern & 2026 layers + modern planar topology audit
+  for mf in (
+    "prc_adm_1.geojson",
+    "prc_adm_2.geojson",
+    "prc_adm_3.geojson",
+    "twn_adm_1.geojson",
+    "twn_adm_2.geojson",
+    "twn_adm_3.geojson",
+    "mng_adm_1.geojson",
+    "mng_adm_2.geojson",
+    "tuva_adm_1.geojson",
+    "tuva_adm_2.geojson",
+  ):
+    mfp = os.path.join(modern_dir, mf)
+    if os.path.exists(mfp):
+      with open(mfp, "r", encoding="utf-8") as fh:
+        m_feats = [(ft.get("properties") or {}, shape(ft["geometry"])) for ft in json.load(fh).get("features", []) if ft.get("geometry")]
+      m_rep = planar_topology_helpers.audit_planar_layer(m_feats, 1e-9, 1e-8)
+      if m_rep["invalid_count"] > 0 or m_rep["overlap_count"] > 0 or m_rep["hole_count"] > 0:
+        failures.append(f"Planar topology violation in modern {mf}: {m_rep}")
+      m_sl = rasteriser.audit_geojson_scanline(mfp)
+      if m_sl["double_painted_pixels"] != 0:
+        failures.append(f"Scanline overlap in modern {mf}: {m_sl}")
+
+  for clbl, cfiles in (
+    ("modern_combined_adm1", ("prc_adm_1.geojson", "twn_adm_1.geojson", "mng_adm_1.geojson", "tuva_adm_1.geojson")),
+    ("modern_combined_adm2", ("prc_adm_2.geojson", "twn_adm_2.geojson", "mng_adm_2.geojson", "tuva_adm_2.geojson")),
+    ("modern_combined_adm3", ("prc_adm_3.geojson", "twn_adm_3.geojson", "mng_adm_2.geojson", "tuva_adm_2.geojson")),
+  ):
+    c_feats = []
+    for cf in cfiles:
+      cfp = os.path.join(modern_dir, cf)
+      if os.path.exists(cfp):
+        with open(cfp, "r", encoding="utf-8") as fh:
+          c_feats.extend([(ft.get("properties") or {}, shape(ft["geometry"])) for ft in json.load(fh).get("features", []) if ft.get("geometry")])
+    if c_feats:
+      c_rep = planar_topology_helpers.audit_planar_layer(c_feats, 1e-9, 1e-8)
+      if c_rep["invalid_count"] > 0 or c_rep["overlap_count"] > 0 or c_rep["hole_count"] > 0:
+        failures.append(f"Planar topology violation in {clbl}: {c_rep}")
+
   for lbl, gpath in (("prc_adm_3.geojson", os.path.join(modern_dir, "prc_adm_3.geojson")), ("prc_adm_3_2026.geojson", os.path.join(prc_annual_dir, "prc_adm_3_2026.geojson"))):
     if os.path.exists(gpath):
       with open(gpath, "r", encoding="utf-8") as fh:
-        gbs = {str(ft.get("properties", {}).get("gb_code") or "") for ft in json.load(fh).get("features", [])}
-      missing_gb = sorted(req_gbs - gbs)
+        f3 = json.load(fh).get("features", [])
+      by_gb3 = {str(ft.get("properties", {}).get("gb_code") or ""): ft.get("properties", {}) for ft in f3}
+      missing_gb = sorted(req_gbs - set(by_gb3))
       if missing_gb:
         failures.append(f"{lbl} missing expected 2026 GB codes: {missing_gb}")
+      name_k = "name_zh" if lbl == "prc_adm_3.geojson" else "name_ch"
+      for hgb, hname in (("653228", "和康县"), ("653229", "和安县")):
+        if hgb in by_gb3 and str(by_gb3[hgb].get(name_k) or "") != hname:
+          failures.append(f"{lbl} expected {hgb}=={hname}, found {by_gb3[hgb].get(name_k)}")
 
-  # 4. Landmark snapshot assertions & Mainland hole checks
-  for yr in (1954, 1959, 1970, 1989, 1998, 2000, 2026):
-    p1 = os.path.join(prc_annual_dir, f"prc_adm_1_{yr}.geojson")
-    if not os.path.exists(p1):
-      continue
-    with open(p1, "r", encoding="utf-8") as fh:
-      f1 = json.load(fh).get("features", [])
-    names1 = {str(ft.get("properties", {}).get("name_en") or "") for ft in f1}
-    countries1 = {str(ft.get("properties", {}).get("country") or "") for ft in f1}
-    if yr >= 1959:
-      tusi_cnt = sum(1 for ft in f1 if ft.get("properties", {}).get("category") == "tusi")
-      if tusi_cnt > 0:
-        failures.append(f"Unexpected post-1958 Tusi remaining in prc_adm_1_{yr}.geojson: {tusi_cnt}")
-    if yr in (1998, 2000, 2026) and ("Chongqing" not in names1 or "Hong Kong SAR" not in names1):
-      failures.append(f"prc_adm_1_{yr}.geojson missing Chongqing or Hong Kong SAR")
-    if yr in (2000, 2026) and "Macau SAR" not in names1:
-      failures.append(f"prc_adm_1_{yr}.geojson missing Macau SAR")
-    if yr == 2026:
-      if "Taoyuan" not in names1 or "Mongolia" not in countries1 or "Russian Federation" not in countries1:
-        failures.append(f"prc_adm_1_2026.geojson missing expected 2026 entities (names={sorted(names1)[:10]}, countries={sorted(countries1)})")
-    cn_geoms = [
-      shape(ft["geometry"])
-      for ft in f1
-      if ft.get("geometry") and ft.get("properties", {}).get("country") in ("People's Republic of China", "United Kingdom (Hong Kong)", "Portugal (Macau)")
-    ]
-    if cn_geoms:
-      u_cn = unary_union(cn_geoms)
-      for poly in ([u_cn] if u_cn.geom_type == "Polygon" else list(u_cn.geoms)):
-        for r in poly.interiors:
-          hp = Polygon(r)
-          if hp.area > 0.05:
-            unclaimed = hp.difference(u_cn).area
-            if unclaimed > 0.05:
-              failures.append(f"Unclaimed Mainland interior hole in prc_adm_1_{yr}.geojson: area={unclaimed:.4f} at {hp.centroid.coords[0]}")
+  # 4. Landmark snapshot assertions & multi-level planar topology + scanline audit
+  for yr in (1954, 1955, 1956, 1957, 1958, 1959, 1966, 1970, 1980, 1989, 1998, 2000, 2001, 2003, 2011, 2025, 2026):
+    for lvl in (1, 2, 3):
+      pl = os.path.join(prc_annual_dir, f"prc_adm_{lvl}_{yr}.geojson")
+      if not os.path.exists(pl):
+        continue
+      with open(pl, "r", encoding="utf-8") as fh:
+        fl = json.load(fh).get("features", [])
+      l_feats = [(ft.get("properties") or {}, shape(ft["geometry"])) for ft in fl if ft.get("geometry")]
+      l_rep = planar_topology_helpers.audit_planar_layer(l_feats, 1e-9, 1e-8)
+      if l_rep["invalid_count"] > 0 or l_rep["overlap_count"] > 0 or l_rep["hole_count"] > 0:
+        failures.append(f"Planar topology violation in prc_adm_{lvl}_{yr}.geojson: {l_rep}")
+      sl_full = rasteriser.audit_geojson_scanline(pl)
+      sl_inland = rasteriser.audit_geojson_scanline(pl, inland_bbox)
+      if sl_full["double_painted_pixels"] != 0 or sl_inland["double_painted_pixels"] != 0 or sl_inland["interior_void_pixels"] != 0:
+        failures.append(f"Scanline topology violation in prc_adm_{lvl}_{yr}.geojson: full={sl_full}, inland={sl_inland}")
+      if lvl != 1:
+        continue
+      names1 = {str(ft.get("properties", {}).get("name_en") or "") for ft in fl}
+      countries1 = {str(ft.get("properties", {}).get("country") or "") for ft in fl}
+      if yr >= 1959:
+        tusi_cnt = sum(1 for ft in fl if ft.get("properties", {}).get("category") == "tusi")
+        if tusi_cnt > 0:
+          failures.append(f"Unexpected post-1958 Tusi remaining in prc_adm_1_{yr}.geojson: {tusi_cnt}")
+      if yr in (1998, 2000, 2026) and ("Chongqing" not in names1 or "Hong Kong SAR" not in names1):
+        failures.append(f"prc_adm_1_{yr}.geojson missing Chongqing or Hong Kong SAR")
+      if yr in (2000, 2026) and "Macau SAR" not in names1:
+        failures.append(f"prc_adm_1_{yr}.geojson missing Macau SAR")
+      if yr == 2026:
+        if "Taoyuan" not in names1 or "Mongolia" not in countries1 or "Russian Federation" not in countries1:
+          failures.append(f"prc_adm_1_2026.geojson missing expected 2026 entities (names={sorted(names1)[:10]}, countries={sorted(countries1)})")
 
   # 5. Lineage & crosswalk schema v2 checks
   lin_doc = gis_helpers.load_json5(lin_path)
@@ -367,6 +412,11 @@ def _check_prc_1954_2026_invariants (arg1_root_dir, arg2_failures):
     failures.append(f"Invalid prc_admin_lineage_1954_2026 schema in {lin_path}")
   elif "fz_xiongan_xinqu" not in lin_doc.get("units_by_id", {}):
     failures.append("prc_admin_lineage_1954_2026 missing fz_xiongan_xinqu functional zone")
+  else:
+    lin_by_gb = {str(v.get("gb_code_2026") or ""): str(v.get("name_zh_2026") or "") for v in lin_doc.get("units_by_id", {}).values()}
+    for hgb, hname in (("653228", "和康县"), ("653229", "和安县")):
+      if lin_by_gb.get(hgb) != hname:
+        failures.append(f"prc_admin_lineage_1954_2026 expected {hgb}=={hname}, found {lin_by_gb.get(hgb)}")
 
   cw_doc = gis_helpers.load_json5(cw_path)
   banned_pre1949 = set(reforms_cfg.get("epoch_1_1954_1979", {}).get("pre_1949_imperial_republican_names_banned_in_mainland_xinzhi", []))

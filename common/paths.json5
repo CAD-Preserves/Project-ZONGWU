@@ -26,6 +26,7 @@
       "chgis_1911_adm2_base": "input/gis/priors/chgis_1911_adm2_base.geojson",
       "chgis_1911_adm3_base": "input/gis/priors/chgis_1911_adm3_base.geojson",
       "chgis_dir": "input/gis/chgis",
+      "ctamap_dir": "input/gis/ctamap",
       "gadm_arunachal": "input/gis/priors/gadm_arunachal.geojson",
       "gadm_dir": "input/gis/gadm",
       "hydrorivers_cache_pkl": "input/gis/priors/hydrorivers_china_ord3.pkl",

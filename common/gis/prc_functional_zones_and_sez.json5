@@ -103,7 +103,7 @@
     },
     "fz_liangjiang_xinqu": {
       "established_year": 2010,
-      "gb_2026": "",
+      "gb_2026": "500157",
       "kind": "state_new_area",
       "name_zh": "两江新区",
       "parent_1990s_names_zh": ["江北区", "江北县", "北碚区"],
@@ -220,8 +220,8 @@
     }
   },
   "hotan_2024_origins": {
-    "653228": {"name_zh": "和安县", "parent_1990s_names_zh": ["和田县", "皮山县"], "parent_1990s_unit_ids": ["prc_653221_hotan_xian", "prc_653223_pishan"]},
-    "653229": {"name_zh": "和康县", "parent_1990s_names_zh": ["和田县", "皮山县"], "parent_1990s_unit_ids": ["prc_653221_hotan_xian", "prc_653223_pishan"]}
+    "653228": {"name_zh": "和康县", "parent_1990s_names_zh": ["皮山县"], "parent_1990s_unit_ids": ["prc_653223_pishan"]},
+    "653229": {"name_zh": "和安县", "parent_1990s_names_zh": ["和田县"], "parent_1990s_unit_ids": ["prc_653221_hotan_xian"]}
   },
   "xpcc_origins": {
     "659001": {"name_zh": "石河子市", "parent_1990s_names_zh": ["石河子市", "玛纳斯县", "沙湾县"], "parent_1990s_unit_ids": ["prc_659001_shihezi", "prc_652324_manas", "prc_654223_shawan"]},

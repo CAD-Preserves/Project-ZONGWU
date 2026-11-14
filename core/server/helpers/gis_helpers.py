@@ -11,7 +11,7 @@ import numpy as np
 import requests
 import shapefile
 from scipy import ndimage
-from shapely import make_valid
+from shapely import get_precision, make_valid, set_precision, to_geojson
 from shapely.geometry import GeometryCollection, LineString, MultiPolygon, Point, Polygon, box, mapping, shape
 from shapely.ops import polygonize, unary_union
 
@@ -616,6 +616,9 @@ def split_stacked_banners (arg1_items):
   return items
 
 
+_GEOJSON_GEOM_CACHE = {}
+
+
 def write_geojson (arg1_filepath, arg2_features, arg3_precision=5):
   """Write a list of (properties, shapely_geometry) pairs to an RFC 7946 GeoJSON FeatureCollection.
 
@@ -629,30 +632,52 @@ def write_geojson (arg1_filepath, arg2_features, arg3_precision=5):
   filepath = arg1_filepath
   precision = arg3_precision
 
+  # Declare local instance variables.
+  cache_key = None
+  cur_prec = 0.0
+  feat_chunks = []
+  g_json = ""
+  g_out = None
+  grid_size = 0.0
+  props_json = ""
+  wkb_digest = b""
+
+  if precision is not None and precision >= 0:
+    grid_size = 10.0 ** (-precision)
+
   os.makedirs(os.path.dirname(filepath), exist_ok=True)
-  fc_features = []
+  if len(_GEOJSON_GEOM_CACHE) > 25000:
+    _GEOJSON_GEOM_CACHE.clear()
 
   for props, geom in features:
     if geom is None or geom.is_empty:
       continue
-    g_out = round_geometry(geom, precision)
-    if g_out is None or g_out.is_empty:
-      continue
-    fc_features.append({
-      "type": "Feature",
-      "properties": props,
-      "geometry": mapping(g_out),
-    })
+    wkb_digest = hashlib.blake2b(geom.wkb, digest_size=16).digest()
+    cache_key = (wkb_digest, precision)
+    if cache_key in _GEOJSON_GEOM_CACHE:
+      g_json = _GEOJSON_GEOM_CACHE[cache_key]
+    else:
+      cur_prec = get_precision(geom)
+      if grid_size > 0.0 and abs(cur_prec - grid_size) > 1e-12:
+        g_out = set_precision(geom, grid_size)
+        if g_out is not None and not g_out.is_empty and g_out.geom_type not in ("Point", "MultiPoint", "LineString", "MultiLineString"):
+          g_out = clean_polygonal_geometry(g_out)
+      else:
+        g_out = geom
+      if g_out is None or g_out.is_empty:
+        continue
+      g_json = to_geojson(g_out)
+      _GEOJSON_GEOM_CACHE[cache_key] = g_json
+    props_json = json.dumps(props, ensure_ascii=False, separators=(",", ":"))
+    feat_chunks.append(f'{{"type":"Feature","properties":{props_json},"geometry":{g_json}}}')
 
-  payload = {
-    "type": "FeatureCollection",
-    "features": fc_features,
-  }
   with open(filepath, "w", encoding="utf-8") as fh:
-    json.dump(payload, fh, ensure_ascii=False, separators=(",", ":"))
+    fh.write('{"type":"FeatureCollection","features":[')
+    fh.write(",".join(feat_chunks))
+    fh.write("]}")
 
   # Return statement
-  return len(fc_features)
+  return len(feat_chunks)
 
 
 def _chaikin_smooth_chain (arg1_pts, arg2_is_loop, arg3_passes=2):

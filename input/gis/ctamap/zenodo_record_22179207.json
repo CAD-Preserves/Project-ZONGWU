@@ -1,0 +1,893 @@
+{
+  "created": "2026-08-30T18:10:33.152798+00:00",
+  "modified": "2026-09-02T06:07:53.759257+00:00",
+  "id": 22179207,
+  "conceptrecid": "20234672",
+  "doi": "10.5281/zenodo.22179207",
+  "conceptdoi": "10.5281/zenodo.20234672",
+  "doi_url": "https://doi.org/10.5281/zenodo.22179207",
+  "metadata": {
+    "title": "CTAmap: A continuous vector dataset of Chinese administrative divisions from 2000 to 2026",
+    "doi": "10.5281/zenodo.22179207",
+    "publication_date": "2026-08-30",
+    "description": "<p>CTAmap is a continuous vector dataset of Chinese administrative divisions covering the period from 2000 to 2026. It provides topologically consistent administrative boundaries at the provincial, prefectural, and county levels. The dataset is constructed using a \"hybrid reconstruction framework\" that integrates the 2020 national baseline vector with underlying micro-level spatial units (township and village vectors) to accurately reconstruct historical spatial reorganizations. All boundary units are strictly matched with the official statutory records and the 6-digit administrative division codes published by the Ministry of Civil Affairs of China. It serves as a spatial baseline for long-term Earth system science, historical census data integration, and spatial downscaling analyses.</p>\n<p><strong>Folder Structure</strong>: The dataset package is organized as follows:</p>\n<p>- <em>`T{YYYY}_{level}.gpkg`</em> (81 files): The spatial vector data in GeoPackage format &mdash; one file per year and level.<br>- <em>`shp_2000-2013.zip` / `shp_2014-2026.zip`</em>: The spatial vector data in standard Shapefile format, bundled by period. Each bundle contains one single-year archive per year (`shp_T{YYYY}.zip`), which in turn holds the three Shapefile layers of that year.<br>- <em>`tables.zip`</em>: The event table, document index, feature&ndash;document links, validation tables, data dictionary, and file inventory.<br>- <em>`logs.zip`</em>: The annual modification logs. This includes detailed textual records of administrative division changes, tracking the historical evolution and providing official evidence for spatial reconstructions.</p>\n<p><strong>Temporal and Hierarchical Organization</strong>: Within the GeoPackage files and the Shapefile archives, the data is structured chronologically and hierarchically:</p>\n<p>- 27 continuous snapshots, named from 2000 to 2026 (`T{YYYY}`), where the year-Y layer represents the administrative status at 00:00 on 1 January of year Y (i.e., the end of year Y&minus;1).<br>- Three administrative levels within each snapshot:<br>&nbsp; - `province` &mdash; Provincial-level administrative boundaries (e.g., provinces, autonomous regions, municipalities).<br>&nbsp; - `prefecture` &mdash; Prefectural-level administrative boundaries (e.g., prefecture-level cities, autonomous prefectures).<br>&nbsp; - `county` &mdash; County-level administrative boundaries (e.g., counties, districts, county-level cities).</p>",
+    "access_right": "open",
+    "creators": [
+      {
+        "name": "Cheng, Rui",
+        "affiliation": null
+      },
+      {
+        "name": "Hu, Yunfeng",
+        "affiliation": null
+      },
+      {
+        "name": "Xiao, Chiwei",
+        "affiliation": null
+      },
+      {
+        "name": "Wang, Yanjun",
+        "affiliation": null
+      }
+    ],
+    "resource_type": {
+      "title": "Dataset",
+      "type": "dataset"
+    },
+    "license": {
+      "id": "cc-by-4.0"
+    },
+    "relations": {
+      "version": [
+        {
+          "index": 1,
+          "is_last": true,
+          "parent": {
+            "pid_type": "recid",
+            "pid_value": "20234672"
+          }
+        }
+      ]
+    }
+  },
+  "title": "CTAmap: A continuous vector dataset of Chinese administrative divisions from 2000 to 2026",
+  "links": {
+    "self": "https://zenodo.org/api/records/22179207",
+    "self_html": "https://zenodo.org/records/22179207",
+    "preview_html": "https://zenodo.org/records/22179207?preview=1",
+    "doi": "https://doi.org/10.5281/zenodo.22179207",
+    "self_doi": "https://doi.org/10.5281/zenodo.22179207",
+    "self_doi_html": "https://zenodo.org/doi/10.5281/zenodo.22179207",
+    "reserve_doi": "https://zenodo.org/api/records/22179207/draft/pids/doi",
+    "parent": "https://zenodo.org/api/records/20234672",
+    "parent_html": "https://zenodo.org/records/20234672",
+    "parent_doi": "https://doi.org/10.5281/zenodo.20234672",
+    "parent_doi_html": "https://zenodo.org/doi/10.5281/zenodo.20234672",
+    "self_iiif_manifest": "https://zenodo.org/api/iiif/record:22179207/manifest",
+    "self_iiif_sequence": "https://zenodo.org/api/iiif/record:22179207/sequence/default",
+    "files": "https://zenodo.org/api/records/22179207/files",
+    "media_files": "https://zenodo.org/api/records/22179207/media-files",
+    "latest": "https://zenodo.org/api/records/22179207/versions/latest",
+    "latest_html": "https://zenodo.org/records/22179207/latest",
+    "versions": "https://zenodo.org/api/records/22179207/versions",
+    "draft": "https://zenodo.org/api/records/22179207/draft",
+    "access_links": "https://zenodo.org/api/records/22179207/access/links",
+    "access_grants": "https://zenodo.org/api/records/22179207/access/grants",
+    "access_users": "https://zenodo.org/api/records/22179207/access/users",
+    "access_request": "https://zenodo.org/api/records/22179207/access/request",
+    "access": "https://zenodo.org/api/records/22179207/access",
+    "communities": "https://zenodo.org/api/records/22179207/communities",
+    "communities-suggestions": "https://zenodo.org/api/records/22179207/communities-suggestions",
+    "request_deletion": "https://zenodo.org/api/records/22179207/request-deletion",
+    "file_modification": "https://zenodo.org/api/records/22179207/file-modification",
+    "quota_increase": "https://zenodo.org/api/records/22179207/quota-increase",
+    "requests": "https://zenodo.org/api/records/22179207/requests"
+  },
+  "updated": "2026-09-02T06:07:53.759257+00:00",
+  "recid": "22179207",
+  "revision": 4,
+  "files": [
+    {
+      "id": "fae165c4-fe7d-4a2b-a9bc-f09b29fe1186",
+      "key": "README.md",
+      "size": 4049,
+      "checksum": "md5:c5c42df8a143967973cc6d2fb350c9cf",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/README.md/content"
+      }
+    },
+    {
+      "id": "f10ff79c-4740-4f48-a1a9-5fa6f3457fe7",
+      "key": "README_ZH.md",
+      "size": 3362,
+      "checksum": "md5:f29039e62a0b3a71fc40bd20ace2e2f9",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/README_ZH.md/content"
+      }
+    },
+    {
+      "id": "6c290822-8a03-4160-84ae-2cda2d35f085",
+      "key": "tables.zip",
+      "size": 205904,
+      "checksum": "md5:9348f2b576d4ea959d055ea756738675",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/tables.zip/content"
+      }
+    },
+    {
+      "id": "602cdcb6-c285-44c3-8d7b-b056a3618b10",
+      "key": "logs.zip",
+      "size": 848263440,
+      "checksum": "md5:0ad0f43e8e53c353ac53f024206ef115",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/logs.zip/content"
+      }
+    },
+    {
+      "id": "995daf0b-76d9-4136-a436-c60619f616df",
+      "key": "shp_2000-2013.zip",
+      "size": 1061983467,
+      "checksum": "md5:d6670e4b4462d7421ee0ae059ad7f60c",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/shp_2000-2013.zip/content"
+      }
+    },
+    {
+      "id": "e22daeb8-7eea-4d78-8e8f-cbac96156e57",
+      "key": "shp_2014-2026.zip",
+      "size": 983515094,
+      "checksum": "md5:cd1db27503d9a54b283c1eafd41ce7dc",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/shp_2014-2026.zip/content"
+      }
+    },
+    {
+      "id": "f9fbd573-44ab-4fa3-a1ff-78526a831286",
+      "key": "T2000_county.gpkg",
+      "size": 66453504,
+      "checksum": "md5:8c0bc6101ce8f8055852ec9dd9a1c5dd",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2000_county.gpkg/content"
+      }
+    },
+    {
+      "id": "d8bad1ac-9a1f-4d9d-9899-f71e276a0c00",
+      "key": "T2000_prefecture.gpkg",
+      "size": 27770880,
+      "checksum": "md5:abf14c6bad0723c3904bc9b8c7b9d45a",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2000_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "0fb84d39-8ab4-4e63-8f36-c0a947d4b191",
+      "key": "T2000_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:a2944516a031c8a82fa875c0acfd0c2d",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2000_province.gpkg/content"
+      }
+    },
+    {
+      "id": "710ded5b-9129-4414-b721-47a1b481d08e",
+      "key": "T2001_county.gpkg",
+      "size": 66084864,
+      "checksum": "md5:a1abd784f225e71ceb3bfce48e563f28",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2001_county.gpkg/content"
+      }
+    },
+    {
+      "id": "4cd9be92-cea4-4ff3-b0cd-6c9dc8835d98",
+      "key": "T2001_prefecture.gpkg",
+      "size": 27828224,
+      "checksum": "md5:df19e90e0cd7887a385903f3337e6c08",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2001_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "69c8fd2b-be34-444d-afb6-567ba526b5da",
+      "key": "T2001_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:b9297e71b0051964db368eece22c54f3",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2001_province.gpkg/content"
+      }
+    },
+    {
+      "id": "60145a75-4998-48f8-b35f-f137b02d23fa",
+      "key": "T2002_county.gpkg",
+      "size": 65417216,
+      "checksum": "md5:0729bcd5cf4758c31bd91831baf8c7e5",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2002_county.gpkg/content"
+      }
+    },
+    {
+      "id": "8aa0c8a6-6b47-4579-9f83-3f0d79cca84b",
+      "key": "T2002_prefecture.gpkg",
+      "size": 27824128,
+      "checksum": "md5:8fd3bbc531607466db586cc8331dd71a",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2002_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "4b9c9444-bdfd-4012-bf5a-c5917948df14",
+      "key": "T2002_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:0d37dd2289c82b21860774812b04f6a0",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2002_province.gpkg/content"
+      }
+    },
+    {
+      "id": "f5505b77-1066-4d09-bd6c-c4829eb4b758",
+      "key": "T2003_county.gpkg",
+      "size": 64663552,
+      "checksum": "md5:ec81fb8dc97310a72fb888468bc96d4e",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2003_county.gpkg/content"
+      }
+    },
+    {
+      "id": "8dcb7870-289a-4bcf-a84e-2ec231dd26e9",
+      "key": "T2003_prefecture.gpkg",
+      "size": 27713536,
+      "checksum": "md5:34163e6936ae050363742de3d0bc97ab",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2003_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "9f0aef6f-dc96-4817-9108-7c22e1e26f25",
+      "key": "T2003_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:ea658a4e7887f8244a3f5cae47a45491",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2003_province.gpkg/content"
+      }
+    },
+    {
+      "id": "2a961ea4-5bfa-49da-96a4-6072127967ff",
+      "key": "T2004_county.gpkg",
+      "size": 64237568,
+      "checksum": "md5:93ab53be8a71e9587ed3ee538075881e",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2004_county.gpkg/content"
+      }
+    },
+    {
+      "id": "9716997d-352d-4a84-b3ce-27a4ae7a7021",
+      "key": "T2004_prefecture.gpkg",
+      "size": 27697152,
+      "checksum": "md5:3fec323764508bf79ee5c073d08341b1",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2004_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "cd20db95-f852-4a86-b46e-a507858166f1",
+      "key": "T2004_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:d1790530ada9ccf9e6728d667b5c5900",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2004_province.gpkg/content"
+      }
+    },
+    {
+      "id": "60bd97fc-663f-476c-9ec0-495e8bd3840a",
+      "key": "T2005_county.gpkg",
+      "size": 63737856,
+      "checksum": "md5:67c387675085b92956c73c7efeff864a",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2005_county.gpkg/content"
+      }
+    },
+    {
+      "id": "844d1844-973f-47db-8ffe-0f0ef7825c7d",
+      "key": "T2005_prefecture.gpkg",
+      "size": 27697152,
+      "checksum": "md5:8abab62e99d17bdb4c1ee8104879e4f9",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2005_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "ffa982b3-e789-4a1e-86e5-7283c1d55baf",
+      "key": "T2005_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:85c4b6db6098138f4c9e7fb9528fdc4e",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2005_province.gpkg/content"
+      }
+    },
+    {
+      "id": "ba58d267-5693-4393-9ae6-e5d771592799",
+      "key": "T2006_county.gpkg",
+      "size": 63045632,
+      "checksum": "md5:d32d40316165a8e027eb3843f2af1f19",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2006_county.gpkg/content"
+      }
+    },
+    {
+      "id": "cafcf5af-462c-4fbb-8acb-e5833b7d8065",
+      "key": "T2006_prefecture.gpkg",
+      "size": 27697152,
+      "checksum": "md5:d18376285eab791c27b5be96a3ae3dbf",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2006_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "d30d8827-7a62-4bd8-b36a-4ee99541f9bb",
+      "key": "T2006_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:08d7bc01be7f4f894d1b80792067fb29",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2006_province.gpkg/content"
+      }
+    },
+    {
+      "id": "bcc6ff19-7621-43cd-bdf6-3f4e120b1308",
+      "key": "T2007_county.gpkg",
+      "size": 62861312,
+      "checksum": "md5:97173c9f48d8ce0cb5ec7669c969b52e",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2007_county.gpkg/content"
+      }
+    },
+    {
+      "id": "fde384cd-bf52-41ee-be77-4dcf95daab90",
+      "key": "T2007_prefecture.gpkg",
+      "size": 27697152,
+      "checksum": "md5:e92dbb99b4aa238ced6c380fc3096944",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2007_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "c74d38f2-13a8-4cd3-ad65-09a6c78a6531",
+      "key": "T2007_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:9a9f2775208afbd58aec2190fe3d0c77",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2007_province.gpkg/content"
+      }
+    },
+    {
+      "id": "c1bd9735-3917-48cb-a3bb-75c138758f14",
+      "key": "T2008_county.gpkg",
+      "size": 62799872,
+      "checksum": "md5:0a2d5f750be1f3dc69f026c2eba3634b",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2008_county.gpkg/content"
+      }
+    },
+    {
+      "id": "d3151490-dcf8-413c-a2e6-9c779b1bb9b0",
+      "key": "T2008_prefecture.gpkg",
+      "size": 27660288,
+      "checksum": "md5:fe60691e02daef4754ce697d244a5bd6",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2008_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "54156b50-106c-48e1-99a4-61a37641e453",
+      "key": "T2008_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:60068d061090393da041265903a715b5",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2008_province.gpkg/content"
+      }
+    },
+    {
+      "id": "74c18412-771f-4459-bbdc-3f93d9521906",
+      "key": "T2009_county.gpkg",
+      "size": 62840832,
+      "checksum": "md5:6737cfa51a59ede7b85519c1eed29b70",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2009_county.gpkg/content"
+      }
+    },
+    {
+      "id": "7ab73a7d-4cca-43ad-82df-d67b1f69693b",
+      "key": "T2009_prefecture.gpkg",
+      "size": 27660288,
+      "checksum": "md5:303d39014f41bb972e69698d8d9983ca",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2009_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "083385ea-77e8-4957-9355-d470857b06aa",
+      "key": "T2009_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:6bd8be673db60c09886b35066448d4cc",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2009_province.gpkg/content"
+      }
+    },
+    {
+      "id": "34f807ad-c48d-44b7-af46-7c1dcd0adb00",
+      "key": "T2010_county.gpkg",
+      "size": 62844928,
+      "checksum": "md5:669aa2d79573731c4ed18209d80dcfdd",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2010_county.gpkg/content"
+      }
+    },
+    {
+      "id": "f576b04c-67a3-4f18-b0b6-3324e9d8a8d6",
+      "key": "T2010_prefecture.gpkg",
+      "size": 27660288,
+      "checksum": "md5:4e5ab56de3a954cb438659553d0a2e7a",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2010_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "8feb394e-6e2f-4fbb-aa13-dffc5159b33a",
+      "key": "T2010_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:8b8296e0dab20946bfe1d537fbd5d273",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2010_province.gpkg/content"
+      }
+    },
+    {
+      "id": "2ebf7d5c-23ae-45c6-82d5-79ebb07b0e42",
+      "key": "T2011_county.gpkg",
+      "size": 62791680,
+      "checksum": "md5:ff544c500643a6a437449423d588b204",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2011_county.gpkg/content"
+      }
+    },
+    {
+      "id": "a815221f-0eb8-4ae0-a328-f196e30af596",
+      "key": "T2011_prefecture.gpkg",
+      "size": 27660288,
+      "checksum": "md5:eed141c3294c5adbed9a3ba494cfac9a",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2011_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "1b760548-ea9e-40e2-8315-d0262fa570ab",
+      "key": "T2011_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:9d275430ca6324e81a5d1d4b334cb123",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2011_province.gpkg/content"
+      }
+    },
+    {
+      "id": "5bf878d9-f7fe-40cd-b7bb-a87209b75ac4",
+      "key": "T2012_county.gpkg",
+      "size": 62722048,
+      "checksum": "md5:9a35e7501d22b0b5b3b86e83365a8ae9",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2012_county.gpkg/content"
+      }
+    },
+    {
+      "id": "44d5b3dd-c87f-4b76-a616-4745d0ecfb3b",
+      "key": "T2012_prefecture.gpkg",
+      "size": 27668480,
+      "checksum": "md5:6314febb10100ab6126914458f6d7c2b",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2012_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "ea07dc4f-7c6f-4458-aefd-fab4727bff3a",
+      "key": "T2012_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:0533d9143e1c787b65fb139cb836d971",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2012_province.gpkg/content"
+      }
+    },
+    {
+      "id": "a374f9b9-87f3-4a68-9250-f3b3ce6a3d08",
+      "key": "T2013_county.gpkg",
+      "size": 62910464,
+      "checksum": "md5:30c6918d9577fa22aa3c89b19d53f5ec",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2013_county.gpkg/content"
+      }
+    },
+    {
+      "id": "a0bae181-3c67-442f-814e-27ebfe2c9060",
+      "key": "T2013_prefecture.gpkg",
+      "size": 27697152,
+      "checksum": "md5:5492a497cd4e8d2cbbc46541ec811b15",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2013_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "d2df9409-d5e7-4072-a57e-233738a596ba",
+      "key": "T2013_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:2c4e29f41edb026c0c000a3faf08b91a",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2013_province.gpkg/content"
+      }
+    },
+    {
+      "id": "284b6bc3-a758-4ca0-8fa0-7f068e3ae8e8",
+      "key": "T2014_county.gpkg",
+      "size": 62926848,
+      "checksum": "md5:6f0d96c82c097bdf2f4d39916c1c75a1",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2014_county.gpkg/content"
+      }
+    },
+    {
+      "id": "58807c91-9026-4380-8106-46c51ce3858b",
+      "key": "T2014_prefecture.gpkg",
+      "size": 27697152,
+      "checksum": "md5:1e76b9926e909451d9e5001b6dcea39a",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2014_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "107819d9-3ad1-4ca7-8d41-57b6bf43dbe8",
+      "key": "T2014_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:d1843b0c0bfc6dc44b69ca44e5b0cb35",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2014_province.gpkg/content"
+      }
+    },
+    {
+      "id": "05c0ab18-3535-4bc3-bec5-5c336918d6ed",
+      "key": "T2015_county.gpkg",
+      "size": 62910464,
+      "checksum": "md5:5161c5d51918f0ff8bcd799c6d1d786e",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2015_county.gpkg/content"
+      }
+    },
+    {
+      "id": "908cf07c-71cf-46b2-baad-19c0bcece923",
+      "key": "T2015_prefecture.gpkg",
+      "size": 27713536,
+      "checksum": "md5:2bbeb7a344191856ba60f4f39e78adeb",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2015_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "2b10cc31-3c38-418d-80fa-55395f1ced0f",
+      "key": "T2015_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:8ed0b22561d60ba198f93864b5a20ef8",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2015_province.gpkg/content"
+      }
+    },
+    {
+      "id": "60afe29f-68fa-4368-b588-ef8055359281",
+      "key": "T2016_county.gpkg",
+      "size": 63066112,
+      "checksum": "md5:26855f6b06ada263335f16394a79c2cf",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2016_county.gpkg/content"
+      }
+    },
+    {
+      "id": "159b35c8-1998-4d02-a5b1-97858be754af",
+      "key": "T2016_prefecture.gpkg",
+      "size": 27873280,
+      "checksum": "md5:6182f90630083a4e1bc747fefaad0ceb",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2016_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "145e8664-ffb7-48f8-8a11-17799f686137",
+      "key": "T2016_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:9aab8e97da230b3f9c3b5c92ed914428",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2016_province.gpkg/content"
+      }
+    },
+    {
+      "id": "79e00582-b3e8-4c48-b356-c5e076128176",
+      "key": "T2017_county.gpkg",
+      "size": 63062016,
+      "checksum": "md5:3bda942d061b4cc906aa8493af68cd2e",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2017_county.gpkg/content"
+      }
+    },
+    {
+      "id": "489968d9-1313-42a3-815d-cc359675c352",
+      "key": "T2017_prefecture.gpkg",
+      "size": 27897856,
+      "checksum": "md5:51b6936e48e00e53b98a86b14bb36a5c",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2017_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "5b5b38f7-65d7-4e96-a0f3-53177d47c9ea",
+      "key": "T2017_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:056cead7e2428b513b5a7c0b8061d06b",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2017_province.gpkg/content"
+      }
+    },
+    {
+      "id": "969c6532-f70b-4a80-b319-9eab597ac866",
+      "key": "T2018_county.gpkg",
+      "size": 63066112,
+      "checksum": "md5:2cb32768e1bf75bf6d2c24046750c333",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2018_county.gpkg/content"
+      }
+    },
+    {
+      "id": "fe590436-f270-44dd-af18-59680e9e05a1",
+      "key": "T2018_prefecture.gpkg",
+      "size": 27893760,
+      "checksum": "md5:571f7e4956edb9b041eec9f30256572c",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2018_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "95cb685e-b973-4497-9e96-9dd5cc92086d",
+      "key": "T2018_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:4b62d82ad967f69f290f1f95e80b9c36",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2018_province.gpkg/content"
+      }
+    },
+    {
+      "id": "72f531cd-1281-4ef0-a42c-c44479d0c199",
+      "key": "T2019_county.gpkg",
+      "size": 63074304,
+      "checksum": "md5:0811f47af1ade97350711e6464246135",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2019_county.gpkg/content"
+      }
+    },
+    {
+      "id": "6c1d0524-9f91-4279-ba2f-0cd735d4aef9",
+      "key": "T2019_prefecture.gpkg",
+      "size": 27885568,
+      "checksum": "md5:7dee28025d6153fca062faba11a25563",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2019_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "4e45f82f-dece-406f-91bb-69ee752d2474",
+      "key": "T2019_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:db8658a196cb5688ad92b95645b68562",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2019_province.gpkg/content"
+      }
+    },
+    {
+      "id": "d16dbdcc-44f8-44a2-9918-ce239472175e",
+      "key": "T2020_county.gpkg",
+      "size": 63053824,
+      "checksum": "md5:e5980e68b88df4e0407bb8e3da191f35",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2020_county.gpkg/content"
+      }
+    },
+    {
+      "id": "7f40db14-8dcc-4dbd-b686-255ab6520933",
+      "key": "T2020_prefecture.gpkg",
+      "size": 27885568,
+      "checksum": "md5:f33a33d570f1be531960f6c5efa4026d",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2020_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "8d33cd26-ae0f-40f9-a10f-041eb20a7503",
+      "key": "T2020_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:f959f1d897e41ae425a6ad28bf5ee2b2",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2020_province.gpkg/content"
+      }
+    },
+    {
+      "id": "62b219ee-3db4-44f6-9281-f1f6034da586",
+      "key": "T2021_county.gpkg",
+      "size": 63258624,
+      "checksum": "md5:58b27b78dd0438ba2c20079e508ab4f1",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2021_county.gpkg/content"
+      }
+    },
+    {
+      "id": "2b73ed8b-4b93-4476-8ce8-dee954a1b9de",
+      "key": "T2021_prefecture.gpkg",
+      "size": 27906048,
+      "checksum": "md5:129fcf87e09163465773e0897d0fb8f8",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2021_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "5a7b0966-c1be-46d0-ba40-d72f8d018f75",
+      "key": "T2021_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:ad44a165377eb303d742ac9e23fc17a2",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2021_province.gpkg/content"
+      }
+    },
+    {
+      "id": "83840760-4429-4efc-8827-e8c019696a57",
+      "key": "T2022_county.gpkg",
+      "size": 63348736,
+      "checksum": "md5:bd222c797e4d413de8d3a84d973f1f70",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2022_county.gpkg/content"
+      }
+    },
+    {
+      "id": "e7ce3ead-2042-4091-ac6c-22138c0c765a",
+      "key": "T2022_prefecture.gpkg",
+      "size": 27910144,
+      "checksum": "md5:05ebfc464fd925a0112d843c87ffd02c",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2022_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "d183f522-11b9-4f20-a743-c69f9fbf578b",
+      "key": "T2022_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:3f2b400c17b30d886761fc1d439ff7e3",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2022_province.gpkg/content"
+      }
+    },
+    {
+      "id": "0fe53650-0c4d-4b80-929d-257d2b9a33dc",
+      "key": "T2023_county.gpkg",
+      "size": 63623168,
+      "checksum": "md5:5ee2fd1e180d8f92d8fa5d876307673d",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2023_county.gpkg/content"
+      }
+    },
+    {
+      "id": "f2829eb2-e6c7-4482-be60-e9bac13f8b88",
+      "key": "T2023_prefecture.gpkg",
+      "size": 27910144,
+      "checksum": "md5:7fc7acce8f2db8dc3135e3703f58dfd0",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2023_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "df40cc12-ff90-4442-a242-a974901a1b34",
+      "key": "T2023_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:cbd18c39a811d172c496eb8e6e443496",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2023_province.gpkg/content"
+      }
+    },
+    {
+      "id": "1fe412fe-13de-45c6-bda1-e538a7930c18",
+      "key": "T2024_county.gpkg",
+      "size": 63873024,
+      "checksum": "md5:3b4a7ecc33ac76b3506d262be4bd694c",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2024_county.gpkg/content"
+      }
+    },
+    {
+      "id": "ff0f3b45-139e-4b89-a4fc-7c7e2d176b2d",
+      "key": "T2024_prefecture.gpkg",
+      "size": 27983872,
+      "checksum": "md5:9e18e990a4c7b173276c45c58c29bbcb",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2024_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "5e87e371-ba59-4ed8-a72a-22bb6dff23cd",
+      "key": "T2024_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:ebac97f8f0f1c95af3f0ca904b9f3349",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2024_province.gpkg/content"
+      }
+    },
+    {
+      "id": "7565cb29-b771-44e0-a00b-016fc065e942",
+      "key": "T2025_county.gpkg",
+      "size": 63979520,
+      "checksum": "md5:3ddd0050b10c9984fe4cf3e8532519b3",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2025_county.gpkg/content"
+      }
+    },
+    {
+      "id": "877cad5c-1d0a-499a-bfac-debe6bb1e2c3",
+      "key": "T2025_prefecture.gpkg",
+      "size": 28041216,
+      "checksum": "md5:6cfb9360e608826a484a6897b32a46c3",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2025_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "c9078900-a792-46f6-8f09-bd7a1161f62a",
+      "key": "T2025_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:8c0737de36e0775a851b0a2df1b4957c",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2025_province.gpkg/content"
+      }
+    },
+    {
+      "id": "7ebfb2dc-63c3-4c31-bdf9-4f62d9e5e76e",
+      "key": "T2026_county.gpkg",
+      "size": 64118784,
+      "checksum": "md5:e2a74da75e0901e4fc06daada0dd5180",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2026_county.gpkg/content"
+      }
+    },
+    {
+      "id": "6b04aa29-c41f-4b15-b833-36a400d11825",
+      "key": "T2026_prefecture.gpkg",
+      "size": 28041216,
+      "checksum": "md5:2c935849e66db951eeb7cc368cbb563c",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2026_prefecture.gpkg/content"
+      }
+    },
+    {
+      "id": "1e69995c-75c1-4238-8c2a-dfe9c84318aa",
+      "key": "T2026_province.gpkg",
+      "size": 11177984,
+      "checksum": "md5:d83c8cc972a17133b44f6008fc3c8598",
+      "links": {
+        "self": "https://zenodo.org/api/records/22179207/files/T2026_province.gpkg/content"
+      }
+    }
+  ],
+  "swh": {},
+  "owners": [
+    {
+      "id": "248932"
+    }
+  ],
+  "status": "published",
+  "stats": {
+    "downloads": 1384,
+    "unique_downloads": 1079,
+    "views": 429,
+    "unique_views": 377,
+    "version_downloads": 1174,
+    "version_unique_downloads": 1042,
+    "version_unique_views": 236,
+    "version_views": 273
+  },
+  "state": "done",
+  "submitted": true
+}

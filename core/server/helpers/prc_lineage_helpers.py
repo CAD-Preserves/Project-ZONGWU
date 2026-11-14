@@ -1,9 +1,9 @@
-"""Step 2 PRC 1954-2026 administrative lineage graph, 2026 carvings, and query-hygiene helpers."""
+"""PRC 1954-2026 statutory lineage graph builder and 4-rung Mainland gazetteer query planner."""
 
+from collections import deque
 import os
 import sys
-from shapely.geometry import Point, box, shape
-from shapely.ops import unary_union
+from shapely import STRtree
 
 if os.path.abspath(os.path.join(os.path.dirname(__file__), "..")) not in sys.path:
   sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -11,598 +11,552 @@ if os.path.abspath(os.path.join(os.path.dirname(__file__), "..")) not in sys.pat
 from helpers import gis_helpers
 
 
-def _infer_rank_from_zh (arg1_name_zh, arg2_fallback="xian"):
-  """Infer canonical local-history administrative rank from a Simplified Chinese unit name.
+def _clean_zh_stem (arg1_name_zh):
+  """Strip modern administrative suffix characters to obtain a clean Chinese toponym stem.
 
-  @param arg1_name_zh Official Chinese unit name.
-  @param arg2_fallback Fallback rank string if no standard suffix matches.
-  @return Canonical rank token (xian, autonomous_xian, banner_qi, etc.).
+  @param arg1_name_zh Simplified Chinese administrative name.
+  @return Stem string preserving short 2-char names intact.
   """
   # Convert from parameters
-  fallback = str(arg2_fallback or "xian")
   name_zh = str(arg1_name_zh or "").strip()
 
-  if name_zh.endswith("林区"):
-    return "linqu"
-  if name_zh.endswith("特区"):
-    return "tequ"
-  if name_zh.endswith("自治旗"):
-    return "autonomous_qi"
-  if name_zh.endswith("旗"):
-    return "banner_qi"
-  if name_zh.endswith("自治县"):
-    return "autonomous_xian"
-  if name_zh.endswith("区"):
-    return "urban_qu"
-  if name_zh.endswith("市"):
-    return "county_level_shi"
-  if name_zh.endswith("县"):
-    return "xian"
+  # Declare local instance variables.
+  sfx = ""
+
+  for sfx in (
+    "特别行政区",
+    "壮族自治区",
+    "回族自治区",
+    "维吾尔自治区",
+    "自治区",
+    "自治州",
+    "自治县",
+    "自治旗",
+    "矿区",
+    "林区",
+    "新区",
+    "特区",
+    "地区",
+    "盟",
+    "市",
+    "县",
+    "区",
+    "旗",
+  ):
+    if name_zh.endswith(sfx) and len(name_zh) - len(sfx) >= 2:
+      return name_zh[:-len(sfx)]
 
   # Return statement
-  return fallback
+  return name_zh
 
 
-def _patch_hotan_2024_units (arg1_units, arg2_reforms_cfg):
-  """Disambiguate 653201/653221 in GADM and carve 27 December 2024 Hotan counties (653228, 653229).
+def _collect_ethnicity_tokens (arg1_edge_cases):
+  """Collect descending-length list of ethnicity names and autonomy tokens from config.
 
-  @param arg1_units Mutable list of PRC adm_3 unit dicts.
-  @param arg2_reforms_cfg Parsed prc_admin_reforms_1954_2026.json5 dict.
-  @return Updated list of PRC adm_3 unit dicts.
+  @param arg1_edge_cases Parsed local_history_edge_cases.json5 dictionary.
+  @return List of ethnic tokens sorted longest-first.
   """
   # Convert from parameters
-  reforms_cfg = arg2_reforms_cfg or {}
-  units = list(arg1_units or [])
+  edge_cases = arg1_edge_cases or {}
 
   # Declare local instance variables.
-  hotan_cfg = reforms_cfg.get("epoch_3_2001_2026", {}).get("hotan_2024_new_counties", [])
-  hotan_geoms = []
-  hotan_proto = None
-  kept_units = []
-  new_items = []
+  ml = edge_cases.get("mainland_prc", {})
+  raw_tokens = []
+  tok = ""
 
-  for u in units:
-    if u.get("parent_adm1") == "XinjiangUygur" and str(u.get("gb_code") or "").startswith("653201"):
-      hotan_geoms.append(u["geom"])
-      if hotan_proto is None or float(u["geom"].area) < float(hotan_proto["geom"].area):
-        hotan_proto = dict(u)
-    else:
-      kept_units.append(u)
+  raw_tokens.extend(ml.get("ethnic_minority_groups", []))
+  raw_tokens.extend(ml.get("ethnicity_tokens", []))
+  raw_tokens.extend(ml.get("recognized_ethnicities_55", []))
 
-  if not hotan_geoms or hotan_proto is None:
-    # Return statement
-    return units
-
-  combined = gis_helpers.clean_polygonal_geometry(unary_union(hotan_geoms))
-  if combined is None or combined.is_empty:
-    # Return statement
-    return units
-
-  min_x, min_y, max_x, max_y = combined.bounds
-  split_lat = 36.15
-  split_lon = 78.90
-  south_box = box(min_x - 0.1, min_y - 0.1, max_x + 0.1, split_lat)
-  hean_box = box(split_lon, min_y - 0.1, max_x + 0.1, split_lat)
-  hekang_box = box(min_x - 0.1, min_y - 0.1, split_lon, split_lat)
-
-  north_geom = gis_helpers.clean_polygonal_geometry(combined.difference(south_box))
-  shi_disk = Point(79.92, 37.11).buffer(0.14, resolution=4)
-  shi_geom = gis_helpers.clean_polygonal_geometry(north_geom.intersection(shi_disk)) if north_geom is not None else None
-  xian_geom = gis_helpers.clean_polygonal_geometry(north_geom.difference(shi_geom)) if (north_geom is not None and shi_geom is not None) else north_geom
-
-  if shi_geom is not None and not shi_geom.is_empty:
-    shi_u = dict(hotan_proto)
-    shi_u.update({
-      "gb_code": "653201",
-      "gb_1990": "653201",
-      "geom": shi_geom,
-      "name_en": "Hotan Shi",
-      "name_py": "Hotan",
-      "name_zh": "和田市",
-      "name_zh_hant": "和田市",
-      "parent_adm2": "Hotan",
-      "parent_adm2_gb": "653200",
-      "parent_adm2_zh": "和田地区",
-      "unit_id": "prc_653201_hotan_shi",
-      "unit_type": "county_level_shi",
-    })
-    new_items.append(shi_u)
-
-  if xian_geom is not None and not xian_geom.is_empty:
-    xian_u = dict(hotan_proto)
-    xian_u.update({
-      "gb_code": "653221",
-      "gb_1990": "653221",
-      "geom": xian_geom,
-      "name_en": "Hotan Xian",
-      "name_py": "Hotan",
-      "name_zh": "和田县",
-      "name_zh_hant": "和田縣",
-      "parent_adm2": "Hotan",
-      "parent_adm2_gb": "653200",
-      "parent_adm2_zh": "和田地区",
-      "unit_id": "prc_653221_hotan_xian",
-      "unit_type": "xian",
-    })
-    new_items.append(xian_u)
-
-  for cfg_item in hotan_cfg:
-    gb = str(cfg_item["gb_code"])
-    cbox = hean_box if gb == "653228" else hekang_box
-    cgeom = gis_helpers.clean_polygonal_geometry(combined.intersection(cbox))
-    if cgeom is None or cgeom.is_empty:
+  # Expand bare ethnic nouns when entries end in 族
+  expanded = set()
+  for tok in raw_tokens:
+    tok = str(tok or "").strip()
+    if not tok:
       continue
-    new_u = dict(hotan_proto)
-    new_u.update({
-      "edge_cases": ["hotan_2024_carveout"],
-      "gb_code": gb,
-      "gb_1990": "653221",
-      "geom": cgeom,
-      "name_en": cfg_item["name_en"],
-      "name_py": cfg_item["name_en"].replace(" Xian", ""),
-      "name_zh": cfg_item["name_zh"],
-      "name_zh_hant": cfg_item["name_zh"].replace("县", "縣"),
-      "parent_adm2": "Hotan",
-      "parent_adm2_gb": "653200",
-      "parent_adm2_zh": "和田地区",
-      "snapshot_year": int(cfg_item.get("snapshot_year", 2025)),
-      "unit_id": f"prc_{gb}_{gis_helpers.slugify_snake(cfg_item['name_en'])}",
-      "unit_type": "xian",
-    })
-    new_items.append(new_u)
-
-  kept_units.extend(new_items)
+    expanded.add(tok)
+    if tok.endswith("族") and len(tok) > 1:
+      expanded.add(tok[:-1])
 
   # Return statement
-  return kept_units
+  return sorted(expanded, key=lambda x: (-len(x), x))
+
+
+def _dedupe_queries (arg1_queries, arg2_banned_set):
+  """Deduplicate Simplified Chinese search strings while purging banned pre-1949 or classical URLs.
+
+  @param arg1_queries Candidate query strings list.
+  @param arg2_banned_set Set of forbidden imperial/republican toponyms.
+  @return Cleaned list of unique query strings.
+  """
+  # Convert from parameters
+  banned_set = set(arg2_banned_set or ())
+  queries = arg1_queries or []
+
+  # Declare local instance variables.
+  out = []
+  q = ""
+  seen = set()
+  stem = ""
+
+  for q in queries:
+    q = str(q or "").strip()
+    if not q or q in seen:
+      continue
+    if "ctext.org" in q.lower():
+      continue
+    stem = q.rstrip("志")
+    if q in banned_set or stem in banned_set:
+      continue
+    seen.add(q)
+    out.append(q)
+
+  # Return statement
+  return out
+
+
+def _index_areacodes_backward (arg1_areacodes):
+  """Build reverse code-transition lookup and 1990s-active ancestor index from scraped MCA areacodes.
+
+  @param arg1_areacodes Output dict from ctamap_io_helpers.load_areacodes_lineage().
+  @return Dictionary containing 'by_code' and 'prev_by_code' mappings.
+  """
+  # Convert from parameters
+  ac_doc = arg1_areacodes or {}
+
+  # Declare local instance variables.
+  by_code = ac_doc.get("by_code", {})
+  prev_by_code = {}
+  row = {}
+  tgt = {}
+
+  for row in ac_doc.get("rows", []):
+    for tgt in row.get("new_targets", []):
+      prev_by_code.setdefault(tgt["code"], []).append({
+        "change_year": tgt.get("year") or row.get("change_year"),
+        "old_code": row["code"],
+        "old_name_zh": row["name_zh"],
+        "status": row["status"],
+      })
+
+  # Return statement
+  return {"by_code": by_code, "prev_by_code": prev_by_code}
+
+
+def _match_unit_ctamap_events (arg1_names_set, arg2_adm1_zh, arg3_events):
+  """Collect scraped CTAmap change_events_v2 records mentioning a county or its 1990s predecessor.
+
+  @param arg1_names_set Set of Chinese unit names (2026 + 1990s).
+  @param arg2_adm1_zh Province Chinese name for regional disambiguation.
+  @param arg3_events List of CTAmap change_events_v2 CSV row dicts.
+  @return List of compact event summary dicts.
+  """
+  # Convert from parameters
+  adm1_prefix = str(arg2_adm1_zh or "")[:2]
+  events = arg3_events or []
+  names_set = {str(n).strip() for n in arg1_names_set if str(n or "").strip()}
+
+  # Declare local instance variables.
+  ev = {}
+  matched = []
+  new_parts = []
+  old_parts = []
+  reg = ""
+
+  if not names_set or not events:
+    return matched
+
+  for ev in events:
+    reg = str(ev.get("region") or "")
+    if adm1_prefix and reg and adm1_prefix not in reg:
+      continue
+    old_parts = [p.strip() for p in str(ev.get("old_unit") or "").split("；") if p.strip()]
+    new_parts = [p.strip() for p in str(ev.get("new_unit") or "").split("；") if p.strip()]
+    if any(p in names_set for p in old_parts) or any(p in names_set for p in new_parts):
+      matched.append({
+        "approval_no": str(ev.get("approval_no_norm") or ev.get("approval_no_raw") or ""),
+        "event_id": str(ev.get("event_id") or ""),
+        "event_type": str(ev.get("event_type") or ""),
+        "new_unit": str(ev.get("new_unit") or ""),
+        "old_unit": str(ev.get("old_unit") or ""),
+        "snapshot_year": str(ev.get("snapshot_year") or ""),
+      })
+
+  # Return statement
+  return matched
+
+
+def _trace_1990s_areacodes (arg1_gb_code, arg2_rev_idx):
+  """Traverse MCA areacodes reverse edges from a 2026 code back to 1981-1999 predecessors.
+
+  @param arg1_gb_code 6-digit GB/T 2260 administrative code.
+  @param arg2_rev_idx Index dict built by _index_areacodes_backward().
+  @return Tuple of (ancestor_codes_ordered, ancestor_rows_ordered).
+  """
+  # Convert from parameters
+  gb_code = str(arg1_gb_code or "").strip()
+  rev_idx = arg2_rev_idx or {}
+
+  # Declare local instance variables.
+  by_code = rev_idx.get("by_code", {})
+  code = ""
+  depth = 0
+  edge = {}
+  out_codes = []
+  out_rows = []
+  prev_map = rev_idx.get("prev_by_code", {})
+  q = deque()
+  row = {}
+  seen = set()
+
+  if not gb_code:
+    return out_codes, out_rows
+
+  q.append((gb_code, 0))
+  seen.add(gb_code)
+
+  while q:
+    code, depth = q.popleft()
+    for row in by_code.get(code, []):
+      out_rows.append(row)
+      en_y = row.get("enable_year") or 1981
+      ch_y = row.get("change_year") or 2026
+      if en_y <= 1999 and ch_y >= 1989:
+        out_codes.append((code, row["name_zh"], en_y, ch_y))
+    if depth >= 6:
+      continue
+    for edge in prev_map.get(code, []):
+      oc = edge["old_code"]
+      if oc not in seen:
+        seen.add(oc)
+        q.append((oc, depth + 1))
+
+  # Return statement
+  return out_codes, out_rows
 
 
 def build_chronicle_search_plan (arg1_unit_meta, arg2_lineage_entry, arg3_edge_cases, arg4_reforms_cfg):
-  """Construct clean 4-rung Mainland ZH chronicle search plan and blocklist per Skill 2/4 hygiene.
+  """Build edge-case tags and a 4-rung Simplified Chinese chronicle search plan for a Mainland unit.
 
-  @param arg1_unit_meta Dict containing gb_code, name_zh, parent_adm1, parent_adm2_zh, unit_type, edge_cases.
-  @param arg2_lineage_entry Optional lineage record from prc_admin_lineage_1954_2026.json5.
-  @param arg3_edge_cases Parsed local_history_edge_cases.json5 dict.
-  @param arg4_reforms_cfg Parsed prc_admin_reforms_1954_2026.json5 dict.
-  @return Tuple (edge_flags_list, chronicle_search_plan_dict, flat_clean_queries_list).
+  @param arg1_unit_meta Unit metadata dictionary (gb_code, name_zh, parent_adm1_zh, parent_adm2_zh, unit_type).
+  @param arg2_lineage_entry Corresponding entry from build_prc_lineage_graph() units_by_id.
+  @param arg3_edge_cases Parsed local_history_edge_cases.json5 dictionary.
+  @param arg4_reforms_cfg Parsed prc_admin_reforms_1954_2026.json5 dictionary.
+  @return Tuple of (edge_cases_list, search_plan_dict, flat_queries_list).
   """
   # Convert from parameters
   edge_cases = arg3_edge_cases or {}
-  lineage = arg2_lineage_entry or {}
+  lin_entry = arg2_lineage_entry or {}
   reforms_cfg = arg4_reforms_cfg or {}
   unit_meta = arg1_unit_meta or {}
 
   # Declare local instance variables.
+  adm1_zh = str(unit_meta.get("parent_adm1_zh") or "")
+  adm2_zh = str(unit_meta.get("parent_adm2_zh") or "")
   banned_pre1949 = set(reforms_cfg.get("epoch_1_1954_1979", {}).get("pre_1949_imperial_republican_names_banned_in_mainland_xinzhi", []))
-  blocked = []
-  city_zh = str(unit_meta.get("parent_adm2_zh") or "").strip()
-  edges = list(unit_meta.get("edge_cases") or [])
-  eth_tokens = edge_cases.get("mainland_prc", {}).get("autonomous_ethnicity_tokens", [])
-  gb = str(unit_meta.get("gb_code") or "").strip()
-  n1 = str(unit_meta.get("parent_adm1") or "").strip()
-  n3 = str(unit_meta.get("name_en") or "").strip()
-  name_zh = str(unit_meta.get("name_zh") or "").strip()
-  prov_zh = str(unit_meta.get("parent_adm1_zh") or "").strip()
-  rung1 = []
-  rung2 = []
-  rung3 = []
-  rung4 = []
-  snap1990 = lineage.get("unit_1990s_snapshot", {})
-  names_1990s = [str(n).strip() for n in snap1990.get("names_1980_2000", []) if str(n).strip()]
-  ranks_1990s = [str(r).strip() for r in snap1990.get("ranks_1980_2000", []) if str(r).strip()]
-  utype = str(unit_meta.get("unit_type") or "xian").strip()
+  edges = ["prefer_1985_2005_xinzhi", "zh_hans_strict_mainland"]
+  eth_tokens = _collect_ethnicity_tokens(edge_cases)
+  flat_qs = []
+  gb = str(unit_meta.get("gb_code") or "")
+  name_2026 = str(unit_meta.get("name_zh") or "")
+  names_1990s = []
+  p1_stem = _clean_zh_stem(adm1_zh)
+  p2_stem = _clean_zh_stem(adm2_zh)
+  primary_90 = ""
+  r1 = []
+  r2 = []
+  r3 = []
+  r4 = []
+  snap_90 = lin_entry.get("unit_1990s_snapshot", {})
+  stem_90 = ""
+  utype = str(unit_meta.get("unit_type") or "")
 
-  def _push (arg1_lst, arg2_q):
-    q = str(arg2_q or "").strip()
-    if not q:
-      return
-    base_q = q[:-1] if q.endswith("志") else q
-    if q in banned_pre1949 or base_q in banned_pre1949:
-      return
-    if q not in arg1_lst:
-      arg1_lst.append(q)
+  if gb.startswith("81"):
+    edges.append("hong_kong_chronicle_series")
+  elif gb.startswith("82"):
+    edges.append("macau_chronicle_series")
+  if utype in ("autonomous_county", "autonomous_banner") or "自治" in name_2026:
+    edges.append("strip_ethnicity_tokens_xinzhi")
 
-  if gb == "810000":
-    if "hong_kong_sar" not in edges:
-      edges.append("hong_kong_sar")
-    hk_qs = edge_cases["mainland_prc"]["hong_kong_and_macau"]["810000"]["search_queries"]
-    for q in hk_qs:
-      _push(rung1, q)
-    plan = {"blocked_post_2000_titles": [], "rung_1_1990s_exact": rung1, "rung_2_eth_stripped": [], "rung_3_shortened_bare": [], "rung_4_higher_admin": []}
-    return edges, plan, list(rung1)
+  names_1990s = [str(n).strip() for n in snap_90.get("names_zh", []) if str(n or "").strip()]
+  if not names_1990s and name_2026:
+    names_1990s = [name_2026]
+  primary_90 = str(snap_90.get("primary_name_zh") or (names_1990s[0] if names_1990s else name_2026))
 
-  if gb.startswith("82"):
-    if "macau_sar" not in edges:
-      edges.append("macau_sar")
-    mo_qs = edge_cases["mainland_prc"]["hong_kong_and_macau"]["820000"]["search_queries"]
-    for q in mo_qs:
-      _push(rung1, q)
-    plan = {"blocked_post_2000_titles": [], "rung_1_1990s_exact": rung1, "rung_2_eth_stripped": [], "rung_3_shortened_bare": [], "rung_4_higher_admin": []}
-    return edges, plan, list(rung1)
-
-  if gb == "350122" and "mainland_fuzhou_lianjiang_disambig" not in edges:
-    edges.append("mainland_fuzhou_lianjiang_disambig")
-
-  if not names_1990s:
-    names_1990s = [name_zh]
-  primary_90 = names_1990s[0]
-  rank_90 = ranks_1990s[0] if ranks_1990s else _infer_rank_from_zh(primary_90, utype)
-  events = snap1990.get("conversion_events", [])
-
-  # Post-2000 conversion / carveout / rename checks
-  if events:
-    ev_types = {str(ev.get("event_type") or "") for ev in events}
-    if "converted_to_qu" in ev_types or "merged_into_qu" in ev_types:
-      if "che_xian_she_qu_post_2000" not in edges:
-        edges.append("che_xian_she_qu_post_2000")
-      _push(blocked, f"{name_zh}志")
-    if "upgraded_to_shi" in ev_types:
-      if "che_xian_she_shi_post_2000" not in edges:
-        edges.append("che_xian_she_shi_post_2000")
-      _push(blocked, f"{name_zh}志")
-    if "renamed" in ev_types:
-      if "post_2000_renaming" not in edges:
-        edges.append("post_2000_renaming")
-      _push(blocked, f"{name_zh}志")
-      for ev in events:
-        if ev.get("event_type") == "renamed" and ev.get("to_name"):
-          _push(blocked, f"{ev['to_name']}志")
-    if "carved_new_xian" in ev_types or "carved_xpcc_shi" in ev_types:
-      _push(blocked, f"{name_zh}志")
-
-  # Rung 1: exact 1980-2000 compilation-era titles
-  for nm90 in names_1990s:
-    if f"{nm90}志" not in blocked:
-      _push(rung1, f"{nm90}志")
-
-  # Include pre-1990 PRC simplifications (never pre-1949 names) if relevant
-  for simp in reforms_cfg.get("epoch_1_1954_1979", {}).get("rare_character_simplifications_1950s_1960s", []):
-    if str(simp.get("gb_code") or "") == gb or str(simp.get("new_name_zh") or "") == primary_90:
-      old_s = str(simp.get("old_name_zh") or "")
-      new_s = str(simp.get("new_name_zh") or "")
-      if int(simp.get("effective_year", 1960)) <= 1986:
-        if new_s:
-          _push(rung1, f"{new_s}志")
-      if "rare_char_simplified_1950s_1960s" not in edges:
-        edges.append("rare_char_simplified_1950s_1960s")
-
-  # Rung 2: recursive 55-ethnicity stripping for autonomous counties/banners
-  if rank_90 in ("autonomous_xian", "autonomous_qi") or utype in ("autonomous_xian", "autonomous_qi") or "自治" in primary_90:
-    if "autonomous_suffix_strip" not in edges:
-      edges.append("autonomous_suffix_strip")
-    stem = strip_ethnicity_tokens_recursive(primary_90, eth_tokens)
-    tail = "旗志" if (rank_90 == "autonomous_qi" or utype == "autonomous_qi") else "县志"
-    if stem and stem != primary_90:
-      _push(rung2, f"{stem}{tail}")
-    _push(rung3, f"{stem}志")
+  if gb.startswith("81"):
+    r1 = ["香港志", "香港地方志", "新界年鉴", "新界志", "九龙城寨志"]
+    r2 = ["香港通史", "港九地方志", "香港年鉴"]
+    r3 = [f"{name_2026}志", f"{name_2026}区志"]
+    r4 = ["广东省志·港澳台卷", "广东省志"]
+  elif gb.startswith("82"):
+    r1 = ["澳门志", "澳门地方志", "澳门编年史", "澳门年鉴"]
+    r2 = ["澳门掌故", "澳门市政志"]
+    r3 = [f"{name_2026}志"]
+    r4 = ["广东省志·港澳台卷", "广东省志"]
   else:
-    stem = strip_ethnicity_tokens_recursive(primary_90, eth_tokens)
-    if rank_90 == "county_level_shi" or utype == "county_level_shi":
-      if "che_xian_she_shi" not in edges:
-        edges.append("che_xian_she_shi")
-      _push(rung1, f"{stem}县志")
-    elif utype == "urban_qu" and f"{name_zh}志" not in blocked:
-      _push(rung1, f"{name_zh}志")
-      if rank_90 == "xian":
-        _push(rung1, f"{stem}县志")
-    if stem:
-      _push(rung3, f"{stem}志")
+    for n90 in names_1990s[:4]:
+      s90 = _clean_zh_stem(n90)
+      r1.extend([f"{n90}志", f"{n90}地名志", f"{s90}县志", f"{n90}·建置沿革"])
 
-  _push(rung3, f"{primary_90}地名志")
-  if "dimingzhi_check" not in edges:
-    edges.append("dimingzhi_check")
+    for n90 in names_1990s[:3]:
+      stem_90 = strip_ethnicity_tokens_recursive(n90, eth_tokens)
+      if stem_90 and stem_90 != n90:
+        r2.extend([f"{stem_90}志", f"{_clean_zh_stem(stem_90)}县志", f"{_clean_zh_stem(stem_90)}旗志"])
+    if not r2 and primary_90:
+      s_bare = _clean_zh_stem(strip_ethnicity_tokens_recursive(primary_90, eth_tokens))
+      if s_bare:
+        r2.extend([f"{s_bare}县志", f"{s_bare}地方志"])
 
-  # Rung 4: Higher prefecture, provincial summary, and metropolitan fenzhi fallbacks
-  for _, m_info in edge_cases.get("mainland_prc", {}).get("metropolitan_core_districts", {}).items():
-    if gb.startswith(m_info["gb_prefix"]) or n1 == m_info.get("city_zh"):
-      if utype == "urban_qu" or name_zh.endswith("区"):
-        if "metropolitan_core_district" not in edges:
-          edges.append("metropolitan_core_district")
-        for fz in m_info.get("fenzhi_suffixes", []):
-          _push(rung4, f"{m_info['city_zh']}{fz}")
-        for h_cnty in m_info.get("historic_counties", []):
-          _push(rung1, f"{h_cnty}志" if not h_cnty.endswith("志") else h_cnty)
+    if name_2026:
+      r3 = [f"{name_2026}志", f"{adm2_zh}{name_2026}志" if adm2_zh and adm2_zh != adm1_zh else f"{adm1_zh}{name_2026}志", f"{name_2026}年鉴"]
 
-  if city_zh and city_zh != name_zh and city_zh != prov_zh:
-    _push(rung4, f"{city_zh}志")
-    if city_zh.endswith("地区"):
-      _push(rung4, f"{city_zh[:-2]}市志")
-  if prov_zh:
-    p_stem = prov_zh.replace("壮族自治区", "").replace("回族自治区", "").replace("维吾尔自治区", "").replace("自治区", "").rstrip("省市")
-    _push(rung4, f"{p_stem}省志·市县概况" if prov_zh.endswith("省") else f"{p_stem}通志")
+    if adm2_zh and adm2_zh != adm1_zh:
+      r4.extend([f"{adm2_zh}志", f"{p2_stem}地区志", f"{p2_stem}市志·建置志"])
+    if adm1_zh:
+      r4.extend([f"{p1_stem}通志", f"{adm1_zh}志·建置沿革志", f"{p1_stem}省志·地名志"])
 
-  flat = []
-  for lst in (rung1, rung2, rung3, rung4):
-    for q in lst:
-      if q not in flat and q not in blocked:
-        flat.append(q)
+  r1 = _dedupe_queries(r1, banned_pre1949)
+  r2 = _dedupe_queries(r2, banned_pre1949)
+  r3 = _dedupe_queries(r3, banned_pre1949)
+  r4 = _dedupe_queries(r4, banned_pre1949)
 
   plan = {
-    "blocked_post_2000_titles": blocked,
-    "rung_1_1990s_exact": rung1,
-    "rung_2_eth_stripped": rung2,
-    "rung_3_shortened_bare": rung3,
-    "rung_4_higher_admin": rung4,
+    "rung_1_1990s_exact": r1,
+    "rung_2_ethnicity_stripped": r2,
+    "rung_3_2026_modern": r3,
+    "rung_4_prefecture_provincial_fallback": r4,
   }
+  flat_qs = _dedupe_queries(r1 + r2 + r3 + r4, banned_pre1949)
 
   # Return statement
-  return edges, plan, flat
+  return edges, plan, flat_qs
 
 
-def build_prc_lineage_graph (arg1_units_2026, arg2_citas_1990, arg3_reforms_cfg, arg4_fz_cfg, arg5_edge_cases):
-  """Construct the 1954-2026 directed acyclic administrative lineage graph.
+def build_prc_lineage_graph (arg1_units_2026, arg2_citas_1990, arg3_reforms_cfg, arg4_fz_cfg, arg5_edge_cases, arg6_areacodes=None, arg7_ctamap_events=None):
+  """Construct the 1954-2026 PRC statutory lineage graph linking 2026 CTAmap units to 1990s CITAS & MCA history.
 
-  @param arg1_units_2026 List of 2026 PRC adm_3 unit dicts from ModernLayerAssembler.
-  @param arg2_citas_1990 List of 1990 CITAS county dicts with gb, name_zh.
-  @param arg3_reforms_cfg Parsed prc_admin_reforms_1954_2026.json5 dict.
-  @param arg4_fz_cfg Parsed prc_functional_zones_and_sez.json5 dict.
-  @param arg5_edge_cases Parsed local_history_edge_cases.json5 dict.
-  @return Dict formatted for common/defines/prc_admin_lineage_1954_2026.json5.
+  @param arg1_units_2026 List of modern PRC adm_3 unit dictionaries (each carrying Shapely 'geom').
+  @param arg2_citas_1990 List of 1990 CITAS county dictionaries.
+  @param arg3_reforms_cfg Parsed prc_admin_reforms_1954_2026.json5 dictionary.
+  @param arg4_fz_cfg Parsed prc_functional_zones_and_sez.json5 dictionary.
+  @param arg5_edge_cases Parsed local_history_edge_cases.json5 dictionary.
+  @param arg6_areacodes Optional parsed yescallop/areacodes lineage dict.
+  @param arg7_ctamap_events Optional CTAmap change_events_v2 row list.
+  @return Lineage dictionary matching common/defines/prc_admin_lineage_1954_2026.json5 schema v1.
   """
   # Convert from parameters
-  citas_list = list(arg2_citas_1990 or [])
+  areacodes = arg6_areacodes or {}
+  citas_1990 = [c for c in (arg2_citas_1990 or []) if str(c.get("gb") or "") not in ("0", "1", "")]
+  ctamap_events = arg7_ctamap_events or []
+  edge_cases = arg5_edge_cases or {}
   fz_cfg = arg4_fz_cfg or {}
   reforms_cfg = arg3_reforms_cfg or {}
-  units_2026 = list(arg1_units_2026 or [])
+  units_2026 = arg1_units_2026 or []
 
   # Declare local instance variables.
-  citas_by_gb = {}
-  conv_by_gb2026 = {}
-  hotan_orig = fz_cfg.get("hotan_2024_origins", {})
-  tibet_by_gb = {}
+  ac_rows = []
+  anc_codes = []
+  c_by_gb = {}
+  c_geoms = []
+  c_ids = []
+  c_item = {}
+  c_tree = None
+  fz_dict = fz_cfg.get("functional_zones", {})
+  fz_out = {}
+  gb = ""
+  hotan_origins = fz_cfg.get("hotan_2024_origins", {})
+  names_90 = []
+  ov_pairs = []
+  p90_ids = []
+  rev_idx = _index_areacodes_backward(areacodes)
+  u = {}
+  uid = ""
   units_by_id = {}
-  units_by_gb = {str(u.get("gb_code") or ""): u for u in units_2026}
-  xpcc_events = {}
-  xpcc_orig = fz_cfg.get("xpcc_origins", {})
 
-  for c in citas_list:
-    gb = str(c.get("gb") or "").strip()
-    nm = "".join(str(c.get("name_zh") or "").split())
-    if gb and nm:
-      citas_by_gb[gb] = nm
+  for c_item in citas_1990:
+    gb_c = str(c_item.get("gb") or "").strip()
+    cid = f"prc_{gb_c}_{gis_helpers.slugify_snake(c_item.get('name_en') or gb_c)}"
+    c_item["citas_unit_id"] = cid
+    c_by_gb.setdefault(gb_c, []).append(c_item)
+    c_geoms.append(c_item["geom"])
+    c_ids.append(c_item)
 
-  e3 = reforms_cfg.get("epoch_3_2001_2026", {})
-  for ev in e3.get("conversion_events", []):
-    conv_by_gb2026.setdefault(str(ev.get("gb_2026") or ""), []).append(dict(ev))
-  for ev in e3.get("tibetan_prefecture_upgrades", []):
-    tibet_by_gb[str(ev.get("county_2026_gb") or "")] = dict(ev)
-  for ev in e3.get("xpcc_shi_cities", []):
-    xpcc_events[str(ev.get("gb_code") or "")] = dict(ev)
+  if c_geoms:
+    c_tree = STRtree(c_geoms)
 
   for u in units_2026:
     uid = str(u["unit_id"])
-    gb26 = str(u.get("gb_code") or "")
-    gb90 = str(u.get("gb_1990") or gb26)
-    n26_zh = str(u.get("name_zh") or "")
-    utype26 = str(u.get("unit_type") or "xian")
-    events = []
-    names90 = []
-    parent90_ids = []
-    ranks90 = []
+    gb = str(u.get("gb_code") or "")
+    anc_codes, ac_rows = _trace_1990s_areacodes(gb, rev_idx)
 
-    if gb26 in hotan_orig:
-      ho = hotan_orig[gb26]
-      names90 = list(ho["parent_1990s_names_zh"])
-      parent90_ids = list(ho["parent_1990s_unit_ids"])
-      ranks90 = ["xian"]
-      events.append({"effective_date": "27 December 2024", "event_type": "carved_new_xian", "from_name": "和田县", "snapshot_year": 2025, "to_name": n26_zh})
-    elif gb26 in xpcc_orig and gb26 != "659001":
-      xo = xpcc_orig[gb26]
-      names90 = list(xo["parent_1990s_names_zh"])
-      parent90_ids = list(xo["parent_1990s_unit_ids"])
-      ranks90 = [_infer_rank_from_zh(names90[0], "xian")]
-      xev = xpcc_events.get(gb26, {})
-      events.append({"effective_date": xev.get("effective_date", "01 January 2003"), "event_type": "carved_xpcc_shi", "from_name": names90[0], "snapshot_year": int(xev.get("snapshot_year", 2003)), "to_name": n26_zh})
-    elif gb26 in conv_by_gb2026:
-      evs = sorted(conv_by_gb2026[gb26], key=lambda x: int(x.get("snapshot_year", 2001)))
-      gb90 = str(evs[0].get("gb_1990") or gb90)
-      names90 = [str(evs[0]["from_name"])]
-      ranks90 = [_infer_rank_from_zh(names90[0], "xian")]
-      for ev in evs:
-        events.append({
-          "effective_date": ev.get("effective_date", ""),
-          "event_type": ev.get("event_type", "converted_to_qu"),
-          "from_name": ev.get("from_name", ""),
-          "gb_1990": ev.get("gb_1990", gb90),
-          "snapshot_year": int(ev.get("snapshot_year", 2001)),
-          "to_name": ev.get("to_name", n26_zh),
-        })
-      stem_s = gis_helpers.slugify_snake(u.get("name_en") or n26_zh)
-      parent90_ids = [f"prc_{gb90}_{stem_s}"]
-    elif gb26 in tibet_by_gb:
-      tev = tibet_by_gb[gb26]
-      names90 = [str(tev["county_1990_name"])]
-      ranks90 = [_infer_rank_from_zh(names90[0], "xian")]
-      events.append({
-        "effective_date": tev["effective_date"],
-        "event_type": "converted_to_qu",
-        "from_name": tev["county_1990_name"],
-        "pref_name_old": tev["pref_name_old"],
-        "pref_name_zh": tev["pref_name_zh"],
-        "snapshot_year": int(tev["snapshot_year"]),
-        "to_name": n26_zh,
-      })
-      parent90_ids = [f"prc_{gb90}_{gis_helpers.slugify_snake(u.get('name_en') or n26_zh)}"]
-    else:
-      c_zh = citas_by_gb.get(gb90, "")
-      if c_zh and "辖区" not in c_zh and c_zh != n26_zh:
-        names90 = [c_zh]
-        ranks90 = [_infer_rank_from_zh(c_zh, utype26)]
-        if utype26 == "urban_qu" and c_zh.endswith("县"):
-          events.append({"effective_date": "01 January 2001", "event_type": "converted_to_qu", "from_name": c_zh, "snapshot_year": 2001, "to_name": n26_zh})
-        elif utype26 == "county_level_shi" and c_zh.endswith("县"):
-          events.append({"effective_date": "01 January 1995", "event_type": "upgraded_to_shi", "from_name": c_zh, "snapshot_year": 1995, "to_name": n26_zh})
-      else:
-        names90 = [n26_zh]
-        ranks90 = [utype26]
-      parent90_ids = [uid]
+    p90_ids = []
+    names_90 = []
+    gb_90s = []
 
+    # 1. Known 2024 Hotan origin overrides / exact MCA reverse code chains
+    if gb in hotan_origins:
+      for pid in hotan_origins[gb].get("parent_1990s_unit_ids", []):
+        if pid not in p90_ids:
+          p90_ids.append(pid)
+      for nzh in hotan_origins[gb].get("parent_1990s_names_zh", []):
+        if nzh not in names_90:
+          names_90.append(nzh)
+
+    # Sort ancestors active in 1990-1999 (earlier enable_year first, exact gb match favoured)
+    anc_sorted = sorted(anc_codes, key=lambda x: (0 if x[0] == gb else 1, x[2], x[0]))
+    for code_90, name_90, _, _ in anc_sorted:
+      if name_90 and name_90 not in names_90:
+        names_90.append(name_90)
+      if code_90 not in gb_90s:
+        gb_90s.append(code_90)
+      for c_hit in c_by_gb.get(code_90, []):
+        if c_hit["citas_unit_id"] not in p90_ids:
+          p90_ids.append(c_hit["citas_unit_id"])
+        if c_hit.get("name_zh") and c_hit["name_zh"] not in names_90:
+          names_90.append(c_hit["name_zh"])
+
+    # 2. Spatial overlap fallback / fortification against CITAS 1990 polygons
+    u_geom = u.get("geom")
+    if u_geom is not None and c_tree is not None:
+      ov_pairs = []
+      for c_idx in c_tree.query(u_geom):
+        c_obj = c_geoms[int(c_idx)]
+        if not u_geom.intersects(c_obj):
+          continue
+        ov = float(u_geom.intersection(c_obj).area)
+        if ov > 1e-6 and ov / max(float(u_geom.area), 1e-9) >= 0.08:
+          ov_pairs.append((ov, c_ids[int(c_idx)]))
+      ov_pairs.sort(key=lambda x: x[0], reverse=True)
+      for _, c_item in ov_pairs[:4]:
+        if c_item["citas_unit_id"] not in p90_ids:
+          p90_ids.append(c_item["citas_unit_id"])
+        if c_item.get("name_zh") and c_item["name_zh"] not in names_90:
+          names_90.append(c_item["name_zh"])
+        if c_item.get("gb") and c_item["gb"] not in gb_90s:
+          gb_90s.append(c_item["gb"])
+
+    if not names_90 and u.get("name_zh"):
+      names_90 = [u["name_zh"]]
+    if not gb_90s and gb:
+      gb_90s = [gb]
+
+    ev_hits = _match_unit_ctamap_events(set(names_90) | {u.get("name_zh", "")}, u.get("parent_adm1_zh", ""), ctamap_events)
     units_by_id[uid] = {
-      "is_post_1990_sez_or_new_area": False,
-      "parent_1990s_unit_ids": parent90_ids,
+      "areacode_chain": [
+        {
+          "change_year": r.get("change_year"),
+          "code": r["code"],
+          "enable_year": r.get("enable_year"),
+          "name_zh": r["name_zh"],
+          "status": r["status"],
+        }
+        for r in ac_rows[:12]
+      ],
+      "ctamap_events": ev_hits,
+      "gb_code_2026": gb,
+      "is_functional_zone": False,
+      "name_en": u.get("name_en", ""),
+      "name_zh_2026": u.get("name_zh", ""),
+      "parent_1990s_unit_ids": p90_ids,
+      "parent_adm1": u.get("parent_adm1", ""),
+      "parent_adm2": u.get("parent_adm2", ""),
       "unit_1990s_snapshot": {
-        "conversion_events": events,
-        "gb_1990": gb90,
-        "names_1980_2000": names90,
-        "ranks_1980_2000": ranks90,
+        "gb_codes": gb_90s,
+        "names_zh": names_90,
+        "primary_name_zh": names_90[0] if names_90 else u.get("name_zh", ""),
       },
       "unit_2026_snapshot": {
-        "gb_code": gb26,
-        "name_zh": n26_zh,
-        "parent_adm1_zh": str(u.get("parent_adm1_zh") or ""),
-        "parent_adm2_zh": str(u.get("parent_adm2_zh") or ""),
-        "unit_type": utype26,
+        "gb_code": gb,
+        "name_en": u.get("name_en", ""),
+        "name_zh": u.get("name_zh", ""),
+        "parent_adm1_zh": u.get("parent_adm1_zh", ""),
+        "parent_adm2_zh": u.get("parent_adm2_zh", ""),
       },
+      "unit_id": uid,
     }
 
-  # Register non-GB2260 functional zones, SEZs, and State-level New Areas
-  for fz_id, fz_meta in sorted(fz_cfg.get("functional_zones", {}).items()):
-    gb26 = str(fz_meta.get("gb_2026") or "")
-    u_match = units_by_gb.get(gb26) if gb26 else None
-    units_by_id[fz_id] = {
-      "is_post_1990_sez_or_new_area": True,
-      "parent_1990s_unit_ids": list(fz_meta.get("parent_1990s_unit_ids") or []),
+  # 3. Functional zones / State New Areas (e.g. Xiongan, Liangjiang)
+  for fz_id, fz_meta in sorted(fz_dict.items()):
+    fz_names = [str(n) for n in fz_meta.get("parent_1990s_names_zh", []) if n]
+    fz_pids = list(fz_meta.get("parent_1990s_unit_ids", []))
+    fz_entry = {
+      "established_year": fz_meta.get("established_year"),
+      "gb_code_2026": str(fz_meta.get("gb_2026") or ""),
+      "is_functional_zone": True,
+      "kind": str(fz_meta.get("kind") or "functional_zone"),
+      "name_zh_2026": str(fz_meta.get("name_zh") or ""),
+      "parent_1990s_unit_ids": fz_pids,
+      "parent_adm1_zh": str(fz_meta.get("parent_adm1_zh") or ""),
       "unit_1990s_snapshot": {
-        "conversion_events": [{
-          "effective_date": f"01 January {fz_meta.get('established_year', 1994)}",
-          "event_type": "established_functional_zone",
-          "from_name": "/".join(fz_meta.get("parent_1990s_names_zh") or []),
-          "snapshot_year": int(fz_meta.get("established_year", 1994)),
-          "to_name": str(fz_meta.get("name_zh") or ""),
-        }],
-        "gb_1990": "",
-        "names_1980_2000": list(fz_meta.get("parent_1990s_names_zh") or []),
-        "ranks_1980_2000": ["xian"],
+        "names_zh": fz_names,
+        "primary_name_zh": fz_names[0] if fz_names else str(fz_meta.get("name_zh") or ""),
       },
       "unit_2026_snapshot": {
-        "gb_code": gb26 or (u_match["gb_code"] if u_match else ""),
+        "gb_code": str(fz_meta.get("gb_2026") or ""),
         "name_zh": str(fz_meta.get("name_zh") or ""),
         "parent_adm1_zh": str(fz_meta.get("parent_adm1_zh") or ""),
-        "parent_adm2_zh": str(fz_meta.get("parent_adm1_zh") or ""),
-        "unit_type": str(fz_meta.get("kind") or "state_new_area"),
       },
+      "unit_id": fz_id,
+    }
+    units_by_id[fz_id] = fz_entry
+    fz_out[fz_id] = {
+      "parent_1990s_names_zh": fz_names,
+      "parent_1990s_unit_ids": fz_pids,
+      "parent_adm1_zh": str(fz_meta.get("parent_adm1_zh") or ""),
+      "target_unit_id": fz_pids[0] if fz_pids else fz_id,
     }
 
   # Return statement
-  return {"coverage_years": [1954, 2026], "schema_version": 1, "units_by_id": units_by_id}
-
-
-def carve_2026_prc_additions (arg1_units, arg2_reforms_cfg, arg3_fz_cfg, arg4_gb_lookup, arg5_precision):
-  """Apply 2024 Hotan new counties (653228/653229) and XPCC shi-city carvings (659002-659012).
-
-  @param arg1_units List of PRC adm_3 unit dicts from GADM CHN_3.
-  @param arg2_reforms_cfg Parsed prc_admin_reforms_1954_2026.json5 dict.
-  @param arg3_fz_cfg Parsed prc_functional_zones_and_sez.json5 dict.
-  @param arg4_gb_lookup GB/T 2260 lookup dictionary.
-  @param arg5_precision Coordinate rounding decimal places.
-  @return Updated watertight list of 2026 PRC adm_3 unit dicts.
-  """
-  # Convert from parameters
-  precision = int(arg5_precision)
-  reforms_cfg = arg2_reforms_cfg or {}
-  units = _patch_hotan_2024_units(arg1_units, reforms_cfg)
-
-  # Declare local instance variables.
-  by_gb = {}
-  carved_units = []
-  existing_gbs = {str(u.get("gb_code") or "") for u in units}
-  xpcc_list = reforms_cfg.get("epoch_3_2001_2026", {}).get("xpcc_shi_cities", [])
-
-  for u in units:
-    by_gb[str(u.get("gb_code") or "")] = u
-
-  for xitem in xpcc_list:
-    xgb = str(xitem["gb_code"])
-    if xgb in existing_gbs:
-      continue
-    pt = Point(float(xitem["seat_lon"]), float(xitem["seat_lat"]))
-    disk = pt.buffer(float(xitem.get("radius_deg", 0.06)), resolution=4)
-    xj_units = [u for u in units if u.get("parent_adm1") == "XinjiangUygur" and u["geom"].intersects(disk)]
-    if not xj_units:
-      host_u = by_gb.get(str(xitem["host_county_gb"]))
-      if host_u is not None:
-        xj_units = [host_u]
-    if not xj_units:
-      continue
-    inter_parts = []
-    primary_host = None
-    best_ov = -1.0
-    for hu in xj_units:
-      part = gis_helpers.clean_polygonal_geometry(hu["geom"].intersection(disk))
-      if part is None or part.is_empty:
-        continue
-      rem = gis_helpers.clean_polygonal_geometry(hu["geom"].difference(part))
-      if rem is None or rem.is_empty:
-        continue
-      hu["geom"] = rem
-      inter_parts.append(part)
-      if float(part.area) > best_ov:
-        best_ov = float(part.area)
-        primary_host = hu
-    if not inter_parts:
-      continue
-    inter_u = gis_helpers.clean_polygonal_geometry(unary_union(inter_parts))
-    inter_r = gis_helpers.round_geometry(inter_u, precision) if inter_u is not None else None
-    if inter_r is None or inter_r.is_empty:
-      continue
-    actual_host_gb = str(primary_host["gb_code"]) if primary_host else str(xitem["host_county_gb"])
-    carved_units.append({
-      "edge_cases": ["xpcc_shi_city_carveout"],
-      "gb_code": xgb,
-      "gb_1990": actual_host_gb,
-      "geom": inter_r,
-      "host_gb_2026": actual_host_gb,
-      "name_en": str(xitem["name_en"]),
-      "name_py": str(xitem["name_en"]),
-      "name_zh": str(xitem["name_zh"]),
-      "name_zh_hant": str(xitem["name_zh"]).replace("师", "師").replace("图", "圖").replace("铁", "鐵").replace("门", "門").replace("关", "關").replace("双", "雙").replace("杨", "楊").replace("阳", "陽"),
-      "parent_adm1": "XinjiangUygur",
-      "parent_adm1_gb": "650000",
-      "parent_adm1_zh": "新疆维吾尔自治区",
-      "parent_adm2": "XPCC County-level Cities",
-      "parent_adm2_gb": "659000",
-      "parent_adm2_zh": "自治区直辖县级行政区划",
-      "region": "mainland_prc",
-      "search_queries": [],
-      "snapshot_year": int(xitem.get("snapshot_year", 2003)),
-      "unit_id": f"prc_{xgb}_{gis_helpers.slugify_snake(xitem['name_en'])}",
-      "unit_type": "county_level_shi",
-    })
-
-  units.extend(carved_units)
-
-  # Return statement
-  return units
+  return {
+    "coverage_years": [1954, 2026],
+    "functional_zones": fz_out,
+    "schema_version": 1,
+    "source_datasets": [
+      "CTAmap v2.0 tables/change_events_v2.csv (Zenodo 22179207)",
+      "yescallop/areacodes result.csv (MCA 1981-2025)",
+      "CHGIS v5 1990 CITAS counties",
+    ],
+    "total_units": len(units_by_id),
+    "units_by_id": units_by_id,
+  }
 
 
 def strip_ethnicity_tokens_recursive (arg1_name_zh, arg2_tokens):
-  """Strip autonomous suffixes and recursively remove all 55 ethnicity tokens from a county name.
+  """Iteratively strip recognised ethnic-group tokens and autonomy suffixes from a Chinese toponym.
 
-  @param arg1_name_zh Full Chinese autonomous county/banner name.
-  @param arg2_tokens Ordered list of ethnicity tokens (longest-first preferred).
-  @return Bare place-name stem without ethnicity or autonomous-unit suffixes.
+  @param arg1_name_zh Chinese county/banner name string.
+  @param arg2_tokens List of ethnic tokens ordered longest-first.
+  @return Cleaned Chinese toponym with autonomous designations stripped.
   """
   # Convert from parameters
-  stem = str(arg1_name_zh or "").strip()
-  tokens = sorted([str(t).strip() for t in (arg2_tokens or []) if str(t).strip()], key=len, reverse=True)
+  name_zh = str(arg1_name_zh or "").strip()
+  tokens = list(arg2_tokens or [])
 
   # Declare local instance variables.
   changed = True
+  core = name_zh
+  suffix = ""
+  tok = ""
 
-  for sfx in ("自治县", "自治旗", "自治州", "林区", "特区", "市", "区", "县", "旗"):
-    if stem.endswith(sfx) and len(stem) > len(sfx):
-      stem = stem[:-len(sfx)]
+  if not name_zh:
+    return ""
+
+  for sfx in ("各族联合自治县", "联合自治县", "各族自治县", "自治县", "自治旗"):
+    if name_zh.endswith(sfx):
+      core = name_zh[:-len(sfx)]
+      suffix = "旗" if "旗" in sfx else "县"
       break
 
-  for _ in range(10):
-    if not changed:
-      break
+  if core == name_zh:
+    return name_zh
+
+  while changed and len(core) > 2:
     changed = False
     for tok in tokens:
-      if stem.endswith(tok) and len(stem) > len(tok):
-        stem = stem[:-len(tok)]
+      if tok and core.endswith(tok) and len(core) - len(tok) >= 2:
+        core = core[:-len(tok)]
         changed = True
         break
 
   # Return statement
-  return stem
+  return f"{core}{suffix}"

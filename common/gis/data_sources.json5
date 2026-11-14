@@ -115,6 +115,13 @@
     }
   },
   "coordinate_precision": 5,
+  "ctamap_zenodo": {
+    "base_url": "https://zenodo.org/api/records/22179207/files/",
+    "record_id": "22179207",
+    "tables_filename": "tables.zip",
+    "target_dir": "input/gis/ctamap",
+    "years": [2000, 2026]
+  },
   "elevation": {
     "cache_npz": "terrarium_dem_z7_z8.npz",
     "contour_intervals_m": [200, 500, 1000, 2000, 3000, 4000],
@@ -186,6 +193,14 @@
   "modern_reference": {
     "target_dir": "input/gis/modern_reference",
     "files": {
+      "areacodes_codes": {
+        "filename": "areacodes_codes.json",
+        "url": "https://raw.githubusercontent.com/yescallop/areacodes/master/codes.json"
+      },
+      "areacodes_result": {
+        "filename": "areacodes_result.csv",
+        "url": "https://raw.githubusercontent.com/yescallop/areacodes/master/result.csv"
+      },
       "gb2260_areas": {
         "filename": "gb2260_areas.json",
         "url": "https://raw.githubusercontent.com/modood/Administrative-divisions-of-China/master/dist/areas.json"
@@ -353,6 +368,7 @@
         "Taiwan": [214, 196, 158],
         "Taoyuan": [212, 202, 162],
         "Tianjin": [218, 194, 148],
+        "Tibet": [224, 208, 176],
         "Tibet Autonomous Region": [224, 208, 176],
         "Wanbei": [208, 214, 162],
         "Wannan": [198, 206, 154],
